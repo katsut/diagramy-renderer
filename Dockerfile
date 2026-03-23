@@ -6,5 +6,5 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 ENV RENDERER_PORT=4729
 EXPOSE 4729
-HEALTHCHECK --interval=5s --timeout=3s CMD curl -sf http://localhost:4729/health || exit 1
+HEALTHCHECK --interval=5s --timeout=3s CMD node -e "fetch('http://localhost:4729/health').then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))"
 CMD ["npx", "tsx", "src/server.ts"]
