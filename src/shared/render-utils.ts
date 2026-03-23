@@ -58,8 +58,9 @@ export function createDiagramSvg(
 
 export function drawBackground(svg: SvgBuilder, d: DesignPreset, width: number, height: number): void {
   if (d.id === 'bold') {
-    // White bg with thick dark border frame
+    // White bg with halftone pattern overlay + thick dark border frame
     svg.rect(0, 0, width, height, { fill: d.bg, rx: d.borderRadius });
+    svg.rect(0, 0, width, height, { fill: 'url(#halftone)', rx: d.borderRadius });
     svg.rect(3, 3, width - 6, height - 6, {
       fill: 'none', stroke: d.border, 'stroke-width': 3, rx: Math.max(0, d.borderRadius - 2),
     });
