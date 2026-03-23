@@ -1,0 +1,28 @@
+{
+  "name": "renderer-js",
+  "version": "1.0.0",
+  "description": "Diagramy SVG renderer (TypeScript)",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec 'tsx src/server.ts'",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "tsx src/test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.30.2",
+  "dependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "express": "^5.2.1",
+    "lucide-static": "^0.577.0",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "tsx": "^4.21.0"
+  }
+}
