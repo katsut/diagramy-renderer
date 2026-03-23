@@ -79,7 +79,7 @@ const SKETCH: DesignPreset = {
   text: '#2D2D2D',
   textSecondary: '#777777',
   border: '#2D2D2D',
-  colors: ['#2D2D2D', '#555555', '#888888', '#AAAAAA', '#444444', '#666666', '#999999', '#333333', '#777777', '#BBBBBB'],
+  colors: ['#2D2D2D', '#8B4513', '#2E8B57', '#4682B4', '#CD853F', '#708090', '#BC8F8F', '#556B2F', '#8B6914', '#5F9EA0'],
   borderRadius: 3,
   borderWidth: 2,
   strokeDasharray: undefined,

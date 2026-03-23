@@ -86,7 +86,8 @@ function drawCell(
   let iy = y + 34;
   const maxItems = Math.floor((h - 38) / 16);
   for (let j = 0; j < Math.min(block.items.length, maxItems); j++) {
-    const itemFit = fitText(block.items[j]!, w - 20, 1, d.captionSize - 1);
+    const itemFontSize = Math.max(d.captionSize - 1, 11);
+    const itemFit = fitText(block.items[j]!, w - 20, 1, itemFontSize);
     svg.text(x + 10, iy, `\u2022 ${itemFit.lines[0] ?? block.items[j]}`, {
       'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.text,
     });
