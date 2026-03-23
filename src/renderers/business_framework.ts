@@ -38,6 +38,8 @@ export function renderBusinessFramework(data: BusinessFrameworkData, title?: str
   switch (style) {
     case 'bmc': return renderBmc(data, title, d);
     case 'lean': return renderLean(data, title, d);
+    case 'vpc': return renderVpc(data, title, d);
+    case 'vpc-lite': return renderVpcLite(data, title, d);
     default: return renderAuto(data, title, d);
   }
 }
@@ -396,6 +398,225 @@ function renderLean(data: BusinessFrameworkData, title: string | undefined, d: D
   const halfW = (totalW - gap) / 2;
   dc(pad, bottomY, halfW, rowH, 'cost_structure', 7);
   dc(pad + halfW + gap, bottomY, halfW, rowH, 'revenue_streams', 8);
+
+  return svg.build();
+}
+
+// ========== VPC (Value Proposition Canvas) ==========
+
+const VPC_DEFAULTS: Record<string, string> = {
+  customer_jobs: 'Customer Jobs',
+  pains: 'Pains',
+  gains: 'Gains',
+  products: 'Products & Services',
+  pain_relievers: 'Pain Relievers',
+  gain_creators: 'Gain Creators',
+};
+
+// Draw items inside a VPC sector (clipped region within circle or rect)
+function drawVpcSector(
+  svg: any, d: DesignPreset, bm: Map<string, CanvasBlock>,
+  cx: number, cy: number, key: string, colorIdx: number,
+  maxW: number,
+) {
+  const block = bm.get(key);
+  const label = block?.label ?? VPC_DEFAULTS[key] ?? key;
+  const items = block?.items ?? [];
+  const color = blockColor(d, colorIdx);
+
+  const labelFit = fitText(label, maxW - 12, 1, d.captionSize);
+  svg.text(cx, cy, labelFit.lines[0] ?? label, {
+    'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
+  });
+
+  let iy = cy + 16;
+  const maxItems = 4;
+  for (let j = 0; j < Math.min(items.length, maxItems); j++) {
+    const itemFit = fitText(items[j]!, maxW - 20, 1, d.captionSize - 2);
+    svg.text(cx, iy, `\u2022 ${itemFit.lines[0] ?? items[j]}`, {
+      'text-anchor': 'middle', 'font-size': itemFit.fontSize, fill: d.text,
+    });
+    iy += 14;
+  }
+}
+
+function renderVpc(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
+  const pad = 32;
+  const titleH = title ? 50 : 0;
+  const circleR = 140;
+  const rectW = 280;
+  const rectH = circleR * 2;
+  const arrowGap = 48;
+  const totalW = rectW + arrowGap + circleR * 2;
+  const totalH = rectH;
+  const width = pad * 2 + totalW;
+  const height = pad * 2 + titleH + totalH;
+
+  const bm = blockMap(data);
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Value Proposition Canvas',
+    `<clipPath id="vpc-circle"><circle cx="${pad + rectW + arrowGap + circleR}" cy="${pad + titleH + circleR}" r="${circleR - 2}"/></clipPath>` +
+    `<clipPath id="vpc-rect"><rect x="${pad}" y="${pad + titleH}" width="${rectW}" height="${rectH}" rx="${Math.min(d.borderRadius, 12)}"/></clipPath>`
+  );
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const top = pad + titleH;
+
+  // --- Left: Value Proposition (rounded rectangle, 3 horizontal sections) ---
+  const rx = pad;
+  const ry = top;
+  svg.rect(rx, ry, rectW, rectH, {
+    fill: d.surface,
+    stroke: d.borderWidth > 0 ? d.border : 'none',
+    'stroke-width': d.borderWidth,
+    rx: Math.min(d.borderRadius, 12),
+    ...d.cardAttrs(),
+  });
+
+  // Horizontal dividers for 3 sections
+  const sectionH = rectH / 3;
+  svg.line(rx, ry + sectionH, rx + rectW, ry + sectionH, {
+    stroke: d.border, 'stroke-width': 1, 'stroke-dasharray': '4,3',
+  });
+  svg.line(rx, ry + sectionH * 2, rx + rectW, ry + sectionH * 2, {
+    stroke: d.border, 'stroke-width': 1, 'stroke-dasharray': '4,3',
+  });
+
+  // Section labels: Gain Creators (top), Products/Services (mid), Pain Relievers (bottom)
+  const rectCx = rx + rectW / 2;
+  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 0.35, 'gain_creators', 3, rectW);
+  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 1.35, 'products', 4, rectW);
+  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 2.35, 'pain_relievers', 5, rectW);
+
+  // --- Right: Customer Segment (circle with Y-shaped dividers) ---
+  const ccx = pad + rectW + arrowGap + circleR;
+  const ccy = top + circleR;
+
+  svg.circle(ccx, ccy, circleR, {
+    fill: d.surface,
+    stroke: d.borderWidth > 0 ? d.border : 'none',
+    'stroke-width': d.borderWidth,
+    ...d.cardAttrs(),
+  });
+
+  // Y-shaped dividers: center → top, center → bottom-left, center → bottom-right
+  // The Y junction is slightly above center to give more room to top section
+  const jy = ccy - 10;
+  // Line to top
+  svg.line(ccx, jy, ccx, ccy - circleR, {
+    stroke: d.border, 'stroke-width': 1, 'stroke-dasharray': '4,3',
+  });
+  // Line to bottom-left (210 degrees)
+  const blx = ccx + circleR * Math.cos(210 * Math.PI / 180);
+  const bly = ccy + circleR * Math.sin(210 * Math.PI / 180);
+  svg.line(ccx, jy, blx, bly, {
+    stroke: d.border, 'stroke-width': 1, 'stroke-dasharray': '4,3',
+  });
+  // Line to bottom-right (330 degrees)
+  const brx = ccx + circleR * Math.cos(330 * Math.PI / 180);
+  const bry = ccy + circleR * Math.sin(330 * Math.PI / 180);
+  svg.line(ccx, jy, brx, bry, {
+    stroke: d.border, 'stroke-width': 1, 'stroke-dasharray': '4,3',
+  });
+
+  // Gains (top sector)
+  drawVpcSector(svg, d, bm, ccx, ccy - circleR * 0.55, 'gains', 0, circleR * 1.2);
+  // Customer Jobs (bottom-right sector)
+  drawVpcSector(svg, d, bm, ccx + circleR * 0.35, ccy + circleR * 0.35, 'customer_jobs', 1, circleR * 0.9);
+  // Pains (bottom-left sector)
+  drawVpcSector(svg, d, bm, ccx - circleR * 0.35, ccy + circleR * 0.35, 'pains', 2, circleR * 0.9);
+
+  // --- Center arrow (Fit) ---
+  const arrowX1 = pad + rectW + 8;
+  const arrowX2 = pad + rectW + arrowGap - 8;
+  const arrowY = top + circleR;
+  svg.line(arrowX2, arrowY, arrowX1, arrowY, {
+    stroke: d.border, 'stroke-width': 2, 'stroke-linecap': 'round',
+  });
+  // Arrowhead pointing left (value side receives from customer side)
+  svg.path(`M${arrowX1},${arrowY} L${arrowX1 + 8},${arrowY - 5} L${arrowX1 + 8},${arrowY + 5} Z`, {
+    fill: d.border,
+  });
+  // "Fit" label
+  svg.text((arrowX1 + arrowX2) / 2, arrowY - 8, 'Fit', {
+    'text-anchor': 'middle', 'font-size': d.captionSize - 2, fill: d.text, 'font-style': 'italic',
+  });
+
+  return svg.build();
+}
+
+// ========== VPC-lite (lightweight Value Proposition Canvas) ==========
+
+function renderVpcLite(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
+  const n = data.blocks.length;
+  if (n <= 3) {
+    // Simple horizontal card layout
+    if (n <= 2) return render2Col(data, title, d);
+    return render3Col(data, title, d);
+  }
+
+  // 4-6 blocks: 2-column grouped layout (value side left, customer side right)
+  const pad = 32;
+  const titleH = title ? 50 : 0;
+  const gap = 10;
+  const groupGap = 24;
+
+  // Split blocks into value side (first half) and customer side (second half)
+  const mid = Math.ceil(n / 2);
+  const leftBlocks = data.blocks.slice(0, mid);
+  const rightBlocks = data.blocks.slice(mid);
+
+  // Measure all blocks
+  const leftSizes = leftBlocks.map(b => measureBlock(b, d));
+  const rightSizes = rightBlocks.map(b => measureBlock(b, d));
+
+  const colW = Math.max(
+    ...leftSizes.map(s => s.w),
+    ...rightSizes.map(s => s.w),
+    160,
+  );
+  const cellH = Math.max(
+    ...leftSizes.map(s => s.h),
+    ...rightSizes.map(s => s.h),
+    80,
+  );
+
+  const leftH = leftBlocks.length * cellH + (leftBlocks.length - 1) * gap;
+  const rightH = rightBlocks.length * cellH + (rightBlocks.length - 1) * gap;
+  const contentH = Math.max(leftH, rightH);
+
+  const labelH = 24;
+  const width = pad * 2 + colW * 2 + groupGap;
+  const height = pad * 2 + titleH + labelH + contentH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Value Proposition Canvas');
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const top = pad + titleH;
+
+  // Group labels
+  svg.text(pad + colW / 2, top + 16, 'Value Proposition', {
+    'text-anchor': 'middle', 'font-size': d.captionSize - 1, fill: d.text, 'font-weight': d.fontWeight, opacity: 0.6,
+  });
+  svg.text(pad + colW + groupGap + colW / 2, top + 16, 'Customer Segment', {
+    'text-anchor': 'middle', 'font-size': d.captionSize - 1, fill: d.text, 'font-weight': d.fontWeight, opacity: 0.6,
+  });
+
+  const cardsTop = top + labelH;
+
+  // Left column (value side)
+  for (let i = 0; i < leftBlocks.length; i++) {
+    drawCell(svg, d, pad, cardsTop + i * (cellH + gap), colW, cellH, leftBlocks[i]!, i + 3);
+  }
+
+  // Right column (customer side)
+  for (let i = 0; i < rightBlocks.length; i++) {
+    drawCell(svg, d, pad + colW + groupGap, cardsTop + i * (cellH + gap), colW, cellH, rightBlocks[i]!, i);
+  }
 
   return svg.build();
 }
