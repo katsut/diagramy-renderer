@@ -1,7 +1,7 @@
 // Business Framework renderer — auto-layout by block count + BMC/Lean Canvas grids
 
 import { getDesign, type DesignPreset } from '../shared/design.js';
-import { fitText } from '../shared/text.js';
+import { fitText, estimateWidth } from '../shared/text.js';
 import {
   createDiagramSvg, drawBackground, drawTitle,
 } from '../shared/render-utils.js';
@@ -18,6 +18,19 @@ interface BusinessFrameworkData {
 
 function blockColor(d: DesignPreset, i: number): string {
   return d.colors[i % d.colors.length]!;
+}
+
+// Measure natural size needed for a block based on its text content
+function measureBlock(block: CanvasBlock, d: DesignPreset): { w: number; h: number } {
+  const fontSize = d.captionSize;
+  const labelW = estimateWidth(block.label, fontSize + 2) + 24;
+  let maxItemW = 0;
+  for (const item of block.items) {
+    maxItemW = Math.max(maxItemW, estimateWidth(`\u2022 ${item}`, fontSize - 1) + 24);
+  }
+  const w = Math.max(labelW, maxItemW, 100);
+  const h = 38 + block.items.length * 16 + 12;
+  return { w, h };
 }
 
 export function renderBusinessFramework(data: BusinessFrameworkData, title?: string, design?: DesignPreset, style?: string): string {
@@ -82,11 +95,13 @@ function drawCell(
 // ========== 2-column layout (Before/After, As-Is/To-Be) ==========
 
 function render2Col(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
-  const pad = 32;
-  const titleH = title ? 50 : 0;
-  const gap = 12;
-  const colW = 352;
-  const cellH = 200;
+  const pad = 24;
+  const titleH = title ? 44 : 0;
+  const gap = 10;
+  const blocks = data.blocks.slice(0, 2);
+  const sizes = blocks.map(b => measureBlock(b, d));
+  const colW = Math.max(...sizes.map(s => s.w), 140);
+  const cellH = Math.max(...sizes.map(s => s.h), 60);
   const width = pad * 2 + colW * 2 + gap;
   const height = pad * 2 + titleH + cellH;
 
@@ -96,9 +111,8 @@ function render2Col(data: BusinessFrameworkData, title: string | undefined, d: D
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
-  for (let i = 0; i < 2; i++) {
-    const block = data.blocks[i]!;
-    drawCell(svg, d, pad + i * (colW + gap), top, colW, cellH, block, i);
+  for (let i = 0; i < blocks.length; i++) {
+    drawCell(svg, d, pad + i * (colW + gap), top, colW, cellH, blocks[i]!, i);
   }
 
   return svg.build();
@@ -107,11 +121,13 @@ function render2Col(data: BusinessFrameworkData, title: string | undefined, d: D
 // ========== 3-column layout (3C, Why/What/How) ==========
 
 function render3Col(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
-  const pad = 32;
-  const titleH = title ? 50 : 0;
-  const gap = 12;
-  const colW = 260;
-  const cellH = 200;
+  const pad = 24;
+  const titleH = title ? 44 : 0;
+  const gap = 10;
+  const blocks = data.blocks.slice(0, 3);
+  const sizes = blocks.map(b => measureBlock(b, d));
+  const colW = Math.max(...sizes.map(s => s.w), 120);
+  const cellH = Math.max(...sizes.map(s => s.h), 60);
   const width = pad * 2 + colW * 3 + gap * 2;
   const height = pad * 2 + titleH + cellH;
 
@@ -121,9 +137,8 @@ function render3Col(data: BusinessFrameworkData, title: string | undefined, d: D
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
-  for (let i = 0; i < 3; i++) {
-    const block = data.blocks[i]!;
-    drawCell(svg, d, pad + i * (colW + gap), top, colW, cellH, block, i);
+  for (let i = 0; i < blocks.length; i++) {
+    drawCell(svg, d, pad + i * (colW + gap), top, colW, cellH, blocks[i]!, i);
   }
 
   return svg.build();
@@ -132,11 +147,13 @@ function render3Col(data: BusinessFrameworkData, title: string | undefined, d: D
 // ========== 2x2 grid (SWOT, 4P, BSC) ==========
 
 function render2x2(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
-  const pad = 32;
-  const titleH = title ? 50 : 0;
-  const gap = 12;
-  const colW = 352;
-  const cellH = 160;
+  const pad = 24;
+  const titleH = title ? 44 : 0;
+  const gap = 10;
+  const blocks = data.blocks.slice(0, 4);
+  const sizes = blocks.map(b => measureBlock(b, d));
+  const colW = Math.max(...sizes.map(s => s.w), 120);
+  const cellH = Math.max(...sizes.map(s => s.h), 60);
   const width = pad * 2 + colW * 2 + gap;
   const height = pad * 2 + titleH + cellH * 2 + gap;
 
