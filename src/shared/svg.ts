@@ -28,7 +28,8 @@ export class SvgBuilder {
       `font-family="${font}">`,
     );
     if (fontImport) {
-      this.parts.push(`<style>@import url('${fontImport}');</style>`);
+      const escaped = fontImport.replace(/&/g, '&amp;');
+      this.parts.push(`<style>@import url('${escaped}');</style>`);
     }
   }
 
