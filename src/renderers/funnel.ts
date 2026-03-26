@@ -9,6 +9,7 @@ import {
   buildColorGradients, drawSketchBackground, drawPixelBackground,
   drawIconNode,
 } from '../shared/render-utils.js';
+import { profileItems } from '../shared/layout-planner.js';
 
 interface FunnelStage {
   label: string;
@@ -114,7 +115,8 @@ function renderClean(data: FunnelData, title: string | undefined, d: DesignPrese
   const funnelW = 320;
   const annotW = 300;
   const gap = 40;
-  const stageH = 80;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 96 : 80;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -155,7 +157,8 @@ function renderBold(data: FunnelData, title: string | undefined, d: DesignPreset
   const funnelW = 340;
   const annotW = 300;
   const gap = 44;
-  const stageH = 90;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 104 : 90;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -254,7 +257,8 @@ function renderGlass(data: FunnelData, title: string | undefined, d: DesignPrese
   const funnelW = 340;
   const annotW = 300;
   const gap = 44;
-  const stageH = 84;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 100 : 84;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -310,7 +314,8 @@ function renderNeon(data: FunnelData, title: string | undefined, d: DesignPreset
   const funnelW = 340;
   const annotW = 300;
   const gap = 44;
-  const stageH = 84;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 100 : 84;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -365,7 +370,8 @@ function renderWatercolor(data: FunnelData, title: string | undefined, d: Design
   const funnelW = 340;
   const annotW = 300;
   const gap = 44;
-  const stageH = 84;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 100 : 84;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 

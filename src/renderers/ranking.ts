@@ -7,6 +7,7 @@ import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   buildColorGradients, drawSketchBackground, drawPixelBackground,
 } from '../shared/render-utils.js';
+import { profileItems, adaptiveLabelWidth } from '../shared/layout-planner.js';
 
 interface RankingItem {
   label: string;
@@ -43,10 +44,12 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
   const pad = 48;
   const titleH = title ? 44 : 0;
   const count = data.items.length;
-  const rowH = 44;
+  const hasDesc = data.items.some(it => it.description);
+  const rowH = hasDesc ? 56 : 44;
   const rowGap = 8;
   const rankW = 36;
-  const labelW = 160;
+  const profile = profileItems(data.items, d.labelSize, d.captionSize);
+  const labelW = adaptiveLabelWidth(profile.maxLabelWidth, 120, 220);
   const barMaxW = 220;
   const totalW = rankW + 12 + labelW + 12 + barMaxW;
   const width = pad * 2 + totalW;
@@ -96,10 +99,12 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
       });
     }
 
-    // Description
+    // Description (fitted to available width)
     if (item.description) {
-      svg.text(lx, y + rowH / 2 + 18, item.description, {
-        'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
+      const descMaxW = labelW + 12 + barMaxW;
+      const dfit = fitText(item.description, descMaxW, 1, d.captionSize);
+      svg.text(lx, y + rowH / 2 + 18, dfit.lines[0]!, {
+        'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
       });
     }
   }

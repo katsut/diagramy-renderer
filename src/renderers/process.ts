@@ -8,8 +8,9 @@ import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   computeHorizontalStepLayout, buildColorGradients, arrowMarkerDef,
   drawSketchBackground, drawPixelBackground, drawPresetCard, drawIconNode,
-  type StepLayout,
+  ensureTitleFits, type StepLayout,
 } from '../shared/render-utils.js';
+import { computeGridLayout } from '../shared/layout-planner.js';
 import type { SvgBuilder } from '../shared/svg.js';
 
 interface ProcessNode {
@@ -33,7 +34,11 @@ export function renderProcess(data: ProcessData, title?: string, design?: Design
     case 'staircase': return renderStaircase(data, title, d);
     case 'numbered': return renderNumbered(data, title, d);
     case 'pipeline': return renderPipeline(data, title, d);
-    default:
+    default: {
+      // Auto-switch to serpentine when horizontal layout would exceed 960px
+      if (!style && data.nodes.length > 4) {
+        return renderSerpentine(data, title, d);
+      }
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
         case 'pixel': return renderPixel(data, title, d);
@@ -44,6 +49,7 @@ export function renderProcess(data: ProcessData, title?: string, design?: Design
         case 'watercolor': return renderWatercolor(data, title, d);
         default: return renderClean(data, title, d);
       }
+    }
   }
 }
 

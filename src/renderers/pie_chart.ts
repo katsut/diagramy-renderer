@@ -7,6 +7,7 @@ import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   buildColorGradients, drawSketchBackground, drawPixelBackground,
 } from '../shared/render-utils.js';
+import { computePieLabels, type PieLabelPos } from '../shared/layout-planner.js';
 
 interface PieSegment {
   label: string;
@@ -85,24 +86,8 @@ function renderClean(data: PieChartData, title: string | undefined, d: DesignPre
   const total = data.segments.reduce((s, seg) => s + seg.value, 0) || 1;
   let angle = 0;
 
-  // Pre-compute label positions for overlap resolution
-  const labelPositions: { x: number; y: number; text: string }[] = [];
-  let preAngle = 0;
-  for (let i = 0; i < data.segments.length; i++) {
-    const seg = data.segments[i]!;
-    const sweep = (seg.value / total) * 360;
-    const pct = Math.round(seg.value / total * 100);
-    if (sweep > 15) {
-      const midAngle = preAngle + sweep / 2;
-      const labelR = r + 20;
-      const pt = polarToCartesian(chartCx, chartCy, labelR, midAngle);
-      labelPositions.push({ x: pt.x, y: pt.y + 4, text: `${pct}%` });
-    }
-    preAngle += sweep;
-  }
-  resolveOverlap(labelPositions);
+  const pieLabels = computePieLabels(data.segments, chartCx, chartCy, r, d.captionSize);
 
-  let labelIdx = 0;
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const sweep = (seg.value / total) * 360;
@@ -114,15 +99,13 @@ function renderClean(data: PieChartData, title: string | undefined, d: DesignPre
       });
     }
 
-    if (sweep > 15 && labelIdx < labelPositions.length) {
-      const lp = labelPositions[labelIdx]!;
-      svg.text(lp.x, lp.y, lp.text, {
-        'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': d.fontWeight, fill: d.textSecondary,
-      });
-      labelIdx++;
-    }
-
     angle += sweep;
+  }
+
+  for (const lp of pieLabels) {
+    svg.text(lp.x, lp.y, lp.text, {
+      'text-anchor': lp.anchor, 'font-size': d.captionSize, 'font-weight': d.fontWeight, fill: d.textSecondary,
+    });
   }
 
   // Legend

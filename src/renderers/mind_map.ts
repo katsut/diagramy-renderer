@@ -9,6 +9,7 @@ import {
   buildColorGradients, drawSketchBackground, drawPixelBackground,
   drawPresetCard, drawIconNode,
 } from '../shared/render-utils.js';
+import { adaptiveRadialRadius } from '../shared/layout-planner.js';
 import type { SvgBuilder } from '../shared/svg.js';
 
 interface MindMapBranch {
@@ -46,15 +47,14 @@ function branchIcon(i: number): string {
   return BRANCH_ICONS[i % BRANCH_ICONS.length]!;
 }
 
-function computeLayout(branchCount: number, hasTitle: boolean) {
+function computeLayout(branchCount: number, hasTitle: boolean, maxChildren: number) {
   const pad = 48;
   const titleH = hasTitle ? 44 : 0;
   const centerR = 50;
-  const branchR = 180;
-  const childR = 60;
-  const maxChildCount = 4;
+  const { branchR, childR } = adaptiveRadialRadius(branchCount, maxChildren);
+  const maxChildCount = branchCount <= 4 ? 5 : branchCount <= 6 ? 4 : 3;
 
-  const totalR = branchR + childR + 40;
+  const totalR = branchR + childR + 50;
   const width = Math.max(pad * 2 + totalR * 2, 600);
   const height = pad * 2 + titleH + totalR * 2;
   const cx = width / 2;
@@ -71,7 +71,8 @@ function branchAngle(i: number, total: number): number {
 
 function renderClean(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const gradientDefs = buildColorGradients(d, n, 'mg');
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map diagram', gradientDefs);
   svg.defs(defs);
@@ -148,7 +149,8 @@ function drawCleanChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: num
 
 function renderBold(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const gradientDefs = buildColorGradients(d, n, 'mg');
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (bold)', gradientDefs);
   svg.defs(defs);
@@ -195,7 +197,8 @@ function renderBold(data: MindMapData, title: string | undefined, d: DesignPrese
 
 function renderFlat(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (flat)');
   svg.defs(defs);
 
@@ -246,7 +249,8 @@ function renderFlat(data: MindMapData, title: string | undefined, d: DesignPrese
 
 function renderGlass(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const gradientDefs = buildColorGradients(d, n, 'mg');
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (glass)', gradientDefs);
   svg.defs(defs);
@@ -297,7 +301,8 @@ function renderGlass(data: MindMapData, title: string | undefined, d: DesignPres
 
 function renderNeon(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (neon)');
   svg.defs(defs);
 
@@ -357,7 +362,8 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
 
 function renderWatercolor(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const gradientDefs = buildColorGradients(d, n, 'mg');
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (watercolor)', gradientDefs);
   svg.defs(defs);
@@ -415,7 +421,8 @@ function renderWatercolor(data: MindMapData, title: string | undefined, d: Desig
 
 function renderSketch(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map diagram (sketch)');
   svg.defs(defs);
 
@@ -484,7 +491,8 @@ function drawSketchChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: nu
 function renderPixel(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const px = 3;
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map diagram (pixel)');
   svg.defs(defs);
 
