@@ -21,6 +21,7 @@ interface RoadmapData {
 export function renderRoadmap(data: RoadmapData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'vertical') return renderVerticalStyle(data, title, d);
+  if (style === 'timeline_cards') return renderTimelineCards(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
@@ -612,6 +613,74 @@ function renderVerticalStyle(data: RoadmapData, title: string | undefined, d: De
     }
 
     curY += phaseH + phaseGap + arrowH;
+  }
+
+  return svg.build();
+}
+
+// ========== TIMELINE CARDS ==========
+// Cards on a horizontal timeline bar, alternating above/below the line
+
+function renderTimelineCards(data: RoadmapData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const count = data.phases.length;
+  const cardW = 160;
+  const cardGap = 20;
+  const maxItems = Math.max(...data.phases.map(p => p.items.length), 1);
+  const cardH = 36 + maxItems * 18;
+  const lineY = pad + titleH + cardH + 40;
+  const totalW = count * (cardW + cardGap) - cardGap;
+  const width = pad * 2 + totalW;
+  const height = lineY + cardH + 60;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Roadmap (timeline cards)',
+    buildColorGradients(d, count, 'rg'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  // Timeline bar
+  svg.line(pad + 10, lineY, width - pad - 10, lineY, {
+    stroke: d.border, 'stroke-width': 3, opacity: 0.3, 'stroke-linecap': 'round',
+  });
+
+  for (let i = 0; i < count; i++) {
+    const phase = data.phases[i]!;
+    const color = phaseColor(d, i);
+    const cx = pad + i * (cardW + cardGap) + cardW / 2;
+    const isAbove = i % 2 === 0;
+
+    // Dot on timeline
+    svg.circle(cx, lineY, 7, { fill: `url(#rg${i})`, stroke: d.bg, 'stroke-width': 2 });
+
+    // Connector line from dot to card
+    const connLen = 28;
+    const cardY = isAbove ? lineY - connLen - cardH : lineY + connLen;
+    const connEnd = isAbove ? cardY + cardH : cardY;
+
+    svg.line(cx, lineY + (isAbove ? -8 : 8), cx, connEnd, {
+      stroke: color, 'stroke-width': 1.5, opacity: 0.4, 'stroke-dasharray': '4,3',
+    });
+
+    // Card
+    drawPresetCard(svg, d, cx - cardW / 2, cardY, cardW, cardH, color);
+
+    // Phase label
+    const fit = fitText(phase.label, cardW - 20, 1, d.labelSize);
+    svg.text(cx, cardY + 22, fit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: color,
+    });
+
+    // Items
+    for (let j = 0; j < phase.items.length; j++) {
+      const itemY = cardY + 36 + j * 18;
+      svg.circle(cx - cardW / 2 + 16, itemY, 2, { fill: color, opacity: 0.5 });
+      const itemFit = fitText(phase.items[j]!, cardW - 36, 1, d.captionSize);
+      svg.text(cx - cardW / 2 + 24, itemY + 4, itemFit.lines[0]!, {
+        'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+      });
+    }
   }
 
   return svg.build();

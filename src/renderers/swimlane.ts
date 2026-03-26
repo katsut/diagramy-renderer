@@ -30,6 +30,7 @@ function laneColor(d: DesignPreset, i: number): string {
 export function renderSwimlane(data: SwimlaneData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'vertical') return renderVerticalStyle(data, title, d);
+  if (style === 'kanban') return renderKanban(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
@@ -638,6 +639,82 @@ function renderVerticalStyle(data: SwimlaneData, title: string | undefined, d: D
         });
         svg.path(`M ${cx - 4} ${ay + stepGap - 8} l 4 4 l 4 -4`, {
           fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.4,
+        });
+      }
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== KANBAN ==========
+// Kanban board: actors as column headers, action cards stacked vertically in each column
+
+function renderKanban(data: SwimlaneData, title: string | undefined, d: DesignPreset): string {
+  const pad = 40;
+  const titleH = title ? 44 : 0;
+  const headerH = 44;
+  const colW = 180;
+  const colGap = 10;
+  const cardH = 48;
+  const cardGap = 8;
+  const lanes = data.lanes;
+  const maxSteps = Math.max(...lanes.map(l => l.steps.length), 1);
+  const contentW = lanes.length * colW + (lanes.length - 1) * colGap;
+  const bodyH = maxSteps * (cardH + cardGap) + 16;
+  const width = pad * 2 + contentW;
+  const height = pad * 2 + titleH + headerH + bodyH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Swimlane (kanban)',
+    buildColorGradients(d, lanes.length, 'sl'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+
+  for (let li = 0; li < lanes.length; li++) {
+    const lane = lanes[li]!;
+    const color = laneColor(d, li);
+    const x = pad + li * (colW + colGap);
+    const cx = x + colW / 2;
+
+    // Column background
+    svg.rect(x, contentTop, colW, headerH + bodyH, {
+      fill: d.surface, rx: d.borderRadius, opacity: 0.5,
+    });
+    svg.rect(x, contentTop, colW, headerH + bodyH, {
+      fill: 'none', stroke: d.border, 'stroke-width': 1, rx: d.borderRadius, opacity: 0.3,
+    });
+
+    // Header
+    svg.rect(x + 1, contentTop + 1, colW - 2, headerH - 1, {
+      fill: `url(#sl${li})`, rx: d.borderRadius > 4 ? 4 : d.borderRadius,
+    });
+    const aFit = fitText(lane.actor, colW - 40, 1, d.labelSize);
+    svg.text(cx, contentTop + headerH / 2 + 5, aFit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: 'white',
+    });
+    // Count badge
+    svg.text(x + colW - 14, contentTop + headerH / 2 + 4, `${lane.steps.length}`, {
+      'text-anchor': 'middle', 'font-size': 10, fill: 'rgba(255,255,255,0.7)',
+    });
+
+    // Cards
+    for (let si = 0; si < lane.steps.length; si++) {
+      const step = lane.steps[si]!;
+      const sy = contentTop + headerH + 8 + si * (cardH + cardGap);
+      drawPresetCard(svg, d, x + 8, sy, colW - 16, cardH, color);
+      // Color dot
+      svg.circle(x + 20, sy + 14, 4, { fill: color, opacity: 0.6 });
+      const fit = fitText(step.label, colW - 44, 1, d.captionSize + 1);
+      svg.text(x + 30, sy + 18, fit.lines[0]!, {
+        'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      });
+      if (step.description) {
+        const dfit = fitText(step.description, colW - 36, 1, d.captionSize);
+        svg.text(x + 20, sy + 36, dfit.lines[0]!, {
+          'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
         });
       }
     }

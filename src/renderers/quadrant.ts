@@ -21,6 +21,7 @@ function itemColor(d: DesignPreset, i: number): string {
 export function renderQuadrant(data: QuadrantData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'color_block') return renderColorBlock(data, title, d);
+  if (style === 'bubble') return renderBubble(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
@@ -578,6 +579,105 @@ function renderColorBlock(data: QuadrantData, title: string | undefined, d: Desi
         'font-size': fit.fontSize, fill: d.text,
       });
       iy += lh;
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== BUBBLE ==========
+// Bubble chart: X/Y axes, items as circles placed by quadrant position
+
+function renderBubble(data: QuadrantData, title: string | undefined, d: DesignPreset): string {
+  const pad = 52;
+  const titleH = title ? 48 : 0;
+  const axisLen = 400;
+  const axisMargin = 40;
+  const width = pad * 2 + axisLen + axisMargin;
+  const height = pad * 2 + titleH + axisLen + axisMargin;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Quadrant (bubble)');
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const originX = pad + axisMargin;
+  const originY = pad + titleH + axisLen;
+  const endX = originX + axisLen;
+  const endY = pad + titleH;
+
+  // Axes
+  svg.line(originX, originY, endX, originY, {
+    stroke: d.border, 'stroke-width': 2, opacity: 0.5,
+  });
+  svg.line(originX, originY, originX, endY, {
+    stroke: d.border, 'stroke-width': 2, opacity: 0.5,
+  });
+  // Arrow tips
+  svg.path(`M ${endX - 6} ${originY - 4} L ${endX} ${originY} L ${endX - 6} ${originY + 4}`, {
+    fill: d.border, opacity: 0.5,
+  });
+  svg.path(`M ${originX - 4} ${endY + 6} L ${originX} ${endY} L ${originX + 4} ${endY + 6}`, {
+    fill: d.border, opacity: 0.5,
+  });
+
+  // Quadrant tint areas
+  const midX = originX + axisLen / 2;
+  const midY = originY - axisLen / 2;
+  const halfLen = axisLen / 2;
+  for (let qi = 0; qi < 4; qi++) {
+    const color = itemColor(d, qi);
+    const qx = qi === 0 || qi === 2 ? originX : midX;
+    const qy = qi === 0 || qi === 1 ? midY : originY - halfLen;
+    svg.rect(qx, qy, halfLen, halfLen, { fill: color, opacity: 0.04 });
+  }
+
+  // Dashed center lines
+  svg.line(midX, originY, midX, endY, {
+    stroke: d.border, 'stroke-width': 1, opacity: 0.15, 'stroke-dasharray': '4,4',
+  });
+  svg.line(originX, midY, endX, midY, {
+    stroke: d.border, 'stroke-width': 1, opacity: 0.15, 'stroke-dasharray': '4,4',
+  });
+
+  // Quadrant label positions: TL=0, TR=1, BL=2, BR=3
+  const labelPositions = [
+    { lx: originX + 8, ly: midY - halfLen + 18 },
+    { lx: midX + 8, ly: midY - halfLen + 18 },
+    { lx: originX + 8, ly: midY + 18 },
+    { lx: midX + 8, ly: midY + 18 },
+  ];
+
+  for (let qi = 0; qi < 4; qi++) {
+    const color = itemColor(d, qi);
+    const lp = labelPositions[qi]!;
+
+    // Quadrant label
+    const labelFit = fitText(data.labels[qi]!, halfLen - 16, 1, d.captionSize);
+    svg.text(lp.lx, lp.ly, labelFit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': labelFit.fontSize, fill: color, opacity: 0.6,
+    });
+
+    // Bubble positions: spread items within quadrant
+    const items = data.quadrants[qi]!;
+    const baseX = qi === 0 || qi === 2 ? originX + halfLen * 0.25 : midX + halfLen * 0.25;
+    const baseY = qi === 0 || qi === 1 ? endY + halfLen * 0.3 : midY + halfLen * 0.3;
+
+    for (let j = 0; j < items.length; j++) {
+      const bubbleR = Math.max(20, 32 - items.length * 2);
+      const offsetX = (j % 3) * (bubbleR * 2.2) + (j > 2 ? bubbleR : 0);
+      const offsetY = Math.floor(j / 3) * (bubbleR * 2.2);
+      const bx = baseX + offsetX;
+      const by = baseY + offsetY;
+
+      svg.circle(bx, by, bubbleR, { fill: color, opacity: 0.2 });
+      svg.circle(bx, by, bubbleR, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.6,
+      });
+      const fit = fitText(items[j]!, bubbleR * 1.6, 1, 10);
+      svg.text(bx, by + 4, fit.lines[0]!, {
+        'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      });
     }
   }
 

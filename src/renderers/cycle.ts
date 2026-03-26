@@ -25,6 +25,7 @@ export function renderCycle(data: CycleData, title?: string, design?: DesignPres
   const d = design ?? getDesign();
   switch (style) {
     case 'flywheel': return renderFlywheel(data, title, d);
+    case 'gear': return renderGear(data, title, d);
     default:
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
@@ -524,6 +525,83 @@ function renderPixel(data: CycleData, title: string | undefined, d: DesignPreset
       'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: d.bg,
     });
     drawLabelBlock(svg, d, step.label, undefined, Math.round(x), Math.round(y) + nodeR + 16, 90);
+  }
+
+  return svg.build();
+}
+
+// ========== GEAR ==========
+// Interlocking gear/cog visualization — each step is a gear node with teeth connecting to neighbors
+
+function renderGear(data: CycleData, title: string | undefined, d: DesignPreset): string {
+  const pad = 48;
+  const titleH = title ? 44 : 0;
+  const count = data.steps.length;
+  const gearR = 36;
+  const ringR = count <= 3 ? 90 : 110 + count * 6;
+  const size = (ringR + gearR + 100) * 2;
+  const width = pad * 2 + size;
+  const height = pad * 2 + titleH + size;
+  const cx = width / 2;
+  const cy = pad + titleH + size / 2;
+
+  const { svg, defs: baseDefs } = createDiagramSvg(d, width, height, title, 'Cycle diagram (gear)',
+    buildColorGradients(d, count, 'cg'));
+  svg.defs(baseDefs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const positions = circlePositions(count, cx, cy, ringR);
+  const toothCount = 10;
+  const toothDepth = 8;
+  const innerR = gearR - 4;
+
+  // Draw connecting arcs between gears
+  for (let i = 0; i < count; i++) {
+    const cur = positions[i]!;
+    const next = positions[(i + 1) % count]!;
+    const mx = (cur.x + next.x) / 2;
+    const my = (cur.y + next.y) / 2;
+    svg.circle(mx, my, 3, { fill: d.border, opacity: 0.3 });
+  }
+
+  // Draw gear nodes
+  for (let i = 0; i < count; i++) {
+    const step = data.steps[i]!;
+    const { x, y } = positions[i]!;
+    const color = stepColor(d, i);
+
+    // Gear teeth path
+    let gearPath = '';
+    for (let t = 0; t < toothCount; t++) {
+      const a1 = (2 * Math.PI * t) / toothCount;
+      const a2 = (2 * Math.PI * (t + 0.35)) / toothCount;
+      const a3 = (2 * Math.PI * (t + 0.5)) / toothCount;
+      const a4 = (2 * Math.PI * (t + 0.85)) / toothCount;
+      const outerR = gearR + toothDepth;
+      const p1 = `${(x + gearR * Math.cos(a1)).toFixed(1)},${(y + gearR * Math.sin(a1)).toFixed(1)}`;
+      const p2 = `${(x + outerR * Math.cos(a2)).toFixed(1)},${(y + outerR * Math.sin(a2)).toFixed(1)}`;
+      const p3 = `${(x + outerR * Math.cos(a3)).toFixed(1)},${(y + outerR * Math.sin(a3)).toFixed(1)}`;
+      const p4 = `${(x + gearR * Math.cos(a4)).toFixed(1)},${(y + gearR * Math.sin(a4)).toFixed(1)}`;
+      gearPath += `${t === 0 ? 'M' : 'L'} ${p1} L ${p2} L ${p3} L ${p4} `;
+    }
+    gearPath += 'Z';
+
+    // Shadow
+    svg.path(gearPath, { fill: color, opacity: 0.15, transform: `translate(2, 2)` });
+    // Gear body
+    svg.path(gearPath, { fill: color, opacity: 0.85, stroke: d.surface, 'stroke-width': 1.5 });
+    // Inner circle
+    svg.circle(x, y, innerR, { fill: d.surface, opacity: 0.9 });
+    svg.circle(x, y, 6, { fill: color, opacity: 0.3 });
+
+    // Step number
+    svg.text(x, y + 5, `${i + 1}`, {
+      'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: color,
+    });
+
+    // Label below
+    drawLabelBlock(svg, d, step.label, step.description, x, y + gearR + toothDepth + 12, 110);
   }
 
   return svg.build();
