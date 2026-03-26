@@ -47,21 +47,52 @@ export function renderNetworkGraph(data: NetworkGraphData, title?: string, desig
   }
 }
 
-// --- Layout: nodes on a circle ---
+// --- Layout: hub node at center, others on ring ---
 
 interface NodePos { id: string; label: string; x: number; y: number; group: number; }
 
 function layoutNodes(data: NetworkGraphData, cx: number, cy: number, radius: number): NodePos[] {
   const groups = [...new Set(data.nodes.map(n => n.group ?? ''))];
-  return data.nodes.map((n, i) => {
-    const angle = -Math.PI / 2 + (2 * Math.PI * i) / data.nodes.length;
-    return {
+
+  // Find the hub node (most edges)
+  const edgeCounts = new Map<string, number>();
+  for (const e of data.edges) {
+    edgeCounts.set(e.from, (edgeCounts.get(e.from) ?? 0) + 1);
+    edgeCounts.set(e.to, (edgeCounts.get(e.to) ?? 0) + 1);
+  }
+  let hubId = data.nodes[0]?.id ?? '';
+  let maxEdges = 0;
+  for (const [id, count] of edgeCounts) {
+    if (count > maxEdges) { maxEdges = count; hubId = id; }
+  }
+
+  const hubNode = data.nodes.find(n => n.id === hubId);
+  const ringNodes = data.nodes.filter(n => n.id !== hubId);
+
+  const result: NodePos[] = [];
+
+  // Hub at center
+  if (hubNode) {
+    result.push({
+      id: hubNode.id, label: hubNode.label,
+      x: cx, y: cy,
+      group: groups.indexOf(hubNode.group ?? ''),
+    });
+  }
+
+  // Others on ring
+  for (let i = 0; i < ringNodes.length; i++) {
+    const n = ringNodes[i]!;
+    const angle = -Math.PI / 2 + (2 * Math.PI * i) / ringNodes.length;
+    result.push({
       id: n.id, label: n.label,
       x: cx + radius * Math.cos(angle),
       y: cy + radius * Math.sin(angle),
       group: groups.indexOf(n.group ?? ''),
-    };
-  });
+    });
+  }
+
+  return result;
 }
 
 function findNode(positions: NodePos[], id: string): NodePos | undefined {
@@ -71,11 +102,11 @@ function findNode(positions: NodePos[], id: string): NodePos | undefined {
 // ========== CLEAN ==========
 
 function renderClean(data: NetworkGraphData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
+  const pad = 40;
   const titleH = title ? 44 : 0;
-  const nodeR = 28;
-  const ringR = Math.max(100, data.nodes.length * 22);
-  const size = (ringR + nodeR + 70) * 2;
+  const nodeR = 44;
+  const ringR = Math.max(120, data.nodes.length * 32);
+  const size = (ringR + nodeR + 20) * 2;
   const width = pad * 2 + size;
   const height = pad * 2 + titleH + size;
   const cx = width / 2;
@@ -111,10 +142,14 @@ function renderClean(data: NetworkGraphData, title: string | undefined, d: Desig
     const p = positions[i]!;
     const color = nodeColor(d, p.group);
     drawIconNode(svg, d, p.x, p.y, nodeR, color, `ng${i}`, '', 0);
-    const fit = fitText(p.label, nodeR * 2 - 8, 1, 11);
-    svg.text(p.x, p.y + 4, fit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: 'white',
-    });
+    const fit = fitText(p.label, nodeR * 2 - 16, 2, 12);
+    const lh = Math.round(fit.fontSize * 1.5);
+    const startY = p.y - ((fit.lines.length - 1) * lh) / 2 + 4;
+    for (let l = 0; l < fit.lines.length; l++) {
+      svg.text(p.x, startY + l * lh, fit.lines[l]!, {
+        'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: 'white',
+      });
+    }
   }
 
   return svg.build();
@@ -272,11 +307,12 @@ function renderGlass(data: NetworkGraphData, title: string | undefined, d: Desig
 // Cyberpunk: dark bg, neon outlines, glow effects
 
 function renderNeon(data: NetworkGraphData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
+  const pad = 40;
   const titleH = title ? 52 : 0;
-  const nodeR = 28;
-  const ringR = Math.max(100, data.nodes.length * 22);
-  const size = (ringR + nodeR + 80) * 2;
+  const nodeR = 44;
+  const ringR = Math.max(120, data.nodes.length * 32);
+  const labelMargin = 20;
+  const size = (ringR + nodeR + labelMargin) * 2;
   const width = pad * 2 + size;
   const height = pad * 2 + titleH + size;
   const cx = width / 2;
@@ -289,6 +325,7 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
 
   const positions = layoutNodes(data, cx, cy, ringR);
 
+  // Edges with labels
   for (const edge of data.edges) {
     const from = findNode(positions, edge.from);
     const to = findNode(positions, edge.to);
@@ -297,21 +334,34 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
     svg.line(from.x, from.y, to.x, to.y, {
       stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)',
     });
+    if (edge.label) {
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2;
+      svg.text(mx, my - 4, edge.label, {
+        'text-anchor': 'middle', 'font-size': 9, fill: d.textSecondary, opacity: 0.6,
+      });
+    }
   }
 
+  // Nodes with 2-line labels inside
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
-    const color = nodeColor(d, i);  // index-based for multi-color neon
-    // Dark filled circle with faint neon fill
-    svg.circle(p.x, p.y, nodeR, { fill: color, opacity: 0.1 });
-    // Neon outline
+    const color = nodeColor(d, i);
+    svg.circle(p.x, p.y, nodeR, { fill: color, opacity: 0.08 });
     svg.circle(p.x, p.y, nodeR, {
-      fill: 'none', stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)',
+      fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
     });
-    const fit = fitText(p.label, nodeR * 2 - 8, 1, 11);
-    svg.text(p.x, p.y + 4, fit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: color,
+    svg.circle(p.x, p.y, nodeR, {
+      fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)',
     });
+    const fit = fitText(p.label, nodeR * 2 - 16, 2, 12);
+    const lh = Math.round(fit.fontSize * 1.5);
+    const startY = p.y - ((fit.lines.length - 1) * lh) / 2 + 4;
+    for (let l = 0; l < fit.lines.length; l++) {
+      svg.text(p.x, startY + l * lh, fit.lines[l]!, {
+        'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: color,
+      });
+    }
   }
 
   return svg.build();

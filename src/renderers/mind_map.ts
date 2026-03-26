@@ -9,7 +9,7 @@ import {
   buildColorGradients, drawSketchBackground, drawPixelBackground,
   drawPresetCard, drawIconNode,
 } from '../shared/render-utils.js';
-import { adaptiveRadialRadius } from '../shared/layout-planner.js';
+import { adaptiveRadialRadius, radialLabelPlacement } from '../shared/layout-planner.js';
 import type { SvgBuilder } from '../shared/svg.js';
 
 interface MindMapBranch {
@@ -315,6 +315,7 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
     const bx = lay.cx + Math.cos(angle) * lay.branchR;
     const by = lay.cy + Math.sin(angle) * lay.branchR;
     const color = branchColor(d, i);
+    const lp = radialLabelPlacement(angle, 26);
 
     // Neon connection line
     svg.line(lay.cx, lay.cy, bx, by, { stroke: color, 'stroke-width': 1, opacity: 0.4 });
@@ -323,12 +324,12 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
     });
 
     // Neon outline node
-    svg.circle(bx, by, 26, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
-    svg.circle(bx, by, 26, {
+    svg.circle(bx, by, 22, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+    svg.circle(bx, by, 22, {
       fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)',
     });
-    svg.raw(icon(branchIcon(i), bx, by, 18, color));
-    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120);
+    svg.raw(icon(branchIcon(i), bx, by, 16, color));
+    drawLabelBlock(svg, d, branch.label, undefined, bx, by + lp.yOffset, 110, lp.anchor);
 
     // Neon children
     const children = branch.children ?? [];
@@ -339,9 +340,10 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
       const childAngle = count === 1 ? angle : startAngle + (j / (count - 1)) * spread;
       const cx = bx + Math.cos(childAngle) * lay.childR;
       const cy = by + Math.sin(childAngle) * lay.childR;
+      const clp = radialLabelPlacement(childAngle, 5);
       svg.line(bx, by, cx, cy, { stroke: color, 'stroke-width': 1, opacity: 0.2 });
-      svg.circle(cx, cy, 5, { fill: 'none', stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)' });
-      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 14, 90);
+      svg.circle(cx, cy, 4, { fill: 'none', stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)' });
+      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + clp.yOffset, 80, clp.anchor);
     }
   }
 

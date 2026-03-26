@@ -80,15 +80,31 @@ export function computeGridLayout(
 
 // For radial layouts (mind_map): compute radius that prevents overlap
 export function adaptiveRadialRadius(branchCount: number, childCount: number): { branchR: number; childR: number } {
-  // Minimum arc distance between branches should be ~100px for readability
-  const minArcDist = 100;
+  // Minimum arc distance between branches should be ~90px for readability
+  const minArcDist = 90;
   const circumference = branchCount * minArcDist;
-  const branchR = Math.max(160, Math.round(circumference / (2 * Math.PI)));
+  const branchR = Math.max(140, Math.round(circumference / (2 * Math.PI)));
 
   // Child radius scales with branch count to avoid inter-branch overlap
-  const childR = branchCount <= 4 ? 70 : branchCount <= 6 ? 55 : 45;
+  const childR = branchCount <= 4 ? 65 : branchCount <= 6 ? 50 : 40;
 
   return { branchR, childR };
+}
+
+// Determine label placement direction: outward from center
+// Returns a y-offset multiplier and text anchor hint
+export function radialLabelPlacement(
+  angle: number,
+  nodeR: number,
+): { yOffset: number; anchor: 'middle' | 'start' | 'end' } {
+  // angle is in radians, -PI/2 is top, PI/2 is bottom
+  const sin = Math.sin(angle);
+  // If node is above center, place label above; if below, place below
+  const yOffset = sin < -0.3 ? -(nodeR + 8) : (nodeR + 16);
+  // Left/right anchor for better readability
+  const cos = Math.cos(angle);
+  const anchor = cos > 0.4 ? 'start' : cos < -0.4 ? 'end' : 'middle';
+  return { yOffset, anchor };
 }
 
 // For pie chart: compute label positions with better overlap avoidance
