@@ -309,10 +309,10 @@ function renderGlass(data: NetworkGraphData, title: string | undefined, d: Desig
 function renderNeon(data: NetworkGraphData, title: string | undefined, d: DesignPreset): string {
   const pad = 40;
   const titleH = title ? 52 : 0;
-  const nodeR = 44;
-  const ringR = Math.max(120, data.nodes.length * 32);
-  const labelMargin = 20;
-  const size = (ringR + nodeR + labelMargin) * 2;
+  const nodeR = 48;
+  const ringNodes = data.nodes.length - 1; // hub is at center
+  const ringR = Math.max(140, ringNodes * 44);
+  const size = (ringR + nodeR + 10) * 2;
   const width = pad * 2 + size;
   const height = pad * 2 + titleH + size;
   const cx = width / 2;
@@ -325,7 +325,7 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
 
   const positions = layoutNodes(data, cx, cy, ringR);
 
-  // Edges with labels
+  // Edges with labels (offset perpendicular to line)
   for (const edge of data.edges) {
     const from = findNode(positions, edge.from);
     const to = findNode(positions, edge.to);
@@ -337,13 +337,19 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
     if (edge.label) {
       const mx = (from.x + to.x) / 2;
       const my = (from.y + to.y) / 2;
-      svg.text(mx, my - 4, edge.label, {
-        'text-anchor': 'middle', 'font-size': 9, fill: d.textSecondary, opacity: 0.6,
+      // Offset label perpendicular to edge direction
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ox = -(dy / len) * 12;
+      const oy = (dx / len) * 12;
+      svg.text(mx + ox, my + oy - 2, edge.label, {
+        'text-anchor': 'middle', 'font-size': 9, fill: d.textSecondary, opacity: 0.7,
       });
     }
   }
 
-  // Nodes with 2-line labels inside
+  // Nodes with 3-line labels inside
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
     const color = nodeColor(d, i);
@@ -354,8 +360,8 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
     svg.circle(p.x, p.y, nodeR, {
       fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)',
     });
-    const fit = fitText(p.label, nodeR * 2 - 16, 2, 12);
-    const lh = Math.round(fit.fontSize * 1.5);
+    const fit = fitText(p.label, nodeR * 2 - 16, 3, 11);
+    const lh = Math.round(fit.fontSize * 1.4);
     const startY = p.y - ((fit.lines.length - 1) * lh) / 2 + 4;
     for (let l = 0; l < fit.lines.length; l++) {
       svg.text(p.x, startY + l * lh, fit.lines[l]!, {
