@@ -71,7 +71,13 @@ export function computeGridLayout(
 ): GridLayout {
   // How many columns fit within maxWidth?
   const maxCols = Math.max(1, Math.floor((maxWidth - pad * 2 + gap) / (cellW + gap)));
-  const cols = Math.min(count, maxCols);
+  let cols = Math.min(count, maxCols);
+
+  // Avoid orphan row (1 item alone in last row) — reduce cols to balance
+  if (cols > 1 && count > cols && count % cols === 1) {
+    cols = cols - 1;
+  }
+
   const rows = Math.ceil(count / cols);
   const totalWidth = pad * 2 + cols * cellW + (cols - 1) * gap;
   const totalHeight = pad * 2 + titleH + rows * cellH + (rows - 1) * gap;
