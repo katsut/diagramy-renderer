@@ -40,6 +40,7 @@ export function renderBlockList(data: BlockListData, title?: string, design?: De
     case 'icons': return renderIcons(data, title, d);
     case 'stripe': return renderStripe(data, title, d);
     case 'zigzag': return renderZigzag(data, title, d);
+    case 'timeline': return renderTimeline(data, title, d);
     default:
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
@@ -904,6 +905,91 @@ function renderZigzag(data: BlockListData, title: string | undefined, d: DesignP
       drawLabelBlock(svg, d, item.label, item.description, centerX - 36, y + 20, sideW, 'end');
     } else {
       drawLabelBlock(svg, d, item.label, item.description, centerX + 36, y + 20, sideW, 'start');
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== TIMELINE ==========
+// Horizontal timeline with items as labeled dots on a line
+
+function renderTimeline(data: BlockListData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const count = data.items.length;
+  const dotR = 8;
+  const maxPerRow = 6;
+  const rows = Math.ceil(count / maxPerRow);
+  const perRow = Math.ceil(count / rows);
+  const spacing = 140;
+  const rowH = 120;
+  const lineW = (perRow - 1) * spacing;
+  const width = pad * 2 + lineW + 60;
+  const height = pad * 2 + titleH + rows * rowH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (timeline)',
+    buildColorGradients(d, count, 'bg'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+
+  for (let row = 0; row < rows; row++) {
+    const startIdx = row * perRow;
+    const endIdx = Math.min(startIdx + perRow, count);
+    const itemsInRow = endIdx - startIdx;
+    const rowLineW = (itemsInRow - 1) * spacing;
+    const rowStartX = pad + 30;
+    const lineY = contentTop + row * rowH + rowH / 2;
+
+    // Horizontal line
+    svg.line(rowStartX, lineY, rowStartX + rowLineW, lineY, {
+      stroke: d.border, 'stroke-width': 2, opacity: 0.3,
+    });
+
+    // Connect rows with a vertical segment if zigzag
+    if (row > 0) {
+      const prevLineY = contentTop + (row - 1) * rowH + rowH / 2;
+      svg.line(rowStartX, prevLineY, rowStartX, lineY, {
+        stroke: d.border, 'stroke-width': 2, opacity: 0.15, 'stroke-dasharray': '4,4',
+      });
+    }
+
+    for (let j = 0; j < itemsInRow; j++) {
+      const i = startIdx + j;
+      const item = data.items[i]!;
+      const color = itemColor(d, i);
+      const cx = rowStartX + j * spacing;
+
+      // Dot
+      svg.circle(cx, lineY, dotR, { fill: color, ...d.cardAttrs() });
+      svg.circle(cx, lineY, dotR + 4, { fill: color, opacity: 0.15 });
+
+      // Label above
+      const fit = fitText(item.label, spacing - 16, 2, d.labelSize);
+      const lh = Math.round(fit.fontSize * 1.3);
+      let ly = lineY - dotR - 12 - (fit.lines.length - 1) * lh;
+      for (const line of fit.lines) {
+        svg.text(cx, ly, line, {
+          'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        });
+        ly += lh;
+      }
+
+      // Description below
+      if (item.description) {
+        const dfit = fitText(item.description, spacing - 16, 2, d.captionSize);
+        const dlh = Math.round(dfit.fontSize * 1.3);
+        let dy = lineY + dotR + 16;
+        for (const line of dfit.lines) {
+          svg.text(cx, dy, line, {
+            'text-anchor': 'middle', 'font-size': dfit.fontSize, fill: d.textSecondary,
+          });
+          dy += dlh;
+        }
+      }
     }
   }
 

@@ -35,6 +35,7 @@ export function renderNetworkGraph(data: NetworkGraphData, title?: string, desig
   const d = design ?? getDesign();
   if (style === 'card_flow') return renderCardFlow(data, title, d);
   if (style === 'arc') return renderArc(data, title, d);
+  if (style === 'matrix') return renderMatrix(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
@@ -639,6 +640,96 @@ function renderArc(data: NetworkGraphData, title: string | undefined, d: DesignP
     svg.text(pos.x, nodeY + 24, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
     });
+  }
+
+  return svg.build();
+}
+
+// ========== MATRIX (style variant) ==========
+// Adjacency matrix grid showing connections between nodes
+
+function renderMatrix(data: NetworkGraphData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const n = data.nodes.length;
+  const cellSize = 36;
+  const labelW = 100;
+  const labelH = 100;
+  const gridW = n * cellSize;
+  const gridH = n * cellSize;
+  const width = pad * 2 + labelW + gridW + 20;
+  const height = pad * 2 + titleH + labelH + gridH + 20;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Network graph (matrix)');
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const gridX = pad + labelW;
+  const gridY = pad + titleH + labelH;
+
+  // Build edge set for O(1) lookup
+  const edgeSet = new Set<string>();
+  const edgeLabels = new Map<string, string>();
+  for (const e of data.edges) {
+    edgeSet.add(e.from + '|' + e.to);
+    edgeSet.add(e.to + '|' + e.from);
+    if (e.label) {
+      edgeLabels.set(e.from + '|' + e.to, e.label);
+      edgeLabels.set(e.to + '|' + e.from, e.label);
+    }
+  }
+
+  // Column labels (top, rotated)
+  for (let col = 0; col < n; col++) {
+    const node = data.nodes[col]!;
+    const cx = gridX + col * cellSize + cellSize / 2;
+    const cy = gridY - 8;
+    const fit = fitText(node.label, labelH - 8, 1, 10);
+    svg.group({ transform: `rotate(-45, ${cx}, ${cy})` });
+    svg.text(cx, cy, fit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+    });
+    svg.groupEnd();
+  }
+
+  // Row labels (left)
+  for (let row = 0; row < n; row++) {
+    const node = data.nodes[row]!;
+    const ry = gridY + row * cellSize + cellSize / 2 + 4;
+    const fit = fitText(node.label, labelW - 8, 1, 10);
+    svg.text(gridX - 8, ry, fit.lines[0]!, {
+      'text-anchor': 'end', 'font-size': fit.fontSize, fill: d.text,
+    });
+  }
+
+  // Grid cells
+  const accent = d.colors[0]!;
+  for (let row = 0; row < n; row++) {
+    for (let col = 0; col < n; col++) {
+      const cx = gridX + col * cellSize;
+      const cy = gridY + row * cellSize;
+      const fromId = data.nodes[row]!.id;
+      const toId = data.nodes[col]!.id;
+      const hasEdge = edgeSet.has(fromId + '|' + toId);
+      const isDiagonal = row === col;
+
+      // Cell border
+      svg.rect(cx, cy, cellSize, cellSize, {
+        fill: isDiagonal ? d.surface : hasEdge ? accent : 'none',
+        stroke: d.border, 'stroke-width': 0.5,
+        opacity: isDiagonal ? 0.5 : hasEdge ? 0.7 : 0.1,
+      });
+
+      // Edge label as small text in cell
+      const el = edgeLabels.get(fromId + '|' + toId);
+      if (el && hasEdge) {
+        const eFit = fitText(el, cellSize - 4, 1, 8);
+        svg.text(cx + cellSize / 2, cy + cellSize / 2 + 3, eFit.lines[0]!, {
+          'text-anchor': 'middle', 'font-size': eFit.fontSize, fill: d.text, opacity: 0.8,
+        });
+      }
+    }
   }
 
   return svg.build();

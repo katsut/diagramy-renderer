@@ -27,6 +27,7 @@ const BRANCH_ICONS = ['lightbulb', 'zap', 'target', 'layers', 'settings', 'eye',
 export function renderMindMap(data: MindMapData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'horizontal') return renderHorizontal(data, title, d);
+  if (style === 'org_chart') return renderOrgChart(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
@@ -657,6 +658,109 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
     }
 
     curY += blockH + 8;
+  }
+
+  return svg.build();
+}
+
+// ========== ORG CHART ==========
+// Top-down org chart: center at top, branches in row below, children below each branch
+
+function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const boxW = 140;
+  const boxH = 40;
+  const colGap = 20;
+  const rowGap = 50;
+  const n = data.branches.length;
+
+  // Calculate max children per branch for height
+  const maxCh = Math.max(...data.branches.map(b => (b.children ?? []).length), 0);
+  const clampedCh = Math.min(maxCh, 4);
+
+  // Width: widest row is branches or their children
+  const branchRowW = n * boxW + (n - 1) * colGap;
+
+  // Each branch may have children spread below it
+  let totalChildW = 0;
+  for (const branch of data.branches) {
+    const cc = Math.min((branch.children ?? []).length, 4);
+    const w = cc > 0 ? cc * (boxW * 0.8 + 8) - 8 : boxW;
+    totalChildW += w + colGap;
+  }
+  totalChildW = Math.max(totalChildW - colGap, 0);
+
+  const contentW = Math.max(branchRowW, totalChildW, boxW);
+  const width = pad * 2 + contentW;
+  const rows = 2 + (clampedCh > 0 ? 1 : 0);
+  const height = pad * 2 + titleH + rows * (boxH + rowGap);
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Mind map (org chart)',
+    buildColorGradients(d, n, 'mg'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+  const centerX = width / 2;
+
+  // Center node (top)
+  const centerY = contentTop + 8;
+  drawPresetCard(svg, d, centerX - boxW / 2, centerY, boxW, boxH, d.colors[0]!);
+  const cfit = fitText(data.center, boxW - 16, 1, d.labelSize);
+  svg.text(centerX, centerY + boxH / 2 + 4, cfit.lines[0]!, {
+    'text-anchor': 'middle', 'font-size': cfit.fontSize, 'font-weight': 700, fill: d.text,
+  });
+
+  // Branch row
+  const branchY = centerY + boxH + rowGap;
+  const branchStartX = centerX - branchRowW / 2;
+
+  for (let i = 0; i < n; i++) {
+    const branch = data.branches[i]!;
+    const color = branchColor(d, i);
+    const bx = branchStartX + i * (boxW + colGap);
+    const bCenterX = bx + boxW / 2;
+
+    // Connector from center to branch
+    svg.line(centerX, centerY + boxH, bCenterX, branchY, {
+      stroke: d.border, 'stroke-width': 1.5, opacity: 0.4,
+    });
+
+    drawPresetCard(svg, d, bx, branchY, boxW, boxH, color);
+    const fit = fitText(branch.label, boxW - 16, 1, d.labelSize);
+    svg.text(bCenterX, branchY + boxH / 2 + 4, fit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+
+    // Children below branch
+    const children = (branch.children ?? []).slice(0, 4);
+    if (children.length > 0) {
+      const childW = boxW * 0.8;
+      const childGap = 8;
+      const childRowW = children.length * childW + (children.length - 1) * childGap;
+      const childStartX = bCenterX - childRowW / 2;
+      const childY = branchY + boxH + rowGap;
+
+      for (let j = 0; j < children.length; j++) {
+        const cx = childStartX + j * (childW + childGap);
+        const cCenterX = cx + childW / 2;
+
+        svg.line(bCenterX, branchY + boxH, cCenterX, childY, {
+          stroke: color, 'stroke-width': 1, opacity: 0.3,
+        });
+
+        svg.rect(cx, childY, childW, boxH - 4, {
+          fill: d.surface, stroke: color, 'stroke-width': 1,
+          rx: d.borderRadius, ...d.cardAttrs(),
+        });
+        const chFit = fitText(children[j]!, childW - 12, 1, d.captionSize);
+        svg.text(cCenterX, childY + (boxH - 4) / 2 + 4, chFit.lines[0]!, {
+          'text-anchor': 'middle', 'font-size': chFit.fontSize, fill: d.textSecondary,
+        });
+      }
+    }
   }
 
   return svg.build();
