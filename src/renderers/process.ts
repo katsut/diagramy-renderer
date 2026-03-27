@@ -490,11 +490,12 @@ function renderWatercolor(data: ProcessData, title: string | undefined, d: Desig
 
 function renderChevron(data: ProcessData, title: string | undefined, d: DesignPreset): string {
   const count = data.nodes.length;
+  const hasDesc = data.nodes.some(n => n.description);
   const pad = 36;
   const titleH = title ? 44 : 0;
-  const chevW = 180;
-  const chevH = 72;
-  const notch = 20; // arrow notch depth
+  const chevW = 200;
+  const chevH = hasDesc ? 110 : 80;
+  const notch = 22; // arrow notch depth
   const overlap = 4; // slight overlap between chevrons
   const totalW = count * chevW - (count - 1) * overlap;
   const width = pad * 2 + totalW;
