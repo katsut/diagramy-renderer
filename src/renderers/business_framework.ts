@@ -13,11 +13,41 @@ interface CanvasBlock {
 }
 
 interface BusinessFrameworkData {
+  framework?: string;
   blocks: CanvasBlock[];
 }
 
 function blockColor(d: DesignPreset, i: number): string {
   return d.colors[i % d.colors.length]!;
+}
+
+// ========== Framework Registry ==========
+
+interface FrameworkDef {
+  id: string;
+  name: string;
+  layout: 'grid_9' | '2x2' | '3col' | 'center_4' | 'split_6' | 'vpc' | 'auto';
+  blocks: string[];
+  lite?: string[];
+}
+
+const FRAMEWORK_REGISTRY: FrameworkDef[] = [
+  { id: 'bmc', name: 'Business Model Canvas', layout: 'grid_9', blocks: ['key_partners', 'key_activities', 'key_resources', 'value_proposition', 'customer_relationships', 'channels', 'customer_segments', 'cost_structure', 'revenue_streams'] },
+  { id: 'lean', name: 'Lean Canvas', layout: 'grid_9', blocks: ['problem', 'solution', 'key_metrics', 'unique_value_proposition', 'unfair_advantage', 'channels', 'customer_segments', 'cost_structure', 'revenue_streams'] },
+  { id: 'vpc', name: 'Value Proposition Canvas', layout: 'vpc', blocks: ['customer_jobs', 'pains', 'gains', 'products', 'pain_relievers', 'gain_creators'] },
+  { id: 'swot', name: 'SWOT Analysis', layout: '2x2', blocks: ['strengths', 'weaknesses', 'opportunities', 'threats'] },
+  { id: '3c', name: '3C Analysis', layout: '3col', blocks: ['customer', 'company', 'competitor'] },
+  { id: '4p', name: 'Marketing Mix (4P)', layout: '2x2', blocks: ['product', 'price', 'place', 'promotion'] },
+  { id: '4c', name: '4C Analysis', layout: '2x2', blocks: ['customer_value', 'cost', 'convenience', 'communication'] },
+  { id: '5forces', name: "Porter's Five Forces", layout: 'center_4', blocks: ['rivalry', 'new_entrants', 'substitutes', 'buyer_power', 'supplier_power'] },
+  { id: 'pest', name: 'PEST Analysis', layout: '2x2', blocks: ['political', 'economic', 'social', 'technological'] },
+  { id: 'pestel', name: 'PESTEL Analysis', layout: 'split_6', blocks: ['political', 'economic', 'social', 'technological', 'environmental', 'legal'] },
+  { id: 'bsc', name: 'Balanced Scorecard', layout: '2x2', blocks: ['financial', 'customer', 'internal_process', 'learning_growth'] },
+];
+
+function findFramework(id: string | undefined): FrameworkDef | undefined {
+  if (!id) return undefined;
+  return FRAMEWORK_REGISTRY.find(f => f.id === id);
 }
 
 // Measure natural size needed for a block based on its text content
@@ -35,13 +65,39 @@ function measureBlock(block: CanvasBlock, d: DesignPreset): { w: number; h: numb
 
 export function renderBusinessFramework(data: BusinessFrameworkData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
-  switch (style) {
-    case 'bmc':
-    case 'lean':
+
+  // Style override takes priority
+  if (style) {
+    switch (style) {
+      case 'grid_9': return renderGrid9(data, title, d);
+      case 'vpc': return renderVpc(data, title, d);
+      case 'split_6': return renderSplit6(data, title, d);
+      case '2x2': return render2x2(data, title, d);
+      case '3col': return render3Col(data, title, d);
+      case 'center_4': return render5Center(data, title, d);
+      case 'vpc-lite': return renderVpcLite(data, title, d);
+    }
+    // Style might be a framework ID (e.g., 'bmc', 'swot')
+    const fwByStyle = findFramework(style);
+    if (fwByStyle) return renderByLayout(fwByStyle.layout, data, title, d);
+  }
+
+  // Auto-detect from data.framework field
+  const fw = findFramework(data.framework);
+  if (fw) return renderByLayout(fw.layout, data, title, d);
+
+  // Fallback: auto by block count
+  return renderAuto(data, title, d);
+}
+
+function renderByLayout(layout: string, data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
+  switch (layout) {
     case 'grid_9': return renderGrid9(data, title, d);
-    case 'vpc': return renderVpc(data, title, d);
+    case '2x2': return render2x2(data, title, d);
+    case '3col': return render3Col(data, title, d);
+    case 'center_4': return render5Center(data, title, d);
     case 'split_6': return renderSplit6(data, title, d);
-    case 'vpc-lite': return renderVpcLite(data, title, d);
+    case 'vpc': return renderVpc(data, title, d);
     default: return renderAuto(data, title, d);
   }
 }
