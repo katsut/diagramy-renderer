@@ -37,6 +37,8 @@ export interface DiagramLayout {
   pad: number;
 }
 
+const FOOTER_MARGIN = 24; // Space for branding logo at bottom-right
+
 export function createDiagramSvg(
   d: DesignPreset,
   width: number,
@@ -45,7 +47,8 @@ export function createDiagramSvg(
   desc: string,
   extraDefs = '',
 ): { svg: SvgBuilder; defs: string } {
-  const svg = new SvgBuilder(width, height, title ?? desc, d.fontFamily, d.fontImport);
+  const h = height + FOOTER_MARGIN;
+  const svg = new SvgBuilder(width, h, title ?? desc, d.fontFamily, d.fontImport);
   if (title) svg.title(title);
   svg.desc(desc);
 
