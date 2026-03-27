@@ -122,10 +122,11 @@ export function drawTitle(svg: SvgBuilder, d: DesignPreset, title: string, width
   const ty = pad + 30;
 
   if (d.id === 'bold') {
-    // Background pill behind title
+    // Background pill behind title — extra top margin for bold border frame
+    const boldTy = pad + 38;
     const textW = estimateWidth(title, d.titleSize) + 32;
-    svg.rect(cx - textW / 2, ty - 20, textW, 32, { fill: d.primary, rx: 6, filter: 'url(#bold-offset)' });
-    svg.text(cx, ty + 2, title, {
+    svg.rect(cx - textW / 2, boldTy - 20, textW, 32, { fill: d.primary, rx: 6, filter: 'url(#bold-offset)' });
+    svg.text(cx, boldTy + 2, title, {
       'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 900, fill: '#FFFFFF',
     });
   } else if (d.id === 'neon') {
