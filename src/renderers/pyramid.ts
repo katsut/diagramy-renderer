@@ -25,6 +25,7 @@ export function renderPyramid(data: PyramidData, title?: string, design?: Design
   const d = design ?? getDesign();
   if (style === 'horizontal') return renderHorizontalBars(data, title, d);
   if (style === 'steps') return renderSteps(data, title, d);
+  if (style === 'blocks') return renderBlocks(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
@@ -109,13 +110,15 @@ function trapezoidPath(
   pyramidX: number, baseW: number, topW: number,
   y: number, layerH: number, i: number, count: number,
 ): string {
-  const ratio = i / Math.max(count - 1, 1);
-  const w = topW + (baseW - topW) * ratio;
-  const x = pyramidX + (baseW - w) / 2;
-  const nextRatio = (i + 1) / Math.max(count - 1, 1);
-  const nextW = i < count - 1 ? topW + (baseW - topW) * nextRatio : w;
-  const nextX = pyramidX + (baseW - nextW) / 2;
-  return `M ${x} ${y} L ${x + w} ${y} L ${nextX + nextW} ${y + layerH} L ${nextX} ${y + layerH} Z`;
+  // Top edge: width interpolated from topW (i=0) to baseW (i=count-1)
+  const topRatio = i / Math.max(count, 1);
+  const topEdgeW = topW + (baseW - topW) * topRatio;
+  const topX = pyramidX + (baseW - topEdgeW) / 2;
+  // Bottom edge: next layer's top (or full baseW for last layer)
+  const botRatio = (i + 1) / Math.max(count, 1);
+  const botEdgeW = topW + (baseW - topW) * botRatio;
+  const botX = pyramidX + (baseW - botEdgeW) / 2;
+  return `M ${topX} ${y} L ${topX + topEdgeW} ${y} L ${botX + botEdgeW} ${y + layerH} L ${botX} ${y + layerH} Z`;
 }
 
 // ========== BOLD ==========
@@ -593,6 +596,57 @@ function renderSteps(data: PyramidData, title: string | undefined, d: DesignPres
           'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
         });
       }
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== BLOCKS ==========
+// Center-aligned rectangles of decreasing width — block pyramid
+
+function renderBlocks(data: PyramidData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const count = data.layers.length;
+  const blockH = 56;
+  const gap = 4;
+  const maxW = 460;
+  const minW = 140;
+  const pyramidH = count * (blockH + gap);
+  const width = pad * 2 + maxW;
+  const height = pad * 2 + titleH + pyramidH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Pyramid (blocks)',
+    buildColorGradients(d, count, 'py'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const cx = pad + maxW / 2;
+  const startY = pad + titleH;
+
+  for (let i = 0; i < count; i++) {
+    const layer = data.layers[i]!;
+    const color = layerColor(d, i);
+    const y = startY + i * (blockH + gap);
+    const ratio = count <= 1 ? 1 : i / (count - 1);
+    const w = minW + (maxW - minW) * ratio;
+    const x = cx - w / 2;
+
+    svg.rect(x, y, w, blockH, {
+      fill: `url(#py${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius, ...d.cardAttrs(),
+    });
+
+    const fit = fitText(layer.label, w - 24, 1, d.labelSize);
+    svg.text(cx, y + blockH / 2 - (layer.description ? 4 : 0) + 4, fit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+    });
+    if (layer.description) {
+      const dfit = fitText(layer.description, w - 24, 1, d.captionSize);
+      svg.text(cx, y + blockH / 2 + 16, dfit.lines[0]!, {
+        'text-anchor': 'middle', 'font-size': dfit.fontSize, fill: 'rgba(255,255,255,0.7)',
+      });
     }
   }
 
