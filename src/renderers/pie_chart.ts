@@ -7,6 +7,7 @@ import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   buildColorGradients, drawSketchBackground, drawPixelBackground,
 } from '../shared/render-utils.js';
+import { computePieLabels, type PieLabelPos } from '../shared/layout-planner.js';
 
 interface PieSegment {
   label: string;
@@ -20,11 +21,12 @@ interface PieChartData {
 export function renderPieChart(data: PieChartData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'donut') return renderDonut(data, title, d);
+  if (style === 'waffle') return renderWaffle(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
     case 'bold': return renderBold(data, title, d);
-    case 'flat': return renderFlat(data, title, d);
+    case 'minimal': return renderFlat(data, title, d);
     case 'glass': return renderGlass(data, title, d);
     case 'neon': return renderNeon(data, title, d);
     case 'watercolor': return renderWatercolor(data, title, d);
@@ -85,24 +87,8 @@ function renderClean(data: PieChartData, title: string | undefined, d: DesignPre
   const total = data.segments.reduce((s, seg) => s + seg.value, 0) || 1;
   let angle = 0;
 
-  // Pre-compute label positions for overlap resolution
-  const labelPositions: { x: number; y: number; text: string }[] = [];
-  let preAngle = 0;
-  for (let i = 0; i < data.segments.length; i++) {
-    const seg = data.segments[i]!;
-    const sweep = (seg.value / total) * 360;
-    const pct = Math.round(seg.value / total * 100);
-    if (sweep > 15) {
-      const midAngle = preAngle + sweep / 2;
-      const labelR = r + 20;
-      const pt = polarToCartesian(chartCx, chartCy, labelR, midAngle);
-      labelPositions.push({ x: pt.x, y: pt.y + 4, text: `${pct}%` });
-    }
-    preAngle += sweep;
-  }
-  resolveOverlap(labelPositions);
+  const pieLabels = computePieLabels(data.segments, chartCx, chartCy, r, d.captionSize);
 
-  let labelIdx = 0;
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const sweep = (seg.value / total) * 360;
@@ -114,15 +100,13 @@ function renderClean(data: PieChartData, title: string | undefined, d: DesignPre
       });
     }
 
-    if (sweep > 15 && labelIdx < labelPositions.length) {
-      const lp = labelPositions[labelIdx]!;
-      svg.text(lp.x, lp.y, lp.text, {
-        'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': d.fontWeight, fill: d.textSecondary,
-      });
-      labelIdx++;
-    }
-
     angle += sweep;
+  }
+
+  for (const lp of pieLabels) {
+    svg.text(lp.x, lp.y, lp.text, {
+      'text-anchor': lp.anchor, 'font-size': d.captionSize, 'font-weight': d.fontWeight, fill: d.textSecondary,
+    });
   }
 
   // Legend
@@ -597,6 +581,79 @@ function renderPixel(data: PieChartData, title: string | undefined, d: DesignPre
     const fit = fitText(seg.label, legendW - 20, 1, d.labelSize);
     svg.text(legendX + px * 5 + 4, ly + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+    });
+  }
+
+  return svg.build();
+}
+
+// ========== WAFFLE ==========
+// Waffle chart: 10x10 grid of squares, colored proportionally
+
+function renderWaffle(data: PieChartData, title: string | undefined, d: DesignPreset): string {
+  const pad = 40;
+  const titleH = title ? 44 : 0;
+  const cellSize = 24;
+  const cellGap = 3;
+  const gridSize = 10 * (cellSize + cellGap) - cellGap;
+  const legendX = pad + gridSize + 40;
+  const legendW = 160;
+  const width = legendX + legendW + pad;
+  const height = pad * 2 + titleH + gridSize;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Waffle chart');
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const total = data.segments.reduce((s, seg) => s + seg.value, 0) || 1;
+  const gridTop = pad + titleH;
+
+  // Compute cell counts for each segment (total = 100 cells)
+  const cellCounts: number[] = [];
+  let remaining = 100;
+  for (let i = 0; i < data.segments.length; i++) {
+    const seg = data.segments[i]!;
+    if (i === data.segments.length - 1) {
+      cellCounts.push(remaining);
+    } else {
+      const count = Math.round((seg.value / total) * 100);
+      cellCounts.push(count);
+      remaining -= count;
+    }
+  }
+
+  // Fill grid: rows top-to-bottom, left-to-right
+  let segIdx = 0;
+  let segUsed = 0;
+  for (let row = 0; row < 10; row++) {
+    for (let col = 0; col < 10; col++) {
+      while (segIdx < cellCounts.length - 1 && segUsed >= cellCounts[segIdx]!) {
+        segIdx++;
+        segUsed = 0;
+      }
+      const color = segColor(d, segIdx);
+      const x = pad + col * (cellSize + cellGap);
+      const y = gridTop + row * (cellSize + cellGap);
+      svg.rect(x, y, cellSize, cellSize, {
+        fill: color, rx: 3, opacity: 0.85, ...d.cardAttrs(),
+      });
+      segUsed++;
+    }
+  }
+
+  // Legend
+  for (let i = 0; i < data.segments.length; i++) {
+    const seg = data.segments[i]!;
+    const pct = Math.round((seg.value / total) * 100);
+    const ly = gridTop + i * 28;
+    svg.rect(legendX, ly, 16, 16, { fill: segColor(d, i), rx: 3 });
+    const fit = fitText(seg.label, legendW - 60, 1, d.labelSize);
+    svg.text(legendX + 24, ly + 12, fit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+    });
+    svg.text(legendX + legendW - 4, ly + 12, `${pct}%`, {
+      'text-anchor': 'end', 'font-size': d.captionSize, fill: d.textSecondary,
     });
   }
 

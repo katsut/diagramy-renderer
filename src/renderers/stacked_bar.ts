@@ -21,11 +21,12 @@ interface StackedBarData {
 export function renderStackedBar(data: StackedBarData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'horizontal') return renderHorizontalStyle(data, title, d);
+  if (style === 'percentage') return renderPercentage(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
     case 'bold': return renderBold(data, title, d);
-    case 'flat': return renderFlat(data, title, d);
+    case 'minimal': return renderFlat(data, title, d);
     case 'glass': return renderGlass(data, title, d);
     case 'neon': return renderNeon(data, title, d);
     case 'watercolor': return renderWatercolor(data, title, d);
@@ -534,6 +535,80 @@ function renderHorizontalStyle(data: StackedBarData, title: string | undefined, 
 
   // Legend
   drawLegend(svg, d, data.categories, chartLeft, baseY + labelH, chartAreaW);
+
+  return svg.build();
+}
+
+// ========== PERCENTAGE ==========
+// 100% stacked bar: single horizontal bar per item, segments normalized to full width
+
+function renderPercentage(data: StackedBarData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const count = data.items.length;
+  const labelW = 100;
+  const barH = 36;
+  const barGap = 14;
+  const chartW = 400;
+  const legendH = 36;
+  const contentTop = pad + (titleH);
+  const width = pad * 2 + labelW + 12 + chartW;
+  const barsH = count * (barH + barGap) - barGap;
+  const legendY = contentTop + barsH + 20;
+  const height = legendY + legendH + pad;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Stacked bar (100%)',
+    buildColorGradients(d, data.categories.length, 'sc'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const chartX = pad + labelW + 12;
+
+  for (let i = 0; i < count; i++) {
+    const item = data.items[i]!;
+    const y = contentTop + i * (barH + barGap);
+    const total = item.values.reduce((s, v) => s + v, 0) || 1;
+
+    // Row label
+    const fit = fitText(item.label, labelW, 1, d.labelSize);
+    svg.text(chartX - 8, y + barH / 2 + 4, fit.lines[0]!, {
+      'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+
+    // Full-width background bar
+    svg.rect(chartX, y, chartW, barH, {
+      fill: d.surface, rx: d.borderRadius > 8 ? 6 : d.borderRadius,
+      stroke: d.border, 'stroke-width': 1, opacity: 0.3,
+    });
+
+    // Segments normalized to 100%
+    let xOff = 0;
+    for (let c = 0; c < item.values.length; c++) {
+      const pct = item.values[c]! / total;
+      const segW = Math.max(0, pct * chartW);
+      if (segW > 0) {
+        const isFirst = c === 0;
+        const isLast = c === item.values.length - 1;
+        const rx = d.borderRadius > 8 ? 6 : d.borderRadius;
+        svg.rect(chartX + xOff, y, segW, barH, {
+          fill: catColor(d, c), opacity: 0.85,
+          rx: (isFirst || isLast) ? rx : 0,
+        });
+        // Percentage label inside segment
+        const pctText = `${Math.round(pct * 100)}%`;
+        if (segW > 36) {
+          svg.text(chartX + xOff + segW / 2, y + barH / 2 + 4, pctText, {
+            'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: '#FFFFFF',
+          });
+        }
+      }
+      xOff += segW;
+    }
+  }
+
+  // Legend
+  drawLegend(svg, d, data.categories, chartX, legendY, chartW);
 
   return svg.build();
 }

@@ -36,9 +36,11 @@ function measureBlock(block: CanvasBlock, d: DesignPreset): { w: number; h: numb
 export function renderBusinessFramework(data: BusinessFrameworkData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   switch (style) {
-    case 'bmc': return renderBmc(data, title, d);
-    case 'lean': return renderLean(data, title, d);
+    case 'bmc':
+    case 'lean':
+    case 'grid_9': return renderGrid9(data, title, d);
     case 'vpc': return renderVpc(data, title, d);
+    case 'split_6': return renderSplit6(data, title, d);
     case 'vpc-lite': return renderVpcLite(data, title, d);
     default: return renderAuto(data, title, d);
   }
@@ -53,7 +55,7 @@ function renderAuto(data: BusinessFrameworkData, title: string | undefined, d: D
   if (n === 3) return render3Col(data, title, d);
   if (n === 4) return render2x2(data, title, d);
   if (n === 5) return render5Center(data, title, d);
-  if (n <= 9) return renderBmc(data, title, d);
+  if (n <= 9) return renderGrid9(data, title, d);
   return renderGrid(data, title, d, 3);
 }
 
@@ -295,110 +297,108 @@ function drawBmcCell(
   }
 }
 
-// ========== BMC (standard 9-block Business Model Canvas) ==========
+// ========== Grid 9 — generic 5-col top + 2-col bottom (BMC / Lean Canvas / any 7-9 block framework) ==========
 
-const BMC_DEFAULTS: Record<string, string> = {
-  key_partners: 'Key Partners',
-  key_activities: 'Key Activities',
-  key_resources: 'Key Resources',
-  value_proposition: 'Value Proposition',
-  customer_relationships: 'Customer Relationships',
-  channels: 'Channels',
-  customer_segments: 'Customer Segments',
-  cost_structure: 'Cost Structure',
-  revenue_streams: 'Revenue Streams',
-};
-
-function renderBmc(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
+function renderGrid9(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
   const pad = 32;
   const titleH = title ? 50 : 0;
-  const colW = 160;
-  const rowH = 120;
-  const halfRowH = 60;
+  const colW = 180;
+  const halfRowH = 80;
+  const bottomRowH = 80;
   const gap = 4;
-  const totalW = 5 * colW + 4 * gap;
-  const totalH = 2 * halfRowH + gap + rowH + gap;
+  const blocks = data.blocks;
+  const n = blocks.length;
+
+  // Layout: up to 5 columns in top section, 2 wide columns at bottom
+  const topCols = Math.min(5, n <= 2 ? n : Math.ceil((n - 2) / 2) + 1);
+  const totalW = topCols * colW + (topCols - 1) * gap;
+
+  // Assign blocks to slots: columns 0,2,4 get full height; 1,3 split into halves
+  // Remaining go to bottom row
+  const topSlots = Math.min(n, 7); // max 7 in top section
+  const bottomSlots = Math.max(0, Math.min(n - topSlots, 2));
+  const fullH = 2 * halfRowH + gap;
+  const totalH = fullH + (bottomSlots > 0 ? gap + bottomRowH : 0);
   const width = pad * 2 + totalW;
   const height = pad * 2 + titleH + totalH;
 
-  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Business Model Canvas');
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Framework');
   svg.defs(defs);
   drawBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
-  const bm = blockMap(data);
   const top = pad + titleH;
-  const dc = (x: number, y: number, w: number, h: number, key: string, ci: number) =>
-    drawBmcCell(svg, d, bm, BMC_DEFAULTS, x, y, w, h, key, ci);
+  let bi = 0;
 
-  const fullH = 2 * halfRowH + gap;
+  // Top section: 5 columns, odd columns split into 2 halves
+  for (let col = 0; col < topCols && bi < topSlots; col++) {
+    const x = pad + col * (colW + gap);
+    if (col % 2 === 0 || bi >= topSlots - 1) {
+      // Full-height column
+      if (bi < n) drawCell(svg, d, x, top, colW, fullH, blocks[bi]!, bi);
+      bi++;
+    } else {
+      // Split column: top half + bottom half
+      if (bi < n) drawCell(svg, d, x, top, colW, halfRowH, blocks[bi]!, bi);
+      bi++;
+      if (bi < n) drawCell(svg, d, x, top + halfRowH + gap, colW, halfRowH, blocks[bi]!, bi);
+      bi++;
+    }
+  }
 
-  dc(pad, top, colW, fullH, 'key_partners', 0);
-  dc(pad + (colW + gap), top, colW, halfRowH, 'key_activities', 1);
-  dc(pad + (colW + gap), top + halfRowH + gap, colW, halfRowH, 'key_resources', 2);
-  dc(pad + 2 * (colW + gap), top, colW, fullH, 'value_proposition', 3);
-  dc(pad + 3 * (colW + gap), top, colW, halfRowH, 'customer_relationships', 4);
-  dc(pad + 3 * (colW + gap), top + halfRowH + gap, colW, halfRowH, 'channels', 5);
-  dc(pad + 4 * (colW + gap), top, colW, fullH, 'customer_segments', 6);
-
-  const bottomY = top + fullH + gap;
-  const halfW = (totalW - gap) / 2;
-  dc(pad, bottomY, halfW, rowH, 'cost_structure', 7);
-  dc(pad + halfW + gap, bottomY, halfW, rowH, 'revenue_streams', 8);
+  // Bottom row: 1-2 wide blocks
+  if (bottomSlots > 0) {
+    const bottomY = top + fullH + gap;
+    if (bottomSlots === 1 && bi < n) {
+      drawCell(svg, d, pad, bottomY, totalW, bottomRowH, blocks[bi]!, bi);
+    } else if (bottomSlots >= 2) {
+      const halfW = (totalW - gap) / 2;
+      if (bi < n) drawCell(svg, d, pad, bottomY, halfW, bottomRowH, blocks[bi]!, bi);
+      bi++;
+      if (bi < n) drawCell(svg, d, pad + halfW + gap, bottomY, halfW, bottomRowH, blocks[bi]!, bi);
+    }
+  }
 
   return svg.build();
 }
 
-// ========== LEAN Canvas ==========
+// ========== Split 6 — two 3-row panels side by side (VPC / any 6-block framework) ==========
 
-const LEAN_DEFAULTS: Record<string, string> = {
-  problem: 'Problem',
-  solution: 'Solution',
-  key_metrics: 'Key Metrics',
-  unique_value_proposition: 'Unique Value Proposition',
-  unfair_advantage: 'Unfair Advantage',
-  channels: 'Channels',
-  customer_segments: 'Customer Segments',
-  cost_structure: 'Cost Structure',
-  revenue_streams: 'Revenue Streams',
-};
-
-function renderLean(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
-  const pad = 32;
+function renderSplit6(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
+  const pad = 28;
   const titleH = title ? 50 : 0;
-  const colW = 160;
-  const rowH = 120;
-  const halfRowH = 60;
-  const gap = 4;
-  const totalW = 5 * colW + 4 * gap;
-  const totalH = 2 * halfRowH + gap + rowH + gap;
+  const gap = 8;
+  const panelGap = 16;
+  const blocks = data.blocks;
+  const n = Math.min(blocks.length, 6);
+  const leftN = Math.ceil(n / 2);
+  const rightN = n - leftN;
+  const colW = 200;
+  const cellH = 80;
+  const panelW = colW;
+  const totalW = panelW * 2 + panelGap;
+  const maxRows = Math.max(leftN, rightN);
+  const totalH = maxRows * cellH + (maxRows - 1) * gap;
   const width = pad * 2 + totalW;
   const height = pad * 2 + titleH + totalH;
 
-  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Lean Canvas');
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Framework (split)');
   svg.defs(defs);
   drawBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
-  const bm = blockMap(data);
   const top = pad + titleH;
-  const dc = (x: number, y: number, w: number, h: number, key: string, ci: number) =>
-    drawBmcCell(svg, d, bm, LEAN_DEFAULTS, x, y, w, h, key, ci);
 
-  const fullH = 2 * halfRowH + gap;
-
-  dc(pad, top, colW, fullH, 'problem', 0);
-  dc(pad + (colW + gap), top, colW, halfRowH, 'solution', 1);
-  dc(pad + (colW + gap), top + halfRowH + gap, colW, halfRowH, 'key_metrics', 2);
-  dc(pad + 2 * (colW + gap), top, colW, fullH, 'unique_value_proposition', 3);
-  dc(pad + 3 * (colW + gap), top, colW, halfRowH, 'unfair_advantage', 4);
-  dc(pad + 3 * (colW + gap), top + halfRowH + gap, colW, halfRowH, 'channels', 5);
-  dc(pad + 4 * (colW + gap), top, colW, fullH, 'customer_segments', 6);
-
-  const bottomY = top + fullH + gap;
-  const halfW = (totalW - gap) / 2;
-  dc(pad, bottomY, halfW, rowH, 'cost_structure', 7);
-  dc(pad + halfW + gap, bottomY, halfW, rowH, 'revenue_streams', 8);
+  // Left panel
+  for (let i = 0; i < leftN; i++) {
+    const y = top + i * (cellH + gap);
+    drawCell(svg, d, pad, y, panelW, cellH, blocks[i]!, i);
+  }
+  // Right panel
+  for (let i = 0; i < rightN; i++) {
+    const y = top + i * (cellH + gap);
+    drawCell(svg, d, pad + panelW + panelGap, y, panelW, cellH, blocks[leftN + i]!, leftN + i);
+  }
 
   return svg.build();
 }

@@ -2,11 +2,12 @@
 
 import type { SvgBuilder } from '../shared/svg.js';
 import { getDesign, jitterRect, jitterLine, pixelBorder, type DesignPreset } from '../shared/design.js';
-import { fitText } from '../shared/text.js';
+import { fitText, estimateWidth } from '../shared/text.js';
 import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   buildColorGradients, drawSketchBackground, drawPixelBackground,
 } from '../shared/render-utils.js';
+import { profileItems, adaptiveLabelWidth, adaptiveChartWidth } from '../shared/layout-planner.js';
 
 interface BarChartItem {
   label: string;
@@ -26,7 +27,7 @@ export function renderBarChart(data: BarChartData, title?: string, design?: Desi
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
     case 'bold': return renderBold(data, title, d);
-    case 'flat': return renderFlat(data, title, d);
+    case 'minimal': return renderFlat(data, title, d);
     case 'glass': return renderGlass(data, title, d);
     case 'neon': return renderNeon(data, title, d);
     case 'watercolor': return renderWatercolor(data, title, d);
@@ -53,10 +54,12 @@ interface BarLayout {
   maxVal: number;
 }
 
-function computeLayout(data: BarChartData, hasTitle: boolean, labelW: number, barH: number, barGap: number, pad: number): BarLayout {
+function computeLayout(data: BarChartData, hasTitle: boolean, baseLabelW: number, barH: number, barGap: number, pad: number, labelFontSize: number): BarLayout {
   const titleH = hasTitle ? 44 : 0;
   const contentTop = pad + titleH;
-  const chartW = 360;
+  const profile = profileItems(data.items, labelFontSize, 12);
+  const labelW = adaptiveLabelWidth(profile.maxLabelWidth, baseLabelW, 240);
+  const chartW = Math.max(240, Math.min(420, 560 - labelW));
   const width = pad * 2 + labelW + 12 + chartW + 40;
   const chartX = pad + labelW + 12;
   const totalBarsH = data.items.length * (barH + barGap) - barGap;
@@ -68,7 +71,7 @@ function computeLayout(data: BarChartData, hasTitle: boolean, labelW: number, ba
 // ========== CLEAN ==========
 
 function renderClean(data: BarChartData, title: string | undefined, d: DesignPreset): string {
-  const lay = computeLayout(data, !!title, 100, 32, 12, 40);
+  const lay = computeLayout(data, !!title, 100, 32, 12, 40, d.labelSize);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Bar chart',
     buildColorGradients(d, data.items.length, 'bg'));
   svg.defs(defs);
@@ -112,7 +115,7 @@ function renderClean(data: BarChartData, title: string | undefined, d: DesignPre
 // Thick bars with offset shadow, large value labels, no grid
 
 function renderBold(data: BarChartData, title: string | undefined, d: DesignPreset): string {
-  const lay = computeLayout(data, !!title, 110, 40, 16, 44);
+  const lay = computeLayout(data, !!title, 110, 40, 16, 44, d.labelSize);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Bar chart (bold)',
     buildColorGradients(d, data.items.length, 'bg'));
   svg.defs(defs);
@@ -158,7 +161,7 @@ function renderBold(data: BarChartData, title: string | undefined, d: DesignPres
 // Material-style horizontal bars, no shadows/borders, left color dot
 
 function renderFlat(data: BarChartData, title: string | undefined, d: DesignPreset): string {
-  const lay = computeLayout(data, !!title, 100, 28, 6, 36);
+  const lay = computeLayout(data, !!title, 100, 28, 6, 36, d.labelSize);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Bar chart (flat)');
   svg.defs(defs);
 
@@ -195,7 +198,7 @@ function renderFlat(data: BarChartData, title: string | undefined, d: DesignPres
 // Dark bg, glowing bars with frosted-glass track behind
 
 function renderGlass(data: BarChartData, title: string | undefined, d: DesignPreset): string {
-  const lay = computeLayout(data, !!title, 100, 34, 14, 48);
+  const lay = computeLayout(data, !!title, 100, 34, 14, 48, d.labelSize);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Bar chart (glass)',
     buildColorGradients(d, data.items.length, 'bg'));
   svg.defs(defs);
@@ -243,7 +246,7 @@ function renderGlass(data: BarChartData, title: string | undefined, d: DesignPre
 // Cyberpunk: dark bg, neon outline bars, glow effects, grid lines
 
 function renderNeon(data: BarChartData, title: string | undefined, d: DesignPreset): string {
-  const lay = computeLayout(data, !!title, 100, 30, 14, 44);
+  const lay = computeLayout(data, !!title, 100, 30, 14, 44, d.labelSize);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Bar chart (neon)');
   svg.defs(defs);
 
@@ -298,7 +301,7 @@ function renderNeon(data: BarChartData, title: string | undefined, d: DesignPres
 // Organic bars with watercolor filter, soft colors, paper feel
 
 function renderWatercolor(data: BarChartData, title: string | undefined, d: DesignPreset): string {
-  const lay = computeLayout(data, !!title, 100, 36, 16, 48);
+  const lay = computeLayout(data, !!title, 100, 36, 16, 48, d.labelSize);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Bar chart (watercolor)',
     buildColorGradients(d, data.items.length, 'bg'));
   svg.defs(defs);
@@ -347,7 +350,7 @@ function renderWatercolor(data: BarChartData, title: string | undefined, d: Desi
 // ========== SKETCH ==========
 
 function renderSketch(data: BarChartData, title: string | undefined, d: DesignPreset): string {
-  const lay = computeLayout(data, !!title, 100, 28, 14, 40);
+  const lay = computeLayout(data, !!title, 100, 28, 14, 40, d.labelSize);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Bar chart (sketch)');
   svg.defs(defs);
 
@@ -395,7 +398,7 @@ function renderSketch(data: BarChartData, title: string | undefined, d: DesignPr
 
 function renderPixel(data: BarChartData, title: string | undefined, d: DesignPreset): string {
   const px = 3;
-  const lay = computeLayout(data, !!title, 90, 24, 10, 36);
+  const lay = computeLayout(data, !!title, 90, 24, 10, 36, d.labelSize);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Bar chart (pixel)');
   svg.defs(defs);
 

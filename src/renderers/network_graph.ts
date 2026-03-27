@@ -35,11 +35,12 @@ export function renderNetworkGraph(data: NetworkGraphData, title?: string, desig
   const d = design ?? getDesign();
   if (style === 'card_flow') return renderCardFlow(data, title, d);
   if (style === 'arc') return renderArc(data, title, d);
+  if (style === 'matrix') return renderMatrix(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
     case 'bold': return renderBold(data, title, d);
-    case 'flat': return renderFlat(data, title, d);
+    case 'minimal': return renderFlat(data, title, d);
     case 'glass': return renderGlass(data, title, d);
     case 'neon': return renderNeon(data, title, d);
     case 'watercolor': return renderWatercolor(data, title, d);
@@ -47,21 +48,52 @@ export function renderNetworkGraph(data: NetworkGraphData, title?: string, desig
   }
 }
 
-// --- Layout: nodes on a circle ---
+// --- Layout: hub node at center, others on ring ---
 
 interface NodePos { id: string; label: string; x: number; y: number; group: number; }
 
 function layoutNodes(data: NetworkGraphData, cx: number, cy: number, radius: number): NodePos[] {
   const groups = [...new Set(data.nodes.map(n => n.group ?? ''))];
-  return data.nodes.map((n, i) => {
-    const angle = -Math.PI / 2 + (2 * Math.PI * i) / data.nodes.length;
-    return {
+
+  // Find the hub node (most edges)
+  const edgeCounts = new Map<string, number>();
+  for (const e of data.edges) {
+    edgeCounts.set(e.from, (edgeCounts.get(e.from) ?? 0) + 1);
+    edgeCounts.set(e.to, (edgeCounts.get(e.to) ?? 0) + 1);
+  }
+  let hubId = data.nodes[0]?.id ?? '';
+  let maxEdges = 0;
+  for (const [id, count] of edgeCounts) {
+    if (count > maxEdges) { maxEdges = count; hubId = id; }
+  }
+
+  const hubNode = data.nodes.find(n => n.id === hubId);
+  const ringNodes = data.nodes.filter(n => n.id !== hubId);
+
+  const result: NodePos[] = [];
+
+  // Hub at center
+  if (hubNode) {
+    result.push({
+      id: hubNode.id, label: hubNode.label,
+      x: cx, y: cy,
+      group: groups.indexOf(hubNode.group ?? ''),
+    });
+  }
+
+  // Others on ring
+  for (let i = 0; i < ringNodes.length; i++) {
+    const n = ringNodes[i]!;
+    const angle = -Math.PI / 2 + (2 * Math.PI * i) / ringNodes.length;
+    result.push({
       id: n.id, label: n.label,
       x: cx + radius * Math.cos(angle),
       y: cy + radius * Math.sin(angle),
       group: groups.indexOf(n.group ?? ''),
-    };
-  });
+    });
+  }
+
+  return result;
 }
 
 function findNode(positions: NodePos[], id: string): NodePos | undefined {
@@ -71,11 +103,11 @@ function findNode(positions: NodePos[], id: string): NodePos | undefined {
 // ========== CLEAN ==========
 
 function renderClean(data: NetworkGraphData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
+  const pad = 40;
   const titleH = title ? 44 : 0;
-  const nodeR = 28;
-  const ringR = Math.max(100, data.nodes.length * 22);
-  const size = (ringR + nodeR + 70) * 2;
+  const nodeR = 44;
+  const ringR = Math.max(120, data.nodes.length * 32);
+  const size = (ringR + nodeR + 20) * 2;
   const width = pad * 2 + size;
   const height = pad * 2 + titleH + size;
   const cx = width / 2;
@@ -111,10 +143,14 @@ function renderClean(data: NetworkGraphData, title: string | undefined, d: Desig
     const p = positions[i]!;
     const color = nodeColor(d, p.group);
     drawIconNode(svg, d, p.x, p.y, nodeR, color, `ng${i}`, '', 0);
-    const fit = fitText(p.label, nodeR * 2 - 8, 1, 11);
-    svg.text(p.x, p.y + 4, fit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: 'white',
-    });
+    const fit = fitText(p.label, nodeR * 2 - 16, 2, 12);
+    const lh = Math.round(fit.fontSize * 1.5);
+    const startY = p.y - ((fit.lines.length - 1) * lh) / 2 + 4;
+    for (let l = 0; l < fit.lines.length; l++) {
+      svg.text(p.x, startY + l * lh, fit.lines[l]!, {
+        'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: 'white',
+      });
+    }
   }
 
   return svg.build();
@@ -272,11 +308,12 @@ function renderGlass(data: NetworkGraphData, title: string | undefined, d: Desig
 // Cyberpunk: dark bg, neon outlines, glow effects
 
 function renderNeon(data: NetworkGraphData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
+  const pad = 40;
   const titleH = title ? 52 : 0;
-  const nodeR = 28;
-  const ringR = Math.max(100, data.nodes.length * 22);
-  const size = (ringR + nodeR + 80) * 2;
+  const nodeR = 48;
+  const ringNodes = data.nodes.length - 1; // hub is at center
+  const ringR = Math.max(140, ringNodes * 44);
+  const size = (ringR + nodeR + 10) * 2;
   const width = pad * 2 + size;
   const height = pad * 2 + titleH + size;
   const cx = width / 2;
@@ -289,6 +326,7 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
 
   const positions = layoutNodes(data, cx, cy, ringR);
 
+  // Edges with labels (offset perpendicular to line)
   for (const edge of data.edges) {
     const from = findNode(positions, edge.from);
     const to = findNode(positions, edge.to);
@@ -297,21 +335,40 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
     svg.line(from.x, from.y, to.x, to.y, {
       stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)',
     });
+    if (edge.label) {
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2;
+      // Offset label perpendicular to edge direction
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ox = -(dy / len) * 12;
+      const oy = (dx / len) * 12;
+      svg.text(mx + ox, my + oy - 2, edge.label, {
+        'text-anchor': 'middle', 'font-size': 9, fill: d.textSecondary, opacity: 0.7,
+      });
+    }
   }
 
+  // Nodes with 3-line labels inside
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
-    const color = nodeColor(d, i);  // index-based for multi-color neon
-    // Dark filled circle with faint neon fill
-    svg.circle(p.x, p.y, nodeR, { fill: color, opacity: 0.1 });
-    // Neon outline
+    const color = nodeColor(d, i);
+    svg.circle(p.x, p.y, nodeR, { fill: color, opacity: 0.08 });
     svg.circle(p.x, p.y, nodeR, {
-      fill: 'none', stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)',
+      fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
     });
-    const fit = fitText(p.label, nodeR * 2 - 8, 1, 11);
-    svg.text(p.x, p.y + 4, fit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: color,
+    svg.circle(p.x, p.y, nodeR, {
+      fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)',
     });
+    const fit = fitText(p.label, nodeR * 2 - 16, 3, 11);
+    const lh = Math.round(fit.fontSize * 1.4);
+    const startY = p.y - ((fit.lines.length - 1) * lh) / 2 + 4;
+    for (let l = 0; l < fit.lines.length; l++) {
+      svg.text(p.x, startY + l * lh, fit.lines[l]!, {
+        'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: color,
+      });
+    }
   }
 
   return svg.build();
@@ -583,6 +640,96 @@ function renderArc(data: NetworkGraphData, title: string | undefined, d: DesignP
     svg.text(pos.x, nodeY + 24, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
     });
+  }
+
+  return svg.build();
+}
+
+// ========== MATRIX (style variant) ==========
+// Adjacency matrix grid showing connections between nodes
+
+function renderMatrix(data: NetworkGraphData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const n = data.nodes.length;
+  const cellSize = 36;
+  const labelW = 100;
+  const labelH = 100;
+  const gridW = n * cellSize;
+  const gridH = n * cellSize;
+  const width = pad * 2 + labelW + gridW + 20;
+  const height = pad * 2 + titleH + labelH + gridH + 20;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Network graph (matrix)');
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const gridX = pad + labelW;
+  const gridY = pad + titleH + labelH;
+
+  // Build edge set for O(1) lookup
+  const edgeSet = new Set<string>();
+  const edgeLabels = new Map<string, string>();
+  for (const e of data.edges) {
+    edgeSet.add(e.from + '|' + e.to);
+    edgeSet.add(e.to + '|' + e.from);
+    if (e.label) {
+      edgeLabels.set(e.from + '|' + e.to, e.label);
+      edgeLabels.set(e.to + '|' + e.from, e.label);
+    }
+  }
+
+  // Column labels (top, rotated)
+  for (let col = 0; col < n; col++) {
+    const node = data.nodes[col]!;
+    const cx = gridX + col * cellSize + cellSize / 2;
+    const cy = gridY - 8;
+    const fit = fitText(node.label, labelH - 8, 1, 10);
+    svg.group({ transform: `rotate(-45, ${cx}, ${cy})` });
+    svg.text(cx, cy, fit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+    });
+    svg.groupEnd();
+  }
+
+  // Row labels (left)
+  for (let row = 0; row < n; row++) {
+    const node = data.nodes[row]!;
+    const ry = gridY + row * cellSize + cellSize / 2 + 4;
+    const fit = fitText(node.label, labelW - 8, 1, 10);
+    svg.text(gridX - 8, ry, fit.lines[0]!, {
+      'text-anchor': 'end', 'font-size': fit.fontSize, fill: d.text,
+    });
+  }
+
+  // Grid cells
+  const accent = d.colors[0]!;
+  for (let row = 0; row < n; row++) {
+    for (let col = 0; col < n; col++) {
+      const cx = gridX + col * cellSize;
+      const cy = gridY + row * cellSize;
+      const fromId = data.nodes[row]!.id;
+      const toId = data.nodes[col]!.id;
+      const hasEdge = edgeSet.has(fromId + '|' + toId);
+      const isDiagonal = row === col;
+
+      // Cell border
+      svg.rect(cx, cy, cellSize, cellSize, {
+        fill: isDiagonal ? d.surface : hasEdge ? accent : 'none',
+        stroke: d.border, 'stroke-width': 0.5,
+        opacity: isDiagonal ? 0.5 : hasEdge ? 0.7 : 0.1,
+      });
+
+      // Edge label as small text in cell
+      const el = edgeLabels.get(fromId + '|' + toId);
+      if (el && hasEdge) {
+        const eFit = fitText(el, cellSize - 4, 1, 8);
+        svg.text(cx + cellSize / 2, cy + cellSize / 2 + 3, eFit.lines[0]!, {
+          'text-anchor': 'middle', 'font-size': eFit.fontSize, fill: d.text, opacity: 0.8,
+        });
+      }
+    }
   }
 
   return svg.build();

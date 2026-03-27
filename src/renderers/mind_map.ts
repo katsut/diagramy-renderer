@@ -9,6 +9,7 @@ import {
   buildColorGradients, drawSketchBackground, drawPixelBackground,
   drawPresetCard, drawIconNode,
 } from '../shared/render-utils.js';
+import { adaptiveRadialRadius, radialLabelPlacement } from '../shared/layout-planner.js';
 import type { SvgBuilder } from '../shared/svg.js';
 
 interface MindMapBranch {
@@ -26,11 +27,12 @@ const BRANCH_ICONS = ['lightbulb', 'zap', 'target', 'layers', 'settings', 'eye',
 export function renderMindMap(data: MindMapData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'horizontal') return renderHorizontal(data, title, d);
+  if (style === 'org_chart') return renderOrgChart(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
     case 'bold': return renderBold(data, title, d);
-    case 'flat': return renderFlat(data, title, d);
+    case 'minimal': return renderFlat(data, title, d);
     case 'glass': return renderGlass(data, title, d);
     case 'neon': return renderNeon(data, title, d);
     case 'watercolor': return renderWatercolor(data, title, d);
@@ -46,15 +48,14 @@ function branchIcon(i: number): string {
   return BRANCH_ICONS[i % BRANCH_ICONS.length]!;
 }
 
-function computeLayout(branchCount: number, hasTitle: boolean) {
+function computeLayout(branchCount: number, hasTitle: boolean, maxChildren: number) {
   const pad = 48;
   const titleH = hasTitle ? 44 : 0;
   const centerR = 50;
-  const branchR = 180;
-  const childR = 60;
-  const maxChildCount = 4;
+  const { branchR, childR } = adaptiveRadialRadius(branchCount, maxChildren);
+  const maxChildCount = branchCount <= 4 ? 5 : branchCount <= 6 ? 4 : 3;
 
-  const totalR = branchR + childR + 40;
+  const totalR = branchR + childR + 50;
   const width = Math.max(pad * 2 + totalR * 2, 600);
   const height = pad * 2 + titleH + totalR * 2;
   const cx = width / 2;
@@ -71,7 +72,8 @@ function branchAngle(i: number, total: number): number {
 
 function renderClean(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const gradientDefs = buildColorGradients(d, n, 'mg');
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map diagram', gradientDefs);
   svg.defs(defs);
@@ -148,7 +150,8 @@ function drawCleanChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: num
 
 function renderBold(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const gradientDefs = buildColorGradients(d, n, 'mg');
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (bold)', gradientDefs);
   svg.defs(defs);
@@ -195,7 +198,8 @@ function renderBold(data: MindMapData, title: string | undefined, d: DesignPrese
 
 function renderFlat(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (flat)');
   svg.defs(defs);
 
@@ -246,7 +250,8 @@ function renderFlat(data: MindMapData, title: string | undefined, d: DesignPrese
 
 function renderGlass(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const gradientDefs = buildColorGradients(d, n, 'mg');
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (glass)', gradientDefs);
   svg.defs(defs);
@@ -297,7 +302,8 @@ function renderGlass(data: MindMapData, title: string | undefined, d: DesignPres
 
 function renderNeon(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (neon)');
   svg.defs(defs);
 
@@ -310,6 +316,7 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
     const bx = lay.cx + Math.cos(angle) * lay.branchR;
     const by = lay.cy + Math.sin(angle) * lay.branchR;
     const color = branchColor(d, i);
+    const lp = radialLabelPlacement(angle, 26);
 
     // Neon connection line
     svg.line(lay.cx, lay.cy, bx, by, { stroke: color, 'stroke-width': 1, opacity: 0.4 });
@@ -318,12 +325,12 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
     });
 
     // Neon outline node
-    svg.circle(bx, by, 26, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
-    svg.circle(bx, by, 26, {
+    svg.circle(bx, by, 22, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+    svg.circle(bx, by, 22, {
       fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)',
     });
-    svg.raw(icon(branchIcon(i), bx, by, 18, color));
-    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120);
+    svg.raw(icon(branchIcon(i), bx, by, 16, color));
+    drawLabelBlock(svg, d, branch.label, undefined, bx, by + lp.yOffset, 110, lp.anchor);
 
     // Neon children
     const children = branch.children ?? [];
@@ -334,9 +341,10 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
       const childAngle = count === 1 ? angle : startAngle + (j / (count - 1)) * spread;
       const cx = bx + Math.cos(childAngle) * lay.childR;
       const cy = by + Math.sin(childAngle) * lay.childR;
+      const clp = radialLabelPlacement(childAngle, 5);
       svg.line(bx, by, cx, cy, { stroke: color, 'stroke-width': 1, opacity: 0.2 });
-      svg.circle(cx, cy, 5, { fill: 'none', stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)' });
-      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 14, 90);
+      svg.circle(cx, cy, 4, { fill: 'none', stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)' });
+      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + clp.yOffset, 80, clp.anchor);
     }
   }
 
@@ -357,7 +365,8 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
 
 function renderWatercolor(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const gradientDefs = buildColorGradients(d, n, 'mg');
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map (watercolor)', gradientDefs);
   svg.defs(defs);
@@ -415,7 +424,8 @@ function renderWatercolor(data: MindMapData, title: string | undefined, d: Desig
 
 function renderSketch(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map diagram (sketch)');
   svg.defs(defs);
 
@@ -484,7 +494,8 @@ function drawSketchChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: nu
 function renderPixel(data: MindMapData, title: string | undefined, d: DesignPreset): string {
   const px = 3;
   const n = data.branches.length;
-  const lay = computeLayout(n, !!title);
+  const maxCh = Math.max(...data.branches.map(b => b.children?.length ?? 0), 0);
+  const lay = computeLayout(n, !!title, maxCh);
   const { svg, defs } = createDiagramSvg(d, lay.width, lay.height, title, 'Mind map diagram (pixel)');
   svg.defs(defs);
 
@@ -647,6 +658,109 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
     }
 
     curY += blockH + 8;
+  }
+
+  return svg.build();
+}
+
+// ========== ORG CHART ==========
+// Top-down org chart: center at top, branches in row below, children below each branch
+
+function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const boxW = 140;
+  const boxH = 40;
+  const colGap = 20;
+  const rowGap = 50;
+  const n = data.branches.length;
+
+  // Calculate max children per branch for height
+  const maxCh = Math.max(...data.branches.map(b => (b.children ?? []).length), 0);
+  const clampedCh = Math.min(maxCh, 4);
+
+  // Width: widest row is branches or their children
+  const branchRowW = n * boxW + (n - 1) * colGap;
+
+  // Each branch may have children spread below it
+  let totalChildW = 0;
+  for (const branch of data.branches) {
+    const cc = Math.min((branch.children ?? []).length, 4);
+    const w = cc > 0 ? cc * (boxW * 0.8 + 8) - 8 : boxW;
+    totalChildW += w + colGap;
+  }
+  totalChildW = Math.max(totalChildW - colGap, 0);
+
+  const contentW = Math.max(branchRowW, totalChildW, boxW);
+  const width = pad * 2 + contentW;
+  const rows = 2 + (clampedCh > 0 ? 1 : 0);
+  const height = pad * 2 + titleH + rows * (boxH + rowGap);
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Mind map (org chart)',
+    buildColorGradients(d, n, 'mg'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+  const centerX = width / 2;
+
+  // Center node (top)
+  const centerY = contentTop + 8;
+  drawPresetCard(svg, d, centerX - boxW / 2, centerY, boxW, boxH, d.colors[0]!);
+  const cfit = fitText(data.center, boxW - 16, 1, d.labelSize);
+  svg.text(centerX, centerY + boxH / 2 + 4, cfit.lines[0]!, {
+    'text-anchor': 'middle', 'font-size': cfit.fontSize, 'font-weight': 700, fill: d.text,
+  });
+
+  // Branch row
+  const branchY = centerY + boxH + rowGap;
+  const branchStartX = centerX - branchRowW / 2;
+
+  for (let i = 0; i < n; i++) {
+    const branch = data.branches[i]!;
+    const color = branchColor(d, i);
+    const bx = branchStartX + i * (boxW + colGap);
+    const bCenterX = bx + boxW / 2;
+
+    // Connector from center to branch
+    svg.line(centerX, centerY + boxH, bCenterX, branchY, {
+      stroke: d.border, 'stroke-width': 1.5, opacity: 0.4,
+    });
+
+    drawPresetCard(svg, d, bx, branchY, boxW, boxH, color);
+    const fit = fitText(branch.label, boxW - 16, 1, d.labelSize);
+    svg.text(bCenterX, branchY + boxH / 2 + 4, fit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+
+    // Children below branch
+    const children = (branch.children ?? []).slice(0, 4);
+    if (children.length > 0) {
+      const childW = boxW * 0.8;
+      const childGap = 8;
+      const childRowW = children.length * childW + (children.length - 1) * childGap;
+      const childStartX = bCenterX - childRowW / 2;
+      const childY = branchY + boxH + rowGap;
+
+      for (let j = 0; j < children.length; j++) {
+        const cx = childStartX + j * (childW + childGap);
+        const cCenterX = cx + childW / 2;
+
+        svg.line(bCenterX, branchY + boxH, cCenterX, childY, {
+          stroke: color, 'stroke-width': 1, opacity: 0.3,
+        });
+
+        svg.rect(cx, childY, childW, boxH - 4, {
+          fill: d.surface, stroke: color, 'stroke-width': 1,
+          rx: d.borderRadius, ...d.cardAttrs(),
+        });
+        const chFit = fitText(children[j]!, childW - 12, 1, d.captionSize);
+        svg.text(cCenterX, childY + (boxH - 4) / 2 + 4, chFit.lines[0]!, {
+          'text-anchor': 'middle', 'font-size': chFit.fontSize, fill: d.textSecondary,
+        });
+      }
+    }
   }
 
   return svg.build();

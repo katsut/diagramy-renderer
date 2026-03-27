@@ -7,6 +7,7 @@ import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   buildColorGradients, drawSketchBackground, drawPixelBackground,
 } from '../shared/render-utils.js';
+import { profileItems, adaptiveLabelWidth } from '../shared/layout-planner.js';
 
 interface RankingItem {
   label: string;
@@ -25,11 +26,12 @@ function rankColor(d: DesignPreset, i: number): string {
 export function renderRanking(data: RankingData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'vertical') return renderVerticalPodium(data, title, d);
+  if (style === 'horizontal') return renderHorizontalBars(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
     case 'bold': return renderBold(data, title, d);
-    case 'flat': return renderFlat(data, title, d);
+    case 'minimal': return renderFlat(data, title, d);
     case 'glass': return renderGlass(data, title, d);
     case 'neon': return renderNeon(data, title, d);
     case 'watercolor': return renderWatercolor(data, title, d);
@@ -43,10 +45,12 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
   const pad = 48;
   const titleH = title ? 44 : 0;
   const count = data.items.length;
-  const rowH = 44;
+  const hasDesc = data.items.some(it => it.description);
+  const rowH = hasDesc ? 56 : 44;
   const rowGap = 8;
   const rankW = 36;
-  const labelW = 160;
+  const profile = profileItems(data.items, d.labelSize, d.captionSize);
+  const labelW = adaptiveLabelWidth(profile.maxLabelWidth, 120, 220);
   const barMaxW = 220;
   const totalW = rankW + 12 + labelW + 12 + barMaxW;
   const width = pad * 2 + totalW;
@@ -96,10 +100,12 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
       });
     }
 
-    // Description
+    // Description (fitted to available width)
     if (item.description) {
-      svg.text(lx, y + rowH / 2 + 18, item.description, {
-        'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
+      const descMaxW = labelW + 12 + barMaxW;
+      const dfit = fitText(item.description, descMaxW, 1, d.captionSize);
+      svg.text(lx, y + rowH / 2 + 18, dfit.lines[0]!, {
+        'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
       });
     }
   }
@@ -579,6 +585,67 @@ function renderVerticalPodium(data: RankingData, title: string | undefined, d: D
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
       });
       ly += Math.round(fit.fontSize * 1.3);
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== HORIZONTAL BARS ==========
+// Compact horizontal bar chart: rank number + label on left, colored bar on right
+
+function renderHorizontalBars(data: RankingData, title: string | undefined, d: DesignPreset): string {
+  const pad = 40;
+  const titleH = title ? 44 : 0;
+  const count = data.items.length;
+  const rowH = 36;
+  const rowGap = 6;
+  const rankW = 28;
+  const labelW = 140;
+  const barMaxW = 260;
+  const totalW = rankW + 8 + labelW + 12 + barMaxW;
+  const width = pad * 2 + totalW;
+  const height = pad * 2 + titleH + count * (rowH + rowGap);
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Ranking (horizontal bars)',
+    buildColorGradients(d, count, 'rk'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  for (let i = 0; i < count; i++) {
+    const item = data.items[i]!;
+    const color = rankColor(d, i);
+    const y = pad + titleH + i * (rowH + rowGap);
+    const barRatio = 1 - (i / Math.max(count, 1)) * 0.65;
+    const barW = barMaxW * barRatio;
+
+    // Rank number
+    svg.text(pad + rankW / 2, y + rowH / 2 + 5, `${i + 1}`, {
+      'text-anchor': 'middle', 'font-size': 14, 'font-weight': 800, fill: color,
+    });
+
+    // Label
+    const lx = pad + rankW + 8;
+    const fit = fitText(item.label, labelW, 1, d.labelSize);
+    svg.text(lx, y + rowH / 2 + 4, fit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+
+    // Bar
+    const bx = lx + labelW + 12;
+    const barH = rowH - 10;
+    const barY = y + (rowH - barH) / 2;
+    svg.rect(bx, barY, barW, barH, {
+      fill: `url(#rk${i})`, rx: d.borderRadius > 8 ? 4 : d.borderRadius,
+      ...d.cardAttrs(),
+    });
+
+    // Value at end of bar
+    if (item.value) {
+      svg.text(bx + barW - 6, y + rowH / 2 + 4, item.value, {
+        'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: 'white',
+      });
     }
   }
 

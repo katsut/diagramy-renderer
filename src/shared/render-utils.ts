@@ -37,6 +37,8 @@ export interface DiagramLayout {
   pad: number;
 }
 
+const FOOTER_MARGIN = 24; // Space for branding logo at bottom-right
+
 export function createDiagramSvg(
   d: DesignPreset,
   width: number,
@@ -45,7 +47,8 @@ export function createDiagramSvg(
   desc: string,
   extraDefs = '',
 ): { svg: SvgBuilder; defs: string } {
-  const svg = new SvgBuilder(width, height, title ?? desc, d.fontFamily, d.fontImport);
+  const h = height + FOOTER_MARGIN;
+  const svg = new SvgBuilder(width, h, title ?? desc, d.fontFamily, d.fontImport);
   if (title) svg.title(title);
   svg.desc(desc);
 
@@ -64,7 +67,7 @@ export function drawBackground(svg: SvgBuilder, d: DesignPreset, width: number, 
     svg.rect(3, 3, width - 6, height - 6, {
       fill: 'none', stroke: d.border, 'stroke-width': 3, rx: Math.max(0, d.borderRadius - 2),
     });
-  } else if (d.id === 'flat') {
+  } else if (d.id === 'minimal') {
     // Clean flat bg — no border, no shadow
     svg.rect(0, 0, width, height, { fill: d.bg, rx: d.borderRadius });
   } else if (d.id === 'neon') {
@@ -152,7 +155,7 @@ export function drawTitle(svg: SvgBuilder, d: DesignPreset, title: string, width
     svg.text(cx, ty, title, {
       'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 600, fill: d.text,
     });
-  } else if (d.id === 'flat') {
+  } else if (d.id === 'minimal') {
     // Clean flat title with colored accent line
     svg.text(cx, ty, title, {
       'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 700, fill: d.text,
@@ -316,7 +319,7 @@ export function drawPresetCard(
     if (d.id === 'bold') {
       // Thick color bar at top
       svg.rect(x + 1, y + 1, w - 2, 5, { fill: accentColor, rx: 2 });
-    } else if (d.id === 'flat') {
+    } else if (d.id === 'minimal') {
       // Left edge accent strip
       svg.rect(x, y + 4, 4, h - 8, { fill: accentColor, rx: 2 });
     } else if (d.id === 'watercolor') {
@@ -351,7 +354,7 @@ export function drawIconNode(
   } else if (d.id === 'bold') {
     svg.circle(cx, cy, r + 2, { fill: color, stroke: '#111', 'stroke-width': 3 });
     svg.raw(iconSvg(iconName, cx, cy, iconSize, 'white'));
-  } else if (d.id === 'flat') {
+  } else if (d.id === 'minimal') {
     svg.circle(cx, cy, r, { fill: color });
     svg.raw(iconSvg(iconName, cx, cy, iconSize, 'white'));
   } else if (d.id === 'glass') {

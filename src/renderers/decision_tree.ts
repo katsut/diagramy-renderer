@@ -26,11 +26,12 @@ function depthColor(d: DesignPreset, depth: number): string {
 export function renderDecisionTree(data: DecisionTreeData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'horizontal') return renderHorizontal(data, title, d);
+  if (style === 'flowchart') return renderFlowchart(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
     case 'bold': return renderBold(data, title, d);
-    case 'flat': return renderFlat(data, title, d);
+    case 'minimal': return renderFlat(data, title, d);
     case 'glass': return renderGlass(data, title, d);
     case 'neon': return renderNeon(data, title, d);
     case 'watercolor': return renderWatercolor(data, title, d);
@@ -713,5 +714,92 @@ function drawHNode(svg: SvgBuilder, d: DesignPreset, node: HLayoutNode, depth: n
   if (node.no) {
     drawHConnector(svg, right, cy, node.no.x, node.no.y + NODE_H / 2, depthColor(d, depth), 1.5, 'No');
     drawHNode(svg, d, node.no, depth + 1);
+  }
+}
+
+// ========== FLOWCHART ==========
+// Diamond decision nodes, rectangular outcome nodes, Yes/No on edges
+
+function renderFlowchart(data: DecisionTreeData, title: string | undefined, d: DesignPreset): string {
+  const pad = 48;
+  const titleH = title ? 44 : 0;
+  const xOff = { v: 0 };
+  const layout = layoutNode(data.root, 0, xOff);
+  const tw = layoutWidth(layout) + H_GAP;
+  const depth = treeDepth(data.root);
+  const th = depth * (NODE_H + V_GAP) - V_GAP + NODE_H;
+  const width = tw + pad * 2;
+  const height = th + pad * 2 + titleH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Decision tree (flowchart)',
+    buildColorGradients(d, depth, 'dt'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const root = offsetLayout(layout, pad, pad + titleH);
+  drawFlowchartNode(svg, d, root, 0);
+  return svg.build();
+}
+
+function drawFlowchartNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth: number): void {
+  const color = depthColor(d, depth);
+  const cx = node.x + node.w / 2;
+  const cy = node.y + NODE_H / 2;
+
+  if (node.isLeaf) {
+    // Rectangular outcome node with rounded corners
+    svg.rect(node.x + 2, node.y + 2, node.w, NODE_H, {
+      fill: '#000', opacity: 0.05, rx: 6,
+    });
+    svg.rect(node.x, node.y, node.w, NODE_H, {
+      fill: d.surface, stroke: color, 'stroke-width': 2, rx: 6,
+    });
+    const fit = fitText(node.label, node.w - 16, 1, 12);
+    svg.text(cx, cy + 4, fit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+  } else {
+    // Diamond decision node
+    const hw = node.w / 2 + 8;
+    const hh = NODE_H / 2 + 4;
+    // Shadow
+    svg.path(`M ${cx + 2} ${node.y + 2} L ${cx + hw + 2} ${cy + 2} L ${cx + 2} ${node.y + NODE_H + 6} L ${cx - hw + 2} ${cy + 2} Z`, {
+      fill: '#000', opacity: 0.05,
+    });
+    // Diamond
+    svg.path(`M ${cx} ${node.y - 4} L ${cx + hw} ${cy} L ${cx} ${node.y + NODE_H + 4} L ${cx - hw} ${cy} Z`, {
+      fill: color, opacity: 0.15, stroke: color, 'stroke-width': 2,
+    });
+    const fit = fitText(node.label, node.w - 16, 1, 12);
+    svg.text(cx, cy + 4, fit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: color,
+    });
+  }
+
+  const bottom = node.y + NODE_H;
+  if (node.yes) {
+    const childCx = node.yes.x + node.yes.w / 2;
+    const midY = (bottom + node.yes.y) / 2;
+    svg.path(`M ${cx} ${bottom + 4} L ${cx} ${midY} L ${childCx} ${midY} L ${childCx} ${node.yes.y}`, {
+      fill: 'none', stroke: '#4CAF50', 'stroke-width': 2,
+    });
+    // Yes label
+    svg.text((cx + childCx) / 2, midY - 5, 'Yes', {
+      'text-anchor': 'middle', 'font-size': 10, 'font-weight': 600, fill: '#4CAF50',
+    });
+    drawFlowchartNode(svg, d, node.yes, depth + 1);
+  }
+  if (node.no) {
+    const childCx = node.no.x + node.no.w / 2;
+    const midY = (bottom + node.no.y) / 2;
+    svg.path(`M ${cx} ${bottom + 4} L ${cx} ${midY} L ${childCx} ${midY} L ${childCx} ${node.no.y}`, {
+      fill: 'none', stroke: '#F44336', 'stroke-width': 2,
+    });
+    // No label
+    svg.text((cx + childCx) / 2, midY - 5, 'No', {
+      'text-anchor': 'middle', 'font-size': 10, 'font-weight': 600, fill: '#F44336',
+    });
+    drawFlowchartNode(svg, d, node.no, depth + 1);
   }
 }

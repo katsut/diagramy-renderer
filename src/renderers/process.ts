@@ -8,8 +8,9 @@ import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   computeHorizontalStepLayout, buildColorGradients, arrowMarkerDef,
   drawSketchBackground, drawPixelBackground, drawPresetCard, drawIconNode,
-  type StepLayout,
+  ensureTitleFits, type StepLayout,
 } from '../shared/render-utils.js';
+import { computeGridLayout } from '../shared/layout-planner.js';
 import type { SvgBuilder } from '../shared/svg.js';
 
 interface ProcessNode {
@@ -33,17 +34,22 @@ export function renderProcess(data: ProcessData, title?: string, design?: Design
     case 'staircase': return renderStaircase(data, title, d);
     case 'numbered': return renderNumbered(data, title, d);
     case 'pipeline': return renderPipeline(data, title, d);
-    default:
+    default: {
+      // Auto-switch to serpentine when horizontal layout would exceed 960px
+      if (!style && data.nodes.length > 4) {
+        return renderSerpentine(data, title, d);
+      }
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
         case 'pixel': return renderPixel(data, title, d);
         case 'bold': return renderBold(data, title, d);
-        case 'flat': return renderFlat(data, title, d);
+        case 'minimal': return renderFlat(data, title, d);
         case 'glass': return renderGlass(data, title, d);
         case 'neon': return renderNeon(data, title, d);
         case 'watercolor': return renderWatercolor(data, title, d);
         default: return renderClean(data, title, d);
       }
+    }
   }
 }
 
@@ -484,11 +490,12 @@ function renderWatercolor(data: ProcessData, title: string | undefined, d: Desig
 
 function renderChevron(data: ProcessData, title: string | undefined, d: DesignPreset): string {
   const count = data.nodes.length;
+  const hasDesc = data.nodes.some(n => n.description);
   const pad = 36;
   const titleH = title ? 44 : 0;
-  const chevW = 180;
-  const chevH = 72;
-  const notch = 20; // arrow notch depth
+  const chevW = 200;
+  const chevH = hasDesc ? 110 : 80;
+  const notch = 22; // arrow notch depth
   const overlap = 4; // slight overlap between chevrons
   const totalW = count * chevW - (count - 1) * overlap;
   const width = pad * 2 + totalW;
@@ -508,20 +515,39 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
     const x = pad + i * (chevW - overlap);
     const y = contentTop;
 
-    // Chevron polygon: left side has notch (except first), right side is arrow point
-    const leftNotch = i === 0 ? `${x},${y} ` : `${x},${y} ${x + notch},${y + chevH / 2} ${x},${y + chevH} `;
+    // Chevron polygon: all steps have arrow shape (first has rounded left edge via small notch)
+    const ln = i === 0 ? 6 : notch; // first step: slight indent instead of flat
+    const leftNotch = `${x},${y} ${x + ln},${y + chevH / 2} ${x},${y + chevH} `;
     const points = `${leftNotch}${x + chevW - notch},${y + chevH} ${x + chevW},${y + chevH / 2} ${x + chevW - notch},${y}`;
 
     svg.polygon(points, { fill: color, stroke: d.surface, 'stroke-width': 1 });
 
-    // Label text centered in chevron body
-    const textCx = x + (i === 0 ? chevW / 2 : chevW / 2 + notch / 2 - overlap / 2);
-    drawLabelBlock(svg, d, node.label, node.description, textCx, y + chevH / 2 + (node.description ? -4 : 5), chevW - notch * 2 - 8);
+    // Label text — white on colored background for readability
+    const textCx = x + chevW / 2 + (ln - overlap) / 2;
+    const maxW = chevW - notch * 2 - 12;
+    const labelFit = fitText(node.label, maxW, 2, d.labelSize);
+    const lh = Math.round(labelFit.fontSize * 1.4);
+    const descFit = node.description ? fitText(node.description, maxW, 2, d.captionSize) : null;
+    const totalLines = labelFit.lines.length + (descFit ? descFit.lines.length : 0);
+    let ly = y + chevH / 2 - ((totalLines - 1) * lh) / 2 + 4;
+    for (const line of labelFit.lines) {
+      svg.text(textCx, ly, line, {
+        'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+      });
+      ly += lh;
+    }
+    if (descFit) {
+      for (const line of descFit.lines) {
+        svg.text(textCx, ly, line, {
+          'text-anchor': 'middle', 'font-size': descFit.fontSize, fill: 'rgba(255,255,255,0.8)',
+        });
+        ly += Math.round(descFit.fontSize * 1.3);
+      }
+    }
 
-    // Override text color to white for dark chevron fills
-    // (drawLabelBlock uses d.text, which is fine for light designs but we add number badge)
+    // Step number badge
     svg.text(x + chevW - notch - 8, y + 14, `${i + 1}`, {
-      'text-anchor': 'middle', 'font-size': 9, 'font-weight': 600, fill: d.surface, opacity: 0.6,
+      'text-anchor': 'middle', 'font-size': 9, 'font-weight': 600, fill: '#FFFFFF', opacity: 0.5,
     });
   }
 

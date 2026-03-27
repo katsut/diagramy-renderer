@@ -27,12 +27,13 @@ export function renderHierarchy(data: HierarchyData, title?: string, design?: De
   switch (style) {
     case 'horizontal': return renderHorizontal(data, title, d);
     case 'radial': return renderRadial(data, title, d);
+    case 'bracket': return renderBracket(data, title, d);
     default:
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
         case 'pixel': return renderPixel(data, title, d);
         case 'bold': return renderBold(data, title, d);
-        case 'flat': return renderFlat(data, title, d);
+        case 'minimal': return renderFlat(data, title, d);
         case 'glass': return renderGlass(data, title, d);
         case 'neon': return renderNeon(data, title, d);
         case 'watercolor': return renderWatercolor(data, title, d);
@@ -795,6 +796,117 @@ function drawRadialNode(
         'text-anchor': anchor, 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
       });
       textY += lh;
+    }
+  }
+}
+
+// ========== BRACKET ==========
+// Tournament bracket layout: root on left, branches expand to the right with right-angle lines
+
+function bracketLeafCount(node: HierarchyNode): number {
+  if (!node.children || node.children.length === 0) return 1;
+  return node.children.reduce((sum, c) => sum + bracketLeafCount(c), 0);
+}
+
+interface BracketNode {
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  children: BracketNode[];
+}
+
+function layoutBracket(node: HierarchyNode, depth: number, yOff: { v: number }, colW: number, rowH: number): BracketNode {
+  const fs = depth === 0 ? 15 : 13;
+  const w = nodeWidth(node.label, fs);
+
+  if (!node.children || node.children.length === 0) {
+    const y = yOff.v;
+    yOff.v += rowH;
+    return { label: node.label, x: depth * colW, y, w, children: [] };
+  }
+
+  const children = node.children.map(c => layoutBracket(c, depth + 1, yOff, colW, rowH));
+  const firstY = children[0]!.y;
+  const lastY = children[children.length - 1]!.y;
+  const y = (firstY + lastY) / 2;
+
+  return { label: node.label, x: depth * colW, y, w, children };
+}
+
+function renderBracket(data: HierarchyData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const colW = 180;
+  const rowH = 48;
+  const depth = treeDepth(data.root);
+  const leafCount = bracketLeafCount(data.root);
+  const yOff = { v: 0 };
+  const layout = layoutBracket(data.root, 0, yOff, colW, rowH);
+
+  const width = pad * 2 + depth * colW;
+  const height = pad * 2 + titleH + leafCount * rowH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Hierarchy diagram (bracket)',
+    buildColorGradients(d, depth, 'hg'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  drawBracketNode(svg, d, layout, 0, pad, pad + titleH);
+  return svg.build();
+}
+
+function drawBracketNode(svg: SvgBuilder, d: DesignPreset, node: BracketNode, depth: number, ox: number, oy: number): void {
+  const color = stepColor(d, depth);
+  const isRoot = depth === 0;
+  const fs = isRoot ? 15 : 13;
+  const nx = ox + node.x;
+  const ny = oy + node.y;
+
+  // Draw node box
+  if (isRoot) {
+    svg.rect(nx, ny, node.w, NODE_H, {
+      fill: `url(#hg${depth})`, stroke: color, 'stroke-width': d.borderWidth,
+      rx: d.borderRadius > 8 ? 10 : d.borderRadius, ...d.cardAttrs(),
+    });
+  } else {
+    drawPresetCard(svg, d, nx, ny, node.w, NODE_H, color);
+  }
+
+  const fit = fitText(node.label, node.w - 16, 1, fs);
+  svg.text(nx + node.w / 2, ny + NODE_H / 2 + 5, fit.lines[0]!, {
+    'text-anchor': 'middle', 'font-size': fit.fontSize,
+    'font-weight': isRoot ? 700 : d.fontWeight, fill: isRoot ? 'white' : d.text,
+  });
+
+  // Draw right-angle connectors to children
+  const parentRight = nx + node.w;
+  const parentCy = ny + NODE_H / 2;
+
+  if (node.children.length > 0) {
+    const bridgeX = parentRight + 16;
+
+    // Horizontal stub from parent
+    svg.line(parentRight, parentCy, bridgeX, parentCy, {
+      stroke: d.border, 'stroke-width': 1.5,
+    });
+
+    // Vertical bracket line
+    const firstChildY = oy + node.children[0]!.y + NODE_H / 2;
+    const lastChildY = oy + node.children[node.children.length - 1]!.y + NODE_H / 2;
+    svg.line(bridgeX, firstChildY, bridgeX, lastChildY, {
+      stroke: d.border, 'stroke-width': 1.5,
+    });
+
+    for (const child of node.children) {
+      const childY = oy + child.y + NODE_H / 2;
+      const childX = ox + child.x;
+      // Horizontal line from bracket to child
+      svg.line(bridgeX, childY, childX, childY, {
+        stroke: d.border, 'stroke-width': 1.5,
+      });
+      drawBracketNode(svg, d, child, depth + 1, ox, oy);
     }
   }
 }

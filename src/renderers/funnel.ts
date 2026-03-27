@@ -9,6 +9,7 @@ import {
   buildColorGradients, drawSketchBackground, drawPixelBackground,
   drawIconNode,
 } from '../shared/render-utils.js';
+import { profileItems } from '../shared/layout-planner.js';
 
 interface FunnelStage {
   label: string;
@@ -41,12 +42,13 @@ export function renderFunnel(data: FunnelData, title?: string, design?: DesignPr
   const d = design ?? getDesign();
   switch (style) {
     case 'horizontal': return renderHorizontal(data, title, d);
+    case 'pipeline': return renderPipeline(data, title, d);
     default:
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
         case 'pixel': return renderPixel(data, title, d);
         case 'bold': return renderBold(data, title, d);
-        case 'flat': return renderFlat(data, title, d);
+        case 'minimal': return renderFlat(data, title, d);
         case 'glass': return renderGlass(data, title, d);
         case 'neon': return renderNeon(data, title, d);
         case 'watercolor': return renderWatercolor(data, title, d);
@@ -114,7 +116,8 @@ function renderClean(data: FunnelData, title: string | undefined, d: DesignPrese
   const funnelW = 320;
   const annotW = 300;
   const gap = 40;
-  const stageH = 80;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 96 : 80;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -155,7 +158,8 @@ function renderBold(data: FunnelData, title: string | undefined, d: DesignPreset
   const funnelW = 340;
   const annotW = 300;
   const gap = 44;
-  const stageH = 90;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 104 : 90;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -254,7 +258,8 @@ function renderGlass(data: FunnelData, title: string | undefined, d: DesignPrese
   const funnelW = 340;
   const annotW = 300;
   const gap = 44;
-  const stageH = 84;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 100 : 84;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -310,7 +315,8 @@ function renderNeon(data: FunnelData, title: string | undefined, d: DesignPreset
   const funnelW = 340;
   const annotW = 300;
   const gap = 44;
-  const stageH = 84;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 100 : 84;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -365,7 +371,8 @@ function renderWatercolor(data: FunnelData, title: string | undefined, d: Design
   const funnelW = 340;
   const annotW = 300;
   const gap = 44;
-  const stageH = 84;
+  const hasDesc = data.stages.some(s => s.description);
+  const stageH = hasDesc ? 100 : 84;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 
@@ -530,6 +537,82 @@ function renderHorizontal(data: FunnelData, title: string | undefined, d: Design
   svg.path(`M ${arrowX} ${cy - 8} L ${arrowX + 16} ${cy} L ${arrowX} ${cy + 8}`, {
     fill: d.colors[0]!, opacity: 0.5,
   });
+
+  return svg.build();
+}
+
+// ========== PIPELINE ==========
+// Equal-width rounded rectangles stacked vertically, connected by arrows
+
+function renderPipeline(data: FunnelData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const count = data.stages.length;
+  const boxW = 380;
+  const boxH = 56;
+  const gap = 16;
+  const arrowH = 20;
+  const width = pad * 2 + boxW;
+  const height = pad * 2 + titleH + count * boxH + (count - 1) * (gap + arrowH);
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Funnel pipeline',
+    buildColorGradients(d, count, 'fg'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const cx = pad + boxW / 2;
+  let curY = pad + titleH;
+
+  for (let i = 0; i < count; i++) {
+    const stage = data.stages[i]!;
+    const color = stageColor(d, i);
+
+    // Box shadow
+    svg.rect(pad + 2, curY + 2, boxW, boxH, {
+      fill: '#000', opacity: 0.06, rx: d.borderRadius,
+    });
+    // Box
+    svg.rect(pad, curY, boxW, boxH, {
+      fill: d.surface, stroke: color, 'stroke-width': 2, rx: d.borderRadius,
+      ...d.cardAttrs(),
+    });
+    // Color accent on left
+    svg.rect(pad, curY + 6, 4, boxH - 12, { fill: color, rx: 2 });
+
+    // Step number
+    svg.circle(pad + 28, curY + boxH / 2, 12, { fill: color });
+    svg.text(pad + 28, curY + boxH / 2 + 4, `${i + 1}`, {
+      'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: '#FFFFFF',
+    });
+
+    // Label
+    const fit = fitText(stage.label, boxW - 80, 1, d.labelSize);
+    svg.text(pad + 48, curY + boxH / 2 - (stage.description ? 4 : 0) + 4, fit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+    // Description
+    if (stage.description) {
+      const dfit = fitText(stage.description, boxW - 80, 1, d.captionSize);
+      svg.text(pad + 48, curY + boxH / 2 + 16, dfit.lines[0]!, {
+        'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+      });
+    }
+
+    // Arrow between stages
+    if (i < count - 1) {
+      const ay1 = curY + boxH + 4;
+      const ay2 = ay1 + arrowH - 4;
+      svg.path(`M ${cx} ${ay1} L ${cx} ${ay2}`, {
+        fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.4,
+      });
+      svg.path(`M ${cx - 5} ${ay2 - 5} L ${cx} ${ay2} L ${cx + 5} ${ay2 - 5}`, {
+        fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.4,
+      });
+    }
+
+    curY += boxH + gap + arrowH;
+  }
 
   return svg.build();
 }

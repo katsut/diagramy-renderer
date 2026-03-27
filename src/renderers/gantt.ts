@@ -7,6 +7,7 @@ import {
   createDiagramSvg, drawBackground, drawTitle,
   buildColorGradients, drawSketchBackground, drawPixelBackground,
 } from '../shared/render-utils.js';
+import { profileItems, adaptiveLabelWidth } from '../shared/layout-planner.js';
 
 interface GanttTask {
   label: string;
@@ -29,7 +30,7 @@ export function renderGantt(data: GanttData, title?: string, design?: DesignPres
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
     case 'bold': return renderBold(data, title, d);
-    case 'flat': return renderFlat(data, title, d);
+    case 'minimal': return renderFlat(data, title, d);
     case 'glass': return renderGlass(data, title, d);
     case 'neon': return renderNeon(data, title, d);
     case 'watercolor': return renderWatercolor(data, title, d);
@@ -45,18 +46,34 @@ function timeRange(tasks: GanttTask[]): { min: number; max: number } {
   return { min, max: max === min ? min + 1 : max };
 }
 
+interface GanttLayout {
+  pad: number; titleH: number; labelW: number; barAreaW: number;
+  rowH: number; rowGap: number; axisH: number;
+  width: number; height: number;
+}
+
+function computeGanttLayout(
+  data: GanttData, hasTitle: boolean, d: DesignPreset,
+  baseLabelW: number, baseBarAreaW: number,
+  rowH: number, rowGap: number, axisH: number, pad: number, titleHOverride?: number,
+): GanttLayout {
+  const titleH = hasTitle ? (titleHOverride ?? 44) : 0;
+  const profile = profileItems(
+    data.tasks.map(t => ({ label: t.label })),
+    d.labelSize, d.captionSize,
+  );
+  const labelW = adaptiveLabelWidth(profile.maxLabelWidth, baseLabelW, 240);
+  const barAreaW = Math.max(240, Math.min(baseBarAreaW + 40, 620 - labelW));
+  const width = pad * 2 + labelW + barAreaW;
+  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
+  return { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height };
+}
+
 // ========== CLEAN ==========
 
 function renderClean(data: GanttData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
-  const titleH = title ? 44 : 0;
-  const labelW = 140;
-  const barAreaW = 360;
-  const rowH = 36;
-  const rowGap = 6;
-  const axisH = 24;
-  const width = pad * 2 + labelW + barAreaW;
-  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
+  const lay = computeGanttLayout(data, !!title, d, 140, 360, 36, 6, 24, 48);
+  const { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height } = lay;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Gantt chart',
     buildColorGradients(d, data.tasks.length, 'gt'));
@@ -110,15 +127,8 @@ function renderClean(data: GanttData, title: string | undefined, d: DesignPreset
 // ========== SKETCH ==========
 
 function renderSketch(data: GanttData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
-  const titleH = title ? 48 : 0;
-  const labelW = 130;
-  const barAreaW = 340;
-  const rowH = 32;
-  const rowGap = 6;
-  const axisH = 24;
-  const width = pad * 2 + labelW + barAreaW;
-  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
+  const lay = computeGanttLayout(data, !!title, d, 130, 340, 32, 6, 24, 48, 48);
+  const { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height } = lay;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Gantt chart (sketch)');
   svg.defs(defs);
@@ -166,16 +176,9 @@ function renderSketch(data: GanttData, title: string | undefined, d: DesignPrese
 // ========== PIXEL ==========
 
 function renderPixel(data: GanttData, title: string | undefined, d: DesignPreset): string {
-  const pad = 40;
-  const titleH = title ? 40 : 0;
-  const labelW = 120;
-  const barAreaW = 320;
-  const rowH = 28;
-  const rowGap = 4;
-  const axisH = 20;
+  const lay = computeGanttLayout(data, !!title, d, 120, 320, 28, 4, 20, 40, 40);
+  const { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height } = lay;
   const px = 3;
-  const width = pad * 2 + labelW + barAreaW;
-  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Gantt chart (pixel)');
   svg.defs(defs);
@@ -212,15 +215,8 @@ function renderPixel(data: GanttData, title: string | undefined, d: DesignPreset
 // Pop style: colored bars with offset shadow, thick borders, large labels
 
 function renderBold(data: GanttData, title: string | undefined, d: DesignPreset): string {
-  const pad = 52;
-  const titleH = title ? 56 : 0;
-  const labelW = 150;
-  const barAreaW = 380;
-  const rowH = 44;
-  const rowGap = 10;
-  const axisH = 28;
-  const width = pad * 2 + labelW + barAreaW;
-  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
+  const lay = computeGanttLayout(data, !!title, d, 150, 380, 44, 10, 28, 52, 56);
+  const { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height } = lay;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Gantt chart (bold)',
     buildColorGradients(d, data.tasks.length, 'gt'));
@@ -286,15 +282,8 @@ function renderBold(data: GanttData, title: string | undefined, d: DesignPreset)
 // Material design: horizontal layout, left color strip, no shadows
 
 function renderFlat(data: GanttData, title: string | undefined, d: DesignPreset): string {
-  const pad = 36;
-  const titleH = title ? 44 : 0;
-  const labelW = 120;
-  const barAreaW = 360;
-  const rowH = 40;
-  const rowGap = 4;
-  const axisH = 24;
-  const width = pad * 2 + labelW + barAreaW;
-  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
+  const lay = computeGanttLayout(data, !!title, d, 120, 360, 40, 4, 24, 36);
+  const { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height } = lay;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Gantt chart (flat)');
   svg.defs(defs);
@@ -348,15 +337,8 @@ function renderFlat(data: GanttData, title: string | undefined, d: DesignPreset)
 // Dark bg, frosted glass bars, glow effects
 
 function renderGlass(data: GanttData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
-  const titleH = title ? 52 : 0;
-  const labelW = 140;
-  const barAreaW = 380;
-  const rowH = 40;
-  const rowGap = 8;
-  const axisH = 28;
-  const width = pad * 2 + labelW + barAreaW;
-  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
+  const lay = computeGanttLayout(data, !!title, d, 140, 380, 40, 8, 28, 48, 52);
+  const { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height } = lay;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Gantt chart (glass)',
     buildColorGradients(d, data.tasks.length, 'gt'));
@@ -417,15 +399,8 @@ function renderGlass(data: GanttData, title: string | undefined, d: DesignPreset
 // Cyberpunk: dark bg, neon outline bars, glow effects
 
 function renderNeon(data: GanttData, title: string | undefined, d: DesignPreset): string {
-  const pad = 44;
-  const titleH = title ? 52 : 0;
-  const labelW = 140;
-  const barAreaW = 370;
-  const rowH = 38;
-  const rowGap = 8;
-  const axisH = 26;
-  const width = pad * 2 + labelW + barAreaW;
-  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
+  const lay = computeGanttLayout(data, !!title, d, 140, 370, 38, 8, 26, 44, 52);
+  const { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height } = lay;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Gantt chart (neon)');
   svg.defs(defs);
@@ -487,15 +462,8 @@ function renderNeon(data: GanttData, title: string | undefined, d: DesignPreset)
 // Organic soft bars, muted colors, paper feel
 
 function renderWatercolor(data: GanttData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
-  const titleH = title ? 52 : 0;
-  const labelW = 140;
-  const barAreaW = 370;
-  const rowH = 40;
-  const rowGap = 10;
-  const axisH = 26;
-  const width = pad * 2 + labelW + barAreaW;
-  const height = pad * 2 + titleH + axisH + data.tasks.length * (rowH + rowGap);
+  const lay = computeGanttLayout(data, !!title, d, 140, 370, 40, 10, 26, 48, 52);
+  const { pad, titleH, labelW, barAreaW, rowH, rowGap, axisH, width, height } = lay;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Gantt chart (watercolor)',
     buildColorGradients(d, data.tasks.length, 'gt'));
