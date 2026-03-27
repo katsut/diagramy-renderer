@@ -8,7 +8,7 @@ import { icon as iconSvg } from './icons.js';
 // Simple hash-based jitter for sketch wobble (-1 to 1 range)
 function hashJitter(val: number, offset: number): number {
   const s = Math.sin((val + offset) * 127.1 + offset * 311.7) * 43758.5453;
-  return (s - Math.floor(s)) - 0.5;  // -0.5 to 0.5
+  return ((s - Math.floor(s)) - 0.5) * 1.6;  // -0.8 to 0.8
 }
 
 // --- Description builder ---
