@@ -37,7 +37,7 @@ export interface DiagramLayout {
   pad: number;
 }
 
-const FOOTER_MARGIN = 24; // Space for branding logo at bottom-right
+export const FOOTER_MARGIN = 24; // Space for branding logo at bottom-right
 
 export function createDiagramSvg(
   d: DesignPreset,
@@ -47,8 +47,8 @@ export function createDiagramSvg(
   desc: string,
   extraDefs = '',
 ): { svg: SvgBuilder; defs: string } {
-  const h = height + FOOTER_MARGIN;
-  const svg = new SvgBuilder(width, h, title ?? desc, d.fontFamily, d.fontImport);
+  // Add footer margin to viewBox; background uses this full size
+  const svg = new SvgBuilder(width, height + FOOTER_MARGIN, title ?? desc, d.fontFamily, d.fontImport);
   if (title) svg.title(title);
   svg.desc(desc);
 
@@ -59,7 +59,14 @@ export function createDiagramSvg(
   return { svg, defs };
 }
 
-export function drawBackground(svg: SvgBuilder, d: DesignPreset, width: number, height: number): void {
+// Actual viewBox height (content height + footer margin)
+export function viewBoxHeight(contentHeight: number): number {
+  return contentHeight + FOOTER_MARGIN;
+}
+
+export function drawBackground(svg: SvgBuilder, d: DesignPreset, width: number, height: number, _includeFooter = true): void {
+  // Always draw background to full viewBox height (content + footer margin)
+  height = height + FOOTER_MARGIN;
   if (d.id === 'bold') {
     // White bg with halftone pattern overlay + thick dark border frame
     svg.rect(0, 0, width, height, { fill: d.bg, rx: d.borderRadius });
