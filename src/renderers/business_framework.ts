@@ -366,12 +366,13 @@ const LEAN_DEFAULTS: Record<string, string> = {
 function renderLean(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
   const pad = 32;
   const titleH = title ? 50 : 0;
-  const colW = 160;
-  const rowH = 120;
-  const halfRowH = 60;
+  const colW = 180;
+  const halfRowH = 80;
+  const bottomRowH = 80;
   const gap = 4;
   const totalW = 5 * colW + 4 * gap;
-  const totalH = 2 * halfRowH + gap + rowH + gap;
+  const fullH = 2 * halfRowH + gap;
+  const totalH = fullH + gap + bottomRowH;
   const width = pad * 2 + totalW;
   const height = pad * 2 + titleH + totalH;
 
@@ -385,20 +386,19 @@ function renderLean(data: BusinessFrameworkData, title: string | undefined, d: D
   const dc = (x: number, y: number, w: number, h: number, key: string, ci: number) =>
     drawBmcCell(svg, d, bm, LEAN_DEFAULTS, x, y, w, h, key, ci);
 
-  const fullH = 2 * halfRowH + gap;
-
+  // Each block gets a unique color index (0-8, all distinct in 10-color palette)
   dc(pad, top, colW, fullH, 'problem', 0);
   dc(pad + (colW + gap), top, colW, halfRowH, 'solution', 1);
-  dc(pad + (colW + gap), top + halfRowH + gap, colW, halfRowH, 'key_metrics', 2);
-  dc(pad + 2 * (colW + gap), top, colW, fullH, 'unique_value_proposition', 3);
+  dc(pad + (colW + gap), top + halfRowH + gap, colW, halfRowH, 'key_metrics', 3);
+  dc(pad + 2 * (colW + gap), top, colW, fullH, 'unique_value_proposition', 2);
   dc(pad + 3 * (colW + gap), top, colW, halfRowH, 'unfair_advantage', 4);
-  dc(pad + 3 * (colW + gap), top + halfRowH + gap, colW, halfRowH, 'channels', 5);
-  dc(pad + 4 * (colW + gap), top, colW, fullH, 'customer_segments', 6);
+  dc(pad + 3 * (colW + gap), top + halfRowH + gap, colW, halfRowH, 'channels', 6);
+  dc(pad + 4 * (colW + gap), top, colW, fullH, 'customer_segments', 5);
 
   const bottomY = top + fullH + gap;
   const halfW = (totalW - gap) / 2;
-  dc(pad, bottomY, halfW, rowH, 'cost_structure', 7);
-  dc(pad + halfW + gap, bottomY, halfW, rowH, 'revenue_streams', 8);
+  dc(pad, bottomY, halfW, bottomRowH, 'cost_structure', 7);
+  dc(pad + halfW + gap, bottomY, halfW, bottomRowH, 'revenue_streams', 8);
 
   return svg.build();
 }
