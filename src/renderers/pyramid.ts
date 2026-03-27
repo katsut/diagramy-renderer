@@ -45,7 +45,7 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
   const titleH = title ? 44 : 0;
   const count = data.layers.length;
   const layerH = 48;
-  const gap = 3;
+  const gap = 0;
   const baseW = 400;
   const topW = 80;
   const pyramidH = count * (layerH + gap);
@@ -107,17 +107,19 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
 // --- Shared trapezoid path ---
 
 function trapezoidPath(
-  pyramidX: number, baseW: number, topW: number,
+  pyramidX: number, baseW: number, _topW: number,
   y: number, layerH: number, i: number, count: number,
 ): string {
-  // Top edge: width interpolated from topW (i=0) to baseW (i=count-1)
-  const topRatio = i / Math.max(count, 1);
-  const topEdgeW = topW + (baseW - topW) * topRatio;
-  const topX = pyramidX + (baseW - topEdgeW) / 2;
-  // Bottom edge: next layer's top (or full baseW for last layer)
-  const botRatio = (i + 1) / Math.max(count, 1);
-  const botEdgeW = topW + (baseW - topW) * botRatio;
-  const botX = pyramidX + (baseW - botEdgeW) / 2;
+  const cx = pyramidX + baseW / 2;
+  // Top edge: 0 width at apex (i=0), full baseW at bottom (i=count)
+  const topEdgeW = baseW * (i / count);
+  const botEdgeW = baseW * ((i + 1) / count);
+  if (i === 0) {
+    // Apex: triangle (single point at top)
+    return `M ${cx} ${y} L ${cx + botEdgeW / 2} ${y + layerH} L ${cx - botEdgeW / 2} ${y + layerH} Z`;
+  }
+  const topX = cx - topEdgeW / 2;
+  const botX = cx - botEdgeW / 2;
   return `M ${topX} ${y} L ${topX + topEdgeW} ${y} L ${botX + botEdgeW} ${y + layerH} L ${botX} ${y + layerH} Z`;
 }
 
@@ -129,7 +131,7 @@ function renderBold(data: PyramidData, title: string | undefined, d: DesignPrese
   const titleH = title ? 56 : 0;
   const count = data.layers.length;
   const layerH = 56;
-  const gap = 4;
+  const gap = 0;
   const baseW = 420;
   const topW = 90;
   const pyramidH = count * (layerH + gap);
@@ -176,7 +178,7 @@ function renderFlat(data: PyramidData, title: string | undefined, d: DesignPrese
   const titleH = title ? 44 : 0;
   const count = data.layers.length;
   const layerH = 44;
-  const gap = 2;
+  const gap = 0;
   const maxW = 400;
   const width = pad * 2 + maxW;
   const height = pad * 2 + titleH + count * (layerH + gap);
@@ -216,7 +218,7 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
   const titleH = title ? 52 : 0;
   const count = data.layers.length;
   const layerH = 52;
-  const gap = 4;
+  const gap = 0;
   const baseW = 420;
   const topW = 90;
   const pyramidH = count * (layerH + gap);
@@ -287,7 +289,7 @@ function renderNeon(data: PyramidData, title: string | undefined, d: DesignPrese
   const titleH = title ? 52 : 0;
   const count = data.layers.length;
   const layerH = 50;
-  const gap = 6;
+  const gap = 0;
   const baseW = 400;
   const topW = 80;
   const pyramidH = count * (layerH + gap);
@@ -333,7 +335,7 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
   const titleH = title ? 52 : 0;
   const count = data.layers.length;
   const layerH = 52;
-  const gap = 4;
+  const gap = 0;
   const baseW = 400;
   const topW = 80;
   const pyramidH = count * (layerH + gap);
@@ -394,7 +396,7 @@ function renderSketch(data: PyramidData, title: string | undefined, d: DesignPre
   const titleH = title ? 48 : 0;
   const count = data.layers.length;
   const layerH = 44;
-  const gap = 4;
+  const gap = 0;
   const baseW = 380;
   const topW = 70;
   const pyramidH = count * (layerH + gap);
@@ -439,7 +441,7 @@ function renderPixel(data: PyramidData, title: string | undefined, d: DesignPres
   const titleH = title ? 40 : 0;
   const count = data.layers.length;
   const layerH = 36;
-  const gap = 2;
+  const gap = 0;
   const baseW = 360;
   const topW = 60;
   const pyramidH = count * (layerH + gap);
@@ -538,7 +540,7 @@ function renderSteps(data: PyramidData, title: string | undefined, d: DesignPres
   const titleH = title ? 44 : 0;
   const count = data.layers.length;
   const stepH = 52;
-  const gap = 4;
+  const gap = 0;
   const maxW = 460;
   const minW = 120;
   const descW = 160;
@@ -610,7 +612,7 @@ function renderBlocks(data: PyramidData, title: string | undefined, d: DesignPre
   const titleH = title ? 44 : 0;
   const count = data.layers.length;
   const blockH = 56;
-  const gap = 4;
+  const gap = 0;
   const maxW = 460;
   const minW = 140;
   const pyramidH = count * (blockH + gap);
