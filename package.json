@@ -1,7 +1,7 @@
 {
   "name": "renderer-js",
   "version": "1.0.0",
-  "description": "Diagramy SVG renderer (TypeScript)",
+  "description": "Figney SVG renderer (TypeScript)",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

@@ -2,7 +2,7 @@
 
 **Licensor:** katsut
 
-**Licensed Work:** Diagramy Renderer
+**Licensed Work:** Figney Renderer
 
 **Change Date:** 2030-03-23
 
