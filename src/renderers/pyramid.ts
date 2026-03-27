@@ -25,6 +25,7 @@ export function renderPyramid(data: PyramidData, title?: string, design?: Design
   const d = design ?? getDesign();
   if (style === 'horizontal') return renderHorizontalBars(data, title, d);
   if (style === 'steps') return renderSteps(data, title, d);
+  if (style === 'blocks') return renderBlocks(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
@@ -44,10 +45,10 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
   const titleH = title ? 44 : 0;
   const count = data.layers.length;
   const layerH = 48;
-  const gap = 3;
+  const gap = 0;
   const baseW = 400;
   const topW = 80;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const descW = 160;
   const width = pad * 2 + baseW + descW + 20;
   const height = pad * 2 + titleH + pyramidH;
@@ -64,7 +65,8 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = topW + (baseW - topW) * ratio;
     const x = pyramidX + (baseW - w) / 2;
@@ -105,17 +107,35 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
 
 // --- Shared trapezoid path ---
 
+// Compute Y offset and height for each layer (apex is taller)
+function layerGeometry(layerH: number, i: number, count: number): { y: number; h: number } {
+  const apexH = Math.round(layerH * 1.6);
+  const y = i === 0 ? 0 : apexH + (i - 1) * layerH;
+  const h = i === 0 ? apexH : layerH;
+  return { y, h };
+}
+
+function pyramidTotalH(layerH: number, count: number): number {
+  return Math.round(layerH * 1.6) + (count - 1) * layerH;
+}
+
 function trapezoidPath(
-  pyramidX: number, baseW: number, topW: number,
-  y: number, layerH: number, i: number, count: number,
+  pyramidX: number, baseW: number, _topW: number,
+  startY: number, layerH: number, i: number, count: number,
 ): string {
-  const ratio = i / Math.max(count - 1, 1);
-  const w = topW + (baseW - topW) * ratio;
-  const x = pyramidX + (baseW - w) / 2;
-  const nextRatio = (i + 1) / Math.max(count - 1, 1);
-  const nextW = i < count - 1 ? topW + (baseW - topW) * nextRatio : w;
-  const nextX = pyramidX + (baseW - nextW) / 2;
-  return `M ${x} ${y} L ${x + w} ${y} L ${nextX + nextW} ${y + layerH} L ${nextX} ${y + layerH} Z`;
+  const cx = pyramidX + baseW / 2;
+  const geo = layerGeometry(layerH, i, count);
+  const y = startY + geo.y;
+  const h = geo.h;
+  // Top edge: 0 width at apex (i=0), proportional to vertical position
+  const topFrac = geo.y / pyramidTotalH(layerH, count);
+  const botFrac = (geo.y + h) / pyramidTotalH(layerH, count);
+  const topEdgeW = baseW * topFrac;
+  const botEdgeW = baseW * botFrac;
+  if (i === 0) {
+    return `M ${cx} ${y} L ${cx + botEdgeW / 2} ${y + h} L ${cx - botEdgeW / 2} ${y + h} Z`;
+  }
+  return `M ${cx - topEdgeW / 2} ${y} L ${cx + topEdgeW / 2} ${y} L ${cx + botEdgeW / 2} ${y + h} L ${cx - botEdgeW / 2} ${y + h} Z`;
 }
 
 // ========== BOLD ==========
@@ -126,10 +146,10 @@ function renderBold(data: PyramidData, title: string | undefined, d: DesignPrese
   const titleH = title ? 56 : 0;
   const count = data.layers.length;
   const layerH = 56;
-  const gap = 4;
+  const gap = 0;
   const baseW = 420;
   const topW = 90;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const width = pad * 2 + baseW;
   const height = pad * 2 + titleH + pyramidH;
 
@@ -145,7 +165,8 @@ function renderBold(data: PyramidData, title: string | undefined, d: DesignPrese
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
 
     // Trapezoid with offset shadow
     svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
@@ -173,7 +194,7 @@ function renderFlat(data: PyramidData, title: string | undefined, d: DesignPrese
   const titleH = title ? 44 : 0;
   const count = data.layers.length;
   const layerH = 44;
-  const gap = 2;
+  const gap = 0;
   const maxW = 400;
   const width = pad * 2 + maxW;
   const height = pad * 2 + titleH + count * (layerH + gap);
@@ -188,7 +209,8 @@ function renderFlat(data: PyramidData, title: string | undefined, d: DesignPrese
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = 80 + (maxW - 80) * ratio;
     const x = pad + (maxW - w) / 2;
@@ -213,10 +235,10 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
   const titleH = title ? 52 : 0;
   const count = data.layers.length;
   const layerH = 52;
-  const gap = 4;
+  const gap = 0;
   const baseW = 420;
   const topW = 90;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const descW = 160;
   const width = pad * 2 + baseW + descW + 20;
   const height = pad * 2 + titleH + pyramidH;
@@ -233,7 +255,8 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
 
     // Glow behind trapezoid
     svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
@@ -284,10 +307,10 @@ function renderNeon(data: PyramidData, title: string | undefined, d: DesignPrese
   const titleH = title ? 52 : 0;
   const count = data.layers.length;
   const layerH = 50;
-  const gap = 6;
+  const gap = 0;
   const baseW = 400;
   const topW = 80;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const width = pad * 2 + baseW;
   const height = pad * 2 + titleH + pyramidH;
 
@@ -302,7 +325,8 @@ function renderNeon(data: PyramidData, title: string | undefined, d: DesignPrese
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
 
     // Dark fill with neon border
     svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
@@ -330,10 +354,10 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
   const titleH = title ? 52 : 0;
   const count = data.layers.length;
   const layerH = 52;
-  const gap = 4;
+  const gap = 0;
   const baseW = 400;
   const topW = 80;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const descW = 160;
   const width = pad * 2 + baseW + descW + 20;
   const height = pad * 2 + titleH + pyramidH;
@@ -350,7 +374,8 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = topW + (baseW - topW) * ratio;
 
@@ -391,10 +416,10 @@ function renderSketch(data: PyramidData, title: string | undefined, d: DesignPre
   const titleH = title ? 48 : 0;
   const count = data.layers.length;
   const layerH = 44;
-  const gap = 4;
+  const gap = 0;
   const baseW = 380;
   const topW = 70;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const width = pad * 2 + baseW;
   const height = pad * 2 + titleH + pyramidH;
 
@@ -408,7 +433,8 @@ function renderSketch(data: PyramidData, title: string | undefined, d: DesignPre
 
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = topW + (baseW - topW) * ratio;
     const x = pyramidX + (baseW - w) / 2;
@@ -436,10 +462,10 @@ function renderPixel(data: PyramidData, title: string | undefined, d: DesignPres
   const titleH = title ? 40 : 0;
   const count = data.layers.length;
   const layerH = 36;
-  const gap = 2;
+  const gap = 0;
   const baseW = 360;
   const topW = 60;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const width = pad * 2 + baseW;
   const height = pad * 2 + titleH + pyramidH;
 
@@ -454,7 +480,8 @@ function renderPixel(data: PyramidData, title: string | undefined, d: DesignPres
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = Math.round(topW + (baseW - topW) * ratio);
     const x = Math.round(pyramidX + (baseW - w) / 2);
@@ -535,7 +562,7 @@ function renderSteps(data: PyramidData, title: string | undefined, d: DesignPres
   const titleH = title ? 44 : 0;
   const count = data.layers.length;
   const stepH = 52;
-  const gap = 4;
+  const gap = 0;
   const maxW = 460;
   const minW = 120;
   const descW = 160;
@@ -593,6 +620,57 @@ function renderSteps(data: PyramidData, title: string | undefined, d: DesignPres
           'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
         });
       }
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== BLOCKS ==========
+// Center-aligned rectangles of decreasing width — block pyramid
+
+function renderBlocks(data: PyramidData, title: string | undefined, d: DesignPreset): string {
+  const pad = 44;
+  const titleH = title ? 44 : 0;
+  const count = data.layers.length;
+  const blockH = 56;
+  const gap = 0;
+  const maxW = 460;
+  const minW = 140;
+  const pyramidH = count * (blockH + gap);
+  const width = pad * 2 + maxW;
+  const height = pad * 2 + titleH + pyramidH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Pyramid (blocks)',
+    buildColorGradients(d, count, 'py'));
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const cx = pad + maxW / 2;
+  const startY = pad + titleH;
+
+  for (let i = 0; i < count; i++) {
+    const layer = data.layers[i]!;
+    const color = layerColor(d, i);
+    const y = startY + i * (blockH + gap);
+    const ratio = count <= 1 ? 1 : i / (count - 1);
+    const w = minW + (maxW - minW) * ratio;
+    const x = cx - w / 2;
+
+    svg.rect(x, y, w, blockH, {
+      fill: `url(#py${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius, ...d.cardAttrs(),
+    });
+
+    const fit = fitText(layer.label, w - 24, 1, d.labelSize);
+    svg.text(cx, y + blockH / 2 - (layer.description ? 4 : 0) + 4, fit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+    });
+    if (layer.description) {
+      const dfit = fitText(layer.description, w - 24, 1, d.captionSize);
+      svg.text(cx, y + blockH / 2 + 16, dfit.lines[0]!, {
+        'text-anchor': 'middle', 'font-size': dfit.fontSize, fill: 'rgba(255,255,255,0.7)',
+      });
     }
   }
 

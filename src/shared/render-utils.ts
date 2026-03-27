@@ -37,7 +37,7 @@ export interface DiagramLayout {
   pad: number;
 }
 
-const FOOTER_MARGIN = 24; // Space for branding logo at bottom-right
+export const FOOTER_MARGIN = 24; // Space for branding logo at bottom-right
 
 export function createDiagramSvg(
   d: DesignPreset,
@@ -47,8 +47,7 @@ export function createDiagramSvg(
   desc: string,
   extraDefs = '',
 ): { svg: SvgBuilder; defs: string } {
-  const h = height + FOOTER_MARGIN;
-  const svg = new SvgBuilder(width, h, title ?? desc, d.fontFamily, d.fontImport);
+  const svg = new SvgBuilder(width, height + FOOTER_MARGIN, title ?? desc, d.fontFamily, d.fontImport);
   if (title) svg.title(title);
   svg.desc(desc);
 
@@ -59,7 +58,14 @@ export function createDiagramSvg(
   return { svg, defs };
 }
 
-export function drawBackground(svg: SvgBuilder, d: DesignPreset, width: number, height: number): void {
+// Actual viewBox height (content height + footer margin)
+export function viewBoxHeight(contentHeight: number): number {
+  return contentHeight + FOOTER_MARGIN;
+}
+
+export function drawBackground(svg: SvgBuilder, d: DesignPreset, width: number, height: number, _includeFooter = true): void {
+  // Always draw background to full viewBox height (content + footer margin)
+  height = height + FOOTER_MARGIN;
   if (d.id === 'bold') {
     // White bg with halftone pattern overlay + thick dark border frame
     svg.rect(0, 0, width, height, { fill: d.bg, rx: d.borderRadius });
@@ -115,10 +121,11 @@ export function drawTitle(svg: SvgBuilder, d: DesignPreset, title: string, width
   const ty = pad + 30;
 
   if (d.id === 'bold') {
-    // Background pill behind title
+    // Background pill behind title — extra top margin for bold border frame
+    const boldTy = pad + 38;
     const textW = estimateWidth(title, d.titleSize) + 32;
-    svg.rect(cx - textW / 2, ty - 20, textW, 32, { fill: d.primary, rx: 6, filter: 'url(#bold-offset)' });
-    svg.text(cx, ty + 2, title, {
+    svg.rect(cx - textW / 2, boldTy - 20, textW, 32, { fill: d.primary, rx: 6, filter: 'url(#bold-offset)' });
+    svg.text(cx, boldTy + 2, title, {
       'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 900, fill: '#FFFFFF',
     });
   } else if (d.id === 'neon') {
