@@ -48,7 +48,7 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
   const gap = 0;
   const baseW = 400;
   const topW = 80;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const descW = 160;
   const width = pad * 2 + baseW + descW + 20;
   const height = pad * 2 + titleH + pyramidH;
@@ -65,7 +65,8 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = topW + (baseW - topW) * ratio;
     const x = pyramidX + (baseW - w) / 2;
@@ -106,21 +107,35 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
 
 // --- Shared trapezoid path ---
 
+// Compute Y offset and height for each layer (apex is taller)
+function layerGeometry(layerH: number, i: number, count: number): { y: number; h: number } {
+  const apexH = Math.round(layerH * 1.6);
+  const y = i === 0 ? 0 : apexH + (i - 1) * layerH;
+  const h = i === 0 ? apexH : layerH;
+  return { y, h };
+}
+
+function pyramidTotalH(layerH: number, count: number): number {
+  return Math.round(layerH * 1.6) + (count - 1) * layerH;
+}
+
 function trapezoidPath(
   pyramidX: number, baseW: number, _topW: number,
-  y: number, layerH: number, i: number, count: number,
+  startY: number, layerH: number, i: number, count: number,
 ): string {
   const cx = pyramidX + baseW / 2;
-  // Top edge: 0 width at apex (i=0), full baseW at bottom (i=count)
-  const topEdgeW = baseW * (i / count);
-  const botEdgeW = baseW * ((i + 1) / count);
+  const geo = layerGeometry(layerH, i, count);
+  const y = startY + geo.y;
+  const h = geo.h;
+  // Top edge: 0 width at apex (i=0), proportional to vertical position
+  const topFrac = geo.y / pyramidTotalH(layerH, count);
+  const botFrac = (geo.y + h) / pyramidTotalH(layerH, count);
+  const topEdgeW = baseW * topFrac;
+  const botEdgeW = baseW * botFrac;
   if (i === 0) {
-    // Apex: triangle (single point at top)
-    return `M ${cx} ${y} L ${cx + botEdgeW / 2} ${y + layerH} L ${cx - botEdgeW / 2} ${y + layerH} Z`;
+    return `M ${cx} ${y} L ${cx + botEdgeW / 2} ${y + h} L ${cx - botEdgeW / 2} ${y + h} Z`;
   }
-  const topX = cx - topEdgeW / 2;
-  const botX = cx - botEdgeW / 2;
-  return `M ${topX} ${y} L ${topX + topEdgeW} ${y} L ${botX + botEdgeW} ${y + layerH} L ${botX} ${y + layerH} Z`;
+  return `M ${cx - topEdgeW / 2} ${y} L ${cx + topEdgeW / 2} ${y} L ${cx + botEdgeW / 2} ${y + h} L ${cx - botEdgeW / 2} ${y + h} Z`;
 }
 
 // ========== BOLD ==========
@@ -134,7 +149,7 @@ function renderBold(data: PyramidData, title: string | undefined, d: DesignPrese
   const gap = 0;
   const baseW = 420;
   const topW = 90;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const width = pad * 2 + baseW;
   const height = pad * 2 + titleH + pyramidH;
 
@@ -150,7 +165,8 @@ function renderBold(data: PyramidData, title: string | undefined, d: DesignPrese
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
 
     // Trapezoid with offset shadow
     svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
@@ -193,7 +209,8 @@ function renderFlat(data: PyramidData, title: string | undefined, d: DesignPrese
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = 80 + (maxW - 80) * ratio;
     const x = pad + (maxW - w) / 2;
@@ -221,7 +238,7 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
   const gap = 0;
   const baseW = 420;
   const topW = 90;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const descW = 160;
   const width = pad * 2 + baseW + descW + 20;
   const height = pad * 2 + titleH + pyramidH;
@@ -238,7 +255,8 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
 
     // Glow behind trapezoid
     svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
@@ -292,7 +310,7 @@ function renderNeon(data: PyramidData, title: string | undefined, d: DesignPrese
   const gap = 0;
   const baseW = 400;
   const topW = 80;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const width = pad * 2 + baseW;
   const height = pad * 2 + titleH + pyramidH;
 
@@ -307,7 +325,8 @@ function renderNeon(data: PyramidData, title: string | undefined, d: DesignPrese
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
 
     // Dark fill with neon border
     svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
@@ -338,7 +357,7 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
   const gap = 0;
   const baseW = 400;
   const topW = 80;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const descW = 160;
   const width = pad * 2 + baseW + descW + 20;
   const height = pad * 2 + titleH + pyramidH;
@@ -355,7 +374,8 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = topW + (baseW - topW) * ratio;
 
@@ -399,7 +419,7 @@ function renderSketch(data: PyramidData, title: string | undefined, d: DesignPre
   const gap = 0;
   const baseW = 380;
   const topW = 70;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const width = pad * 2 + baseW;
   const height = pad * 2 + titleH + pyramidH;
 
@@ -413,7 +433,8 @@ function renderSketch(data: PyramidData, title: string | undefined, d: DesignPre
 
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = topW + (baseW - topW) * ratio;
     const x = pyramidX + (baseW - w) / 2;
@@ -444,7 +465,7 @@ function renderPixel(data: PyramidData, title: string | undefined, d: DesignPres
   const gap = 0;
   const baseW = 360;
   const topW = 60;
-  const pyramidH = count * (layerH + gap);
+  const pyramidH = pyramidTotalH(layerH, count);
   const width = pad * 2 + baseW;
   const height = pad * 2 + titleH + pyramidH;
 
@@ -459,7 +480,8 @@ function renderPixel(data: PyramidData, title: string | undefined, d: DesignPres
   for (let i = 0; i < count; i++) {
     const layer = data.layers[i]!;
     const color = layerColor(d, i);
-    const y = startY + i * (layerH + gap);
+    const geo = layerGeometry(layerH, i, count);
+    const y = startY + geo.y;
     const ratio = i / Math.max(count - 1, 1);
     const w = Math.round(topW + (baseW - topW) * ratio);
     const x = Math.round(pyramidX + (baseW - w) / 2);
