@@ -148,30 +148,31 @@ const BOLD: DesignPreset = {
   cardAttrs: () => ({ filter: 'url(#bold-offset)' }),
 };
 
-// ---------- FLAT ----------
-const FLAT: DesignPreset = {
-  id: 'flat',
-  label: 'Flat',
-  fontFamily: "'Zen Kaku Gothic New', 'Helvetica Neue', 'Hiragino Sans', 'Segoe UI', sans-serif",
-  fontImport: 'https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap',
-  primary: '#1976D2',       // Material Blue 700 — stronger identity vs clean
-  bg: '#FAFAFA',
+// ---------- MINIMAL ----------
+// Line-only, no fills, generous whitespace, single accent color. Designed to embed anywhere.
+const MINIMAL: DesignPreset = {
+  id: 'minimal',
+  label: 'Minimal',
+  fontFamily: "'Inter', 'Noto Sans JP', 'Helvetica Neue', system-ui, sans-serif",
+  fontImport: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap',
+  primary: '#0EA5E9',       // sky-500 — single calm accent
+  bg: '#FFFFFF',
   surface: '#FFFFFF',
-  text: '#212121',
-  textSecondary: '#616161',
-  border: '#E0E0E0',
-  colors: ['#1976D2', '#D32F2F', '#388E3C', '#F9A825', '#7B1FA2', '#0097A7', '#E64A19', '#00897B', '#C2185B', '#512DA8'],
-  borderRadius: 2,          // sharper corners for Material feel
-  borderWidth: 0,
+  text: '#334155',           // slate-700 — softer than black
+  textSecondary: '#94A3B8',  // slate-400
+  border: '#CBD5E1',         // slate-300
+  colors: ['#0EA5E9', '#64748B', '#94A3B8', '#0EA5E9', '#64748B', '#94A3B8', '#0EA5E9', '#64748B', '#94A3B8', '#0EA5E9'],
+  borderRadius: 6,
+  borderWidth: 1,
   shadow: '',
   cardShadow: '',
   extraDefs: '',
-  fontWeight: 500,
-  titleSize: 22,
-  labelSize: 14,
-  captionSize: 12,
-  nodeAttrs: (color) => ({ fill: color }),
-  cardAttrs: () => ({}),
+  fontWeight: 400,
+  titleSize: 20,
+  labelSize: 13,
+  captionSize: 11,
+  nodeAttrs: (color) => ({ fill: 'none', stroke: color, 'stroke-width': 1.5 }),
+  cardAttrs: () => ({ filter: '' }),
 };
 
 // ---------- GLASS ----------
@@ -258,7 +259,7 @@ export const DESIGNS: Record<string, DesignPreset> = {
   sketch: SKETCH,
   pixel: PIXEL,
   bold: BOLD,
-  flat: FLAT,
+  minimal: MINIMAL,
   glass: GLASS,
   neon: NEON,
   watercolor: WATERCOLOR,
