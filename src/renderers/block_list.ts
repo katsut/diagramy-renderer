@@ -2,7 +2,7 @@
 
 import type { SvgBuilder } from '../shared/svg.js';
 import { getDesign, jitterRect, pixelBorder, type DesignPreset } from '../shared/design.js';
-import { fitText } from '../shared/text.js';
+import { fitText, estimateWidth } from '../shared/text.js';
 import { icon, inferIcon } from '../shared/icons.js';
 import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
@@ -40,6 +40,8 @@ export function renderBlockList(data: BlockListData, title?: string, design?: De
     case 'stripe': return renderStripe(data, title, d);
     case 'zigzag': return renderZigzag(data, title, d);
     case 'timeline': return renderTimeline(data, title, d);
+    case 'simple': return renderSimple(data, title, d);
+    case 'inline': return renderInline(data, title, d);
     default:
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
@@ -904,6 +906,107 @@ function renderZigzag(data: BlockListData, title: string | undefined, d: DesignP
       drawLabelBlock(svg, d, item.label, item.description, centerX - 36, y + 20, sideW, 'end');
     } else {
       drawLabelBlock(svg, d, item.label, item.description, centerX + 36, y + 20, sideW, 'start');
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== SIMPLE (style variant) ==========
+// Plain bullet list — no boxes, no icons, text only
+
+function renderSimple(data: BlockListData, title: string | undefined, d: DesignPreset): string {
+  const pad = 36;
+  const titleH = title ? 44 : 0;
+  const count = data.items.length;
+  const rowH = 28;
+  const descRowH = 18;
+  const maxW = 480;
+  let totalH = 0;
+  for (const item of data.items) {
+    totalH += rowH + (item.description ? descRowH : 0);
+  }
+  const width = pad * 2 + maxW;
+  const height = pad * 2 + titleH + totalH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (simple)');
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  let y = pad + titleH + 16;
+
+  for (let i = 0; i < count; i++) {
+    const item = data.items[i]!;
+    const color = itemColor(d, i);
+
+    // Bullet dot
+    svg.circle(pad + 6, y, 3, { fill: color });
+
+    // Label
+    const lfit = fitText(item.label, maxW - 24, 1, d.labelSize);
+    svg.text(pad + 18, y + 4, lfit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': lfit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+    y += rowH;
+
+    // Description
+    if (item.description) {
+      const dfit = fitText(item.description, maxW - 32, 1, d.captionSize);
+      svg.text(pad + 18, y - 6, dfit.lines[0]!, {
+        'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+      });
+      y += descRowH;
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== INLINE (style variant) ==========
+// Horizontal inline list — items separated by dots/pipes
+
+function renderInline(data: BlockListData, title: string | undefined, d: DesignPreset): string {
+  const pad = 36;
+  const titleH = title ? 44 : 0;
+  const count = data.items.length;
+  const sepW = 24;
+
+  // Measure total width needed
+  let totalW = 0;
+  const labelWidths: number[] = [];
+  for (const item of data.items) {
+    const w = estimateWidth(item.label, d.labelSize);
+    labelWidths.push(w);
+    totalW += w;
+  }
+  totalW += (count - 1) * sepW;
+
+  const width = pad * 2 + Math.max(totalW + 20, 300);
+  const height = pad * 2 + titleH + 40;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (inline)');
+  svg.defs(defs);
+  drawBackground(svg, d, width, height);
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const y = pad + titleH + 24;
+  let x = pad + 10;
+
+  for (let i = 0; i < count; i++) {
+    const item = data.items[i]!;
+    const color = itemColor(d, i);
+
+    // Label
+    svg.text(x, y, item.label, {
+      'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+    x += labelWidths[i]! + 4;
+
+    // Separator (except last)
+    if (i < count - 1) {
+      svg.circle(x + sepW / 2 - 2, y - 4, 2, { fill: color, opacity: 0.5 });
+      x += sepW;
     }
   }
 
