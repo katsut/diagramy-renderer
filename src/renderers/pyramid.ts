@@ -24,7 +24,6 @@ function layerColor(d: DesignPreset, i: number): string {
 export function renderPyramid(data: PyramidData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
   if (style === 'horizontal') return renderHorizontalBars(data, title, d);
-  if (style === 'steps') return renderSteps(data, title, d);
   if (style === 'blocks') return renderBlocks(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
@@ -532,94 +531,36 @@ function renderHorizontalBars(data: PyramidData, title: string | undefined, d: D
     const ratio = count <= 1 ? 1 : i / (count - 1);
     const barW = minBarW + (maxBarW - minBarW) * ratio;
 
-    svg.rect(barX, y, barW, barH, {
-      fill: `url(#py${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius, ...d.cardAttrs(),
-    });
+    if (d.id === 'neon') {
+      // Neon: dark fill + neon outline stroke + glow
+      svg.rect(barX, y, barW, barH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
+        rx: d.borderRadius > 8 ? 6 : d.borderRadius,
+      });
+      svg.rect(barX, y, barW, barH, {
+        fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3,
+        rx: d.borderRadius > 8 ? 6 : d.borderRadius, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(barX, y, barW, barH, {
+        fill: `url(#py${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius, ...d.cardAttrs(),
+      });
+    }
 
     // Label to the left
     const fit = fitText(layer.label, labelW - 8, 1, d.labelSize);
     svg.text(pad + labelW, y + barH / 2 + 4, fit.lines[0]!, {
-      'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+      'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': 700,
+      fill: d.id === 'neon' ? color : d.text,
     });
 
     // Description inside bar
     if (layer.description) {
       const dfit = fitText(layer.description, barW - 16, 1, d.captionSize);
       svg.text(barX + 10, y + barH / 2 + 4, dfit.lines[0]!, {
-        'text-anchor': 'start', 'font-size': dfit.fontSize, fill: 'white', opacity: 0.9,
+        'text-anchor': 'start', 'font-size': dfit.fontSize,
+        fill: d.id === 'neon' ? color : 'white', opacity: 0.9,
       });
-    }
-  }
-
-  return svg.build();
-}
-
-// ========== STEPS ==========
-// Step pyramid: rectangular steps stacked, getting narrower at top (staircase view)
-
-function renderSteps(data: PyramidData, title: string | undefined, d: DesignPreset): string {
-  const pad = 48;
-  const titleH = title ? 44 : 0;
-  const count = data.layers.length;
-  const stepH = 52;
-  const gap = 0;
-  const maxW = 460;
-  const minW = 120;
-  const descW = 160;
-  const pyramidH = count * (stepH + gap);
-  const width = pad * 2 + maxW + (data.layers.some(l => l.description) ? descW + 20 : 0);
-  const height = pad * 2 + titleH + pyramidH;
-
-  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Pyramid (steps)',
-    buildColorGradients(d, count, 'py'));
-  svg.defs(defs);
-  drawBackground(svg, d, width, height);
-  if (title) drawTitle(svg, d, title, width, pad);
-
-  const startY = pad + titleH;
-
-  for (let i = 0; i < count; i++) {
-    const layer = data.layers[i]!;
-    const color = layerColor(d, i);
-    const y = startY + i * (stepH + gap);
-    // Top layer (i=0) is narrowest, bottom is widest — left-aligned for staircase effect
-    const ratio = count <= 1 ? 1 : i / (count - 1);
-    const w = minW + (maxW - minW) * ratio;
-
-    // Step shadow
-    svg.rect(pad + 2, y + 2, w, stepH, {
-      fill: '#000', opacity: 0.06, rx: d.borderRadius,
-    });
-    // Step rectangle
-    svg.rect(pad, y, w, stepH, {
-      fill: `url(#py${i})`, rx: d.borderRadius, ...d.cardAttrs(),
-    });
-
-    // Step number
-    svg.text(pad + 20, y + stepH / 2 + 5, `${i + 1}`, {
-      'text-anchor': 'middle', 'font-size': 16, 'font-weight': 700, fill: 'rgba(255,255,255,0.6)',
-    });
-
-    // Label
-    const fit = fitText(layer.label, w - 50, 1, d.labelSize);
-    svg.text(pad + 40, y + stepH / 2 - (layer.description ? 2 : 0) + 4, fit.lines[0]!, {
-      'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': 700, fill: '#FFFFFF',
-    });
-
-    // Description inline or on right
-    if (layer.description) {
-      if (w > 260) {
-        const dfit = fitText(layer.description, w - 60, 1, d.captionSize);
-        svg.text(pad + 40, y + stepH / 2 + 16, dfit.lines[0]!, {
-          'text-anchor': 'start', 'font-size': dfit.fontSize, fill: 'rgba(255,255,255,0.8)',
-        });
-      } else {
-        const descX = pad + maxW + 20;
-        const dfit = fitText(layer.description, descW, 1, d.captionSize);
-        svg.text(descX, y + stepH / 2 + 4, dfit.lines[0]!, {
-          'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
-        });
-      }
     }
   }
 

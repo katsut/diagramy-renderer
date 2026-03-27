@@ -131,7 +131,7 @@ const BOLD: DesignPreset = {
   primary: '#FF3366',
   bg: '#FFFDF7',           // warm off-white for POP art warmth
   surface: '#FFFFFF',
-  text: '#111111',
+  text: '#1A1A2E',
   textSecondary: '#444444',
   border: '#111111',
   colors: ['#FF3366', '#3366FF', '#33CC66', '#FF9933', '#9933FF', '#FF6633', '#33CCCC', '#CC33FF', '#66CC33', '#3399FF'],
@@ -288,7 +288,7 @@ function hashRand(seed: number, offset: number): number {
 
 // Returns a path 'd' with slight random offsets to simulate hand-drawn lines
 export function jitterLine(x1: number, y1: number, x2: number, y2: number, seed = 0): string {
-  const j = 2.5;
+  const j = 3.8;
   const r1 = hashRand(seed, 0) * j;
   const r2 = hashRand(seed, 1) * j;
   const r3 = hashRand(seed, 2) * j * 0.6;
@@ -303,7 +303,7 @@ export function jitterLine(x1: number, y1: number, x2: number, y2: number, seed 
 }
 
 export function jitterRect(x: number, y: number, w: number, h: number, seed = 0): string {
-  const j = 2.8;
+  const j = 4.2;
   const r = (i: number) => hashRand(seed, i) * j;
   // Each edge is a wobbly cubic bezier, corners don't perfectly meet
   const tl = { x: x + r(0), y: y + r(1) };

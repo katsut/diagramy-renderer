@@ -445,12 +445,10 @@ function renderGrid(data: BlockListData, title: string | undefined, d: DesignPre
   const count = data.items.length;
   const cols = count <= 2 ? 2 : count <= 4 ? 2 : count <= 6 ? 3 : count <= 9 ? 3 : 4;
   const rows = Math.ceil(count / cols);
-  const cardW = 200;
-  const cardH = 160;
-  const gapX = 20;
-  const gapY = 20;
-  const totalW = cols * cardW + (cols - 1) * gapX;
-  const totalH = rows * cardH + (rows - 1) * gapY;
+  const cellW = 200;
+  const cellH = 160;
+  const totalW = cols * cellW;
+  const totalH = rows * cellH;
   const width = pad * 2 + totalW;
   const height = pad * 2 + titleH + totalH;
 
@@ -461,17 +459,42 @@ function renderGrid(data: BlockListData, title: string | undefined, d: DesignPre
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
+  const tableX = pad;
+  const tableY = contentTop;
 
+  // Outer border
+  svg.rect(tableX, tableY, totalW, totalH, {
+    fill: d.surface,
+    stroke: d.borderWidth > 0 ? d.border : d.text,
+    'stroke-width': d.borderWidth || 1,
+    rx: Math.min(d.borderRadius, 6),
+  });
+
+  // Vertical divider lines
+  for (let c = 1; c < cols; c++) {
+    const lx = tableX + c * cellW;
+    svg.line(lx, tableY, lx, tableY + totalH, {
+      stroke: d.border || d.textSecondary, 'stroke-width': 1, opacity: 0.5,
+    });
+  }
+
+  // Horizontal divider lines
+  for (let r = 1; r < rows; r++) {
+    const ly = tableY + r * cellH;
+    svg.line(tableX, ly, tableX + totalW, ly, {
+      stroke: d.border || d.textSecondary, 'stroke-width': 1, opacity: 0.5,
+    });
+  }
+
+  // Cell content (icon + label + description)
   for (let i = 0; i < count; i++) {
     const item = data.items[i]!;
-    const color = itemColor(d, i);
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const cx = pad + col * (cardW + gapX) + cardW / 2;
-    const cy = contentTop + row * (cardH + gapY);
+    const cx = tableX + col * cellW + cellW / 2;
+    const cy = contentTop + row * cellH;
 
-    drawPresetCard(svg, d, cx - cardW / 2, cy, cardW, cardH, color);
-    drawLabelBlock(svg, d, item.label, item.description, cx, cy + cardH / 2 - 8, cardW - 28);
+    drawLabelBlock(svg, d, item.label, item.description, cx, cy + cellH / 2 - 8, cellW - 28);
   }
 
   return svg.build();
@@ -487,13 +510,12 @@ function renderPillars(data: BlockListData, title: string | undefined, d: Design
   const pillarW = 140;
   const pillarH = 220;
   const gap = 20;
-  const baseH = 44;
   const iconR = 22;
   const totalPillarsW = count * pillarW + (count - 1) * gap;
   const baseOverhang = 24;
   const baseW = totalPillarsW + baseOverhang * 2;
   const width = pad * 2 + baseW;
-  const height = pad * 2 + titleH + pillarH + baseH + 8;
+  const height = pad * 2 + titleH + pillarH;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (pillars)',
     buildColorGradients(d, count, 'bg'));
@@ -503,18 +525,6 @@ function renderPillars(data: BlockListData, title: string | undefined, d: Design
 
   const contentTop = pad + titleH;
   const pillarsLeft = pad + baseOverhang;
-  const baseTop = contentTop + pillarH + 8;
-
-  // Foundation bar
-  svg.rect(pad, baseTop, baseW, baseH, {
-    fill: d.primary, rx: d.borderRadius, opacity: 0.9,
-  });
-  // Foundation label (title or generic)
-  const baseLabel = title || 'Foundation';
-  const baseFit = fitText(baseLabel, baseW - 32, 1, 14);
-  svg.text(pad + baseW / 2, baseTop + baseH / 2 + 5, baseFit.lines[0]!, {
-    'text-anchor': 'middle', 'font-size': baseFit.fontSize, 'font-weight': 700, fill: '#FFFFFF',
-  });
 
   // Pillars
   for (let i = 0; i < count; i++) {

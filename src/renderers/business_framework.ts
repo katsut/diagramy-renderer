@@ -267,7 +267,8 @@ function drawBmcCell(
   x: number, y: number, w: number, h: number, key: string, colorIdx: number,
 ) {
   const block = bm.get(key);
-  const label = block?.label ?? defaults[key] ?? key;
+  if (!block) return;
+  const label = block.label ?? defaults[key] ?? key;
   const items = block?.items ?? [];
   const color = blockColor(d, colorIdx);
 
