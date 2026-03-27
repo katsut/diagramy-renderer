@@ -3,7 +3,7 @@
 import type { SvgBuilder } from '../shared/svg.js';
 import { getDesign, jitterRect, pixelBorder, type DesignPreset } from '../shared/design.js';
 import { fitText } from '../shared/text.js';
-import { icon } from '../shared/icons.js';
+import { icon, inferIcon } from '../shared/icons.js';
 import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   buildColorGradients, drawSketchBackground, drawPixelBackground,
@@ -20,10 +20,9 @@ interface BlockListData {
   items: BlockItem[];
 }
 
-const ITEM_ICONS = ['lightbulb', 'target', 'zap', 'users', 'trending-up', 'settings', 'eye', 'link'];
-
-function itemIcon(i: number): string {
-  return ITEM_ICONS[i % ITEM_ICONS.length]!;
+function itemIcon(label?: string, description?: string): string {
+  if (label) return inferIcon(label, description);
+  return 'lightbulb';
 }
 
 function itemColor(d: DesignPreset, i: number): string {
@@ -86,7 +85,7 @@ function renderClean(data: BlockListData, title: string | undefined, d: DesignPr
     const cy = contentTop + row * (cardH + gap);
 
     drawCleanCard(svg, d, cx, cy, colW, cardH, color, i);
-    drawCleanIcon(svg, d, cx, cy + 48, color, i);
+    drawCleanIcon(svg, d, cx, cy + 48, color, i, item.label, item.description);
     drawLabelBlock(svg, d, item.label, item.description, cx, cy + 88, colW - 24);
   }
 
@@ -97,8 +96,8 @@ function drawCleanCard(svg: SvgBuilder, d: DesignPreset, cx: number, top: number
   drawPresetCard(svg, d, cx - w / 2, top, w, h, color);
 }
 
-function drawCleanIcon(svg: SvgBuilder, d: DesignPreset, cx: number, iconY: number, color: string, i: number): void {
-  drawIconNode(svg, d, cx, iconY, 22, color, `bg${i}`, itemIcon(i), 18);
+function drawCleanIcon(svg: SvgBuilder, d: DesignPreset, cx: number, iconY: number, color: string, i: number, label?: string, desc?: string): void {
+  drawIconNode(svg, d, cx, iconY, 22, color, `bg${i}`, itemIcon(label, desc), 18);
 }
 
 // ========== BOLD ==========
@@ -236,7 +235,7 @@ function renderGlass(data: BlockListData, title: string | undefined, d: DesignPr
     // Icon with glow
     svg.circle(cx, cy + 56, 28, { fill: color, opacity: 0.1 });
     svg.circle(cx, cy + 56, 20, { fill: color, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1 });
-    svg.raw(icon(itemIcon(i), cx, cy + 56, 18, '#FFFFFF'));
+    svg.raw(icon(itemIcon(item.label, item.description), cx, cy + 56, 18, '#FFFFFF'));
     drawLabelBlock(svg, d, item.label, item.description, cx, cy + 100, colW - 32);
   }
 
@@ -284,7 +283,7 @@ function renderNeon(data: BlockListData, title: string | undefined, d: DesignPre
     });
     // Neon icon outline
     svg.circle(cx, cy + 52, 22, { fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)' });
-    svg.raw(icon(itemIcon(i), cx, cy + 52, 18, color));
+    svg.raw(icon(itemIcon(item.label, item.description), cx, cy + 52, 18, color));
     // Number
     svg.text(cx + colW / 2 - 18, cy + 18, `0${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 10, fill: color, opacity: 0.5, 'letter-spacing': '1',
@@ -538,7 +537,7 @@ function renderPillars(data: BlockListData, title: string | undefined, d: Design
     const iconY = py + 36;
     svg.circle(cx, iconY, iconR, { fill: color, opacity: 0.15 });
     svg.circle(cx, iconY, iconR - 4, { fill: color });
-    svg.raw(icon(itemIcon(i), cx, iconY, 16, '#FFFFFF'));
+    svg.raw(icon(itemIcon(item.label, item.description), cx, iconY, 16, '#FFFFFF'));
 
     // Label in middle
     drawLabelBlock(svg, d, item.label, item.description, cx, py + 80, pillarW - 24);
@@ -695,7 +694,7 @@ function renderCards(data: BlockListData, title: string | undefined, d: DesignPr
       svg.circle(iconCx, iconCy, 24, { fill: color, opacity: 0.15 });
       svg.circle(iconCx, iconCy, 18, { fill: color });
     }
-    svg.raw(icon(itemIcon(i), iconCx, iconCy, 16, isSketch ? d.border : '#FFFFFF'));
+    svg.raw(icon(itemIcon(item.label, item.description), iconCx, iconCy, 16, isSketch ? d.border : '#FFFFFF'));
 
     // Label + description to the right of icon
     drawLabelBlock(svg, d, item.label, item.description, x + 76, y + cardH / 2 - 6, cardW - 96, 'start');
@@ -759,7 +758,7 @@ function renderIcons(data: BlockListData, title: string | undefined, d: DesignPr
       svg.circle(cx, y + 38, 30, { fill: color, opacity: 0.15 });
       svg.circle(cx, y + 38, 24, { fill: color });
     }
-    svg.raw(icon(itemIcon(i), cx, y + 38, 20, isSketch ? d.border : '#FFFFFF'));
+    svg.raw(icon(itemIcon(item.label, item.description), cx, y + 38, 20, isSketch ? d.border : '#FFFFFF'));
 
     // Short label below
     const fit = fitText(item.label, cellW - 12, 2, d.labelSize - 1);
@@ -830,7 +829,7 @@ function renderStripe(data: BlockListData, title: string | undefined, d: DesignP
     }
 
     // Icon
-    svg.raw(icon(itemIcon(i), pad + 28, y + barH / 2, 16, isSketch ? d.border : color));
+    svg.raw(icon(itemIcon(item.label, item.description), pad + 28, y + barH / 2, 16, isSketch ? d.border : color));
 
     // Label + description
     drawLabelBlock(svg, d, item.label, item.description, pad + 52, y + (item.description ? barH / 2 - 4 : barH / 2 + 5), barW - 72, 'start');
@@ -898,7 +897,7 @@ function renderZigzag(data: BlockListData, title: string | undefined, d: DesignP
     } else {
       svg.circle(centerX, y + 24, 16, { fill: color });
     }
-    svg.raw(icon(itemIcon(i), centerX, y + 24, 14, isSketch ? d.border : '#FFFFFF'));
+    svg.raw(icon(itemIcon(item.label, item.description), centerX, y + 24, 14, isSketch ? d.border : '#FFFFFF'));
 
     // Label + description on alternating sides
     if (isLeft) {
