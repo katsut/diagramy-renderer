@@ -22,7 +22,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', renderer: 'js' });
 });
 
-const port = parseInt(process.env['RENDERER_PORT'] ?? '4729', 10);
-app.listen(port, () => {
+const port = parseInt(process.env['PORT'] ?? process.env['RENDERER_PORT'] ?? '4729', 10);
+app.listen(port, '0.0.0.0', () => {
   console.log(`JS renderer listening on :${port}`);
 });
