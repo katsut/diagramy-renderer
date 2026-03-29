@@ -87,9 +87,11 @@ function renderClean(data: TimelineData, title: string | undefined, d: DesignPre
     const cx = lay.cx(i);
     const color = eventColor(d, i);
 
+    svg.beginItem(`events[${i}]`);
     drawCleanDot(svg, d, cx, lay.axisY, color, i);
     drawCleanTime(svg, d, cx, lay.axisY - 28, ev.time);
     drawCleanCard(svg, d, cx, lay.axisY + 20, lay.stepW - 32, lay.cardH, color, ev, i);
+    svg.endItem();
   }
 
   return svg.build();
@@ -113,10 +115,10 @@ function drawCleanTime(svg: SvgBuilder, d: DesignPreset, cx: number, y: number, 
   }
 }
 
-function drawCleanCard(svg: SvgBuilder, d: DesignPreset, cx: number, top: number, w: number, h: number, color: string, ev: TimelineEvent, _i: number): void {
+function drawCleanCard(svg: SvgBuilder, d: DesignPreset, cx: number, top: number, w: number, h: number, color: string, ev: TimelineEvent, i: number): void {
   const x = cx - w / 2;
   drawPresetCard(svg, d, x, top, w, h, color);
-  drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 24);
+  drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 24, 'middle', `events[${i}]`);
 }
 
 // ========== SKETCH ==========

@@ -80,18 +80,16 @@ function renderClean(data: VennData, title: string | undefined, d: DesignPreset)
 
   const positions = circleLayout(count, cx, cy, circR, overlap);
 
-  // Circles with transparency
+  // Circles with transparency + labels
   for (let i = 0; i < count; i++) {
     const pos = positions[i]!;
     const color = setColor(d, i);
+    const set = data.sets[i]!;
+
+    svg.beginItem(`sets[${i}]`);
     svg.circle(pos.x, pos.y, circR, { fill: color, opacity: 0.15 });
     svg.circle(pos.x, pos.y, circR, { fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.5 });
-  }
 
-  // Set labels
-  for (let i = 0; i < count; i++) {
-    const pos = positions[i]!;
-    const set = data.sets[i]!;
     // Push label away from center
     const dx = pos.x - cx;
     const dy = pos.y - cy;
@@ -104,6 +102,7 @@ function renderClean(data: VennData, title: string | undefined, d: DesignPreset)
     for (const line of fit.lines) {
       svg.text(labelX, ty, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+        'data-field': `sets[${i}].label`,
       });
       ty += Math.round(fit.fontSize * 1.4);
     }
@@ -115,6 +114,7 @@ function renderClean(data: VennData, title: string | undefined, d: DesignPreset)
       });
       ty += Math.round(d.captionSize * 1.3);
     }
+    svg.endItem();
   }
 
   // Intersection label

@@ -179,8 +179,10 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
         const color = itemColor(d, i);
         const x = pad + i * (cardW + gap);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         drawPresetCard(svg, d, x, contentTop, cardW, cardH, color);
         drawKpiContent(svg, d, card, cx, contentTop, cardW, color);
+        svg.endItem();
       }
       break;
     }

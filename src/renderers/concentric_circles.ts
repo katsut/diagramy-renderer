@@ -103,12 +103,13 @@ function renderClean(data: ConcentricCirclesData, title: string | undefined, d: 
 
   // Draw rings from outermost to innermost
   for (let i = count - 1; i >= 0; i--) {
-    const ring = data.rings[i]!;
     const r = 40 + (count - 1 - i) * 36 + 36;
     const color = ringColor(d, i);
 
+    svg.beginItem(`rings[${i}]`);
     svg.circle(cx, cy, r, { fill: color, opacity: 0.08 });
     svg.circle(cx, cy, r, { fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3 });
+    svg.endItem();
   }
 
   drawRingLabels(svg, d, data, cx, cy, 40, 36);

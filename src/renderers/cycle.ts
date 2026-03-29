@@ -110,6 +110,7 @@ function renderClean(data: CycleData, title: string | undefined, d: DesignPreset
     const { x, y } = positions[i]!;
     const color = stepColor(d, i);
 
+    svg.beginItem(`steps[${i}]`);
     drawIconNode(svg, d, x, y, nodeR, color, `cg${i}`, '', 0);
     svg.text(x, y + 6, `${i + 1}`, { 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 800, fill: 'white' });
 
@@ -118,7 +119,8 @@ function renderClean(data: CycleData, title: string | undefined, d: DesignPreset
     const labelDist = nodeR + 20;
     const lx = x + labelDist * Math.cos(angle);
     const ly = y + labelDist * Math.sin(angle);
-    drawLabelBlock(svg, d, step.label, step.description, lx, ly, 120);
+    drawLabelBlock(svg, d, step.label, step.description, lx, ly, 120, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();

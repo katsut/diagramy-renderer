@@ -129,6 +129,7 @@ function renderClean(data: SankeyData, title: string | undefined, d: DesignPrese
     const x = pad + n.col * (colW + 80);
     const y = baseY + n.y;
     const color = flowColor(d, i);
+    svg.beginItem(`nodes[${i}]`);
     svg.rect(x, y, colW, n.h, {
       fill: color, rx: d.borderRadius > 8 ? 6 : d.borderRadius, opacity: 0.85,
       ...d.cardAttrs(),
@@ -136,7 +137,9 @@ function renderClean(data: SankeyData, title: string | undefined, d: DesignPrese
     const fit = fitText(n.label, colW - 12, 1, d.labelSize);
     svg.text(x + colW / 2, y + n.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: 'white',
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();

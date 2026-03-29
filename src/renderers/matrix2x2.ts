@@ -104,6 +104,7 @@ function renderClean(data: Matrix2x2Data, title: string | undefined, d: DesignPr
     const color = itemColor(d, i);
     const { px, py } = plotCoords(item, plotLeft, plotTop, plotW, plotH);
 
+    svg.beginItem(`items[${i}]`);
     // Glow ring
     svg.circle(px, py, 18, { fill: color, opacity: 0.1 });
     // Gradient circle
@@ -112,7 +113,9 @@ function renderClean(data: Matrix2x2Data, title: string | undefined, d: DesignPr
     const fit = fitText(item.name, 80, 1, 10);
     svg.text(px, py + 22, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
   }
 
   // Legend

@@ -84,14 +84,17 @@ function drawActorBoxes(
   for (let i = 0; i < data.actors.length; i++) {
     const cx = actorXs[i]!;
     const x = cx - actorW / 2;
+    svg.beginItem(`actors[${i}]`);
     svg.rect(x, y, actorW, actorH, boxAttrs(i));
     const fit = fitText(data.actors[i]!, actorW - 12, actorH, d.labelSize);
     svg.text(cx, y + actorH / 2 + fit.fontSize * 0.35, fit.lines[0] ?? '', {
       'text-anchor': 'middle',
       'font-size': fit.fontSize,
       'font-weight': d.fontWeight,
+      'data-field': `actors[${i}]`,
       ...textAttrs(),
     });
+    svg.endItem();
   }
 }
 
@@ -130,6 +133,8 @@ function drawMessages(
     const toIdx = Math.min(msg.to, data.actors.length - 1);
     const y = startY + mi * msgGap + msgGap / 2;
     const color = arrowColor(mi);
+
+    svg.beginItem(`messages[${mi}]`);
 
     if (fromIdx === toIdx) {
       // Self-message: loop on the right side
@@ -171,6 +176,8 @@ function drawMessages(
         fill: labelColor,
       });
     }
+
+    svg.endItem();
   }
 }
 

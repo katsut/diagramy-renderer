@@ -103,6 +103,8 @@ function renderClean(data: RadarChartData, title: string | undefined, d: DesignP
     const item = data.items[i]!;
     const color = itemColor(d, i);
     const pts = polygonPoints(chartCx, chartCy, r, item.values, maxVals);
+
+    svg.beginItem(`items[${i}]`);
     svg.polygon(pts, { fill: color, opacity: 0.15, stroke: color, 'stroke-width': 2 });
 
     // Data points
@@ -111,6 +113,7 @@ function renderClean(data: RadarChartData, title: string | undefined, d: DesignP
       const pt = axisPoint(chartCx, chartCy, r * Math.min(ratio, 1), ai, n);
       svg.circle(pt.x, pt.y, 4, { fill: color, stroke: d.bg, 'stroke-width': 2 });
     });
+    svg.endItem();
   }
 
   // Legend

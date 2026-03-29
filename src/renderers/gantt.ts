@@ -105,10 +105,13 @@ function renderClean(data: GanttData, title: string | undefined, d: DesignPreset
     const color = taskColor(d, i);
     const y = topY + axisH + i * (rowH + rowGap);
 
+    svg.beginItem(`tasks[${i}]`);
+
     // Label
     const fit = fitText(task.label, labelW - 16, 1, d.labelSize);
     svg.text(pad + labelW - 8, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `tasks[${i}].label`,
     });
 
     // Bar
@@ -119,6 +122,8 @@ function renderClean(data: GanttData, title: string | undefined, d: DesignPreset
       fill: `url(#gt${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius,
       ...d.cardAttrs(),
     });
+
+    svg.endItem();
   }
 
   return svg.build();

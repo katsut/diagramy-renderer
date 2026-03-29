@@ -186,6 +186,8 @@ function renderClean(data: CompositeFlowData, title: string | undefined, d: Desi
     const ny = contentTop + i * (nodeH + vGap);
     const isTerminal = node.node_type === 'start' || node.node_type === 'end';
 
+    svg.beginItem(`nodes[${i}]`);
+
     if (isTerminal) {
       svg.rect(nodeLeft, ny, nodeW, nodeH, {
         fill: `url(#cf${i})`, stroke: 'white', 'stroke-width': d.borderWidth,
@@ -195,12 +197,15 @@ function renderClean(data: CompositeFlowData, title: string | undefined, d: Desi
       const fit = fitText(node.label, nodeW - 24, 1, d.labelSize);
       svg.text(cx, ny + nodeH / 2 + 5, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+        'data-field': `nodes[${i}].label`,
       });
     } else {
       drawPresetCard(svg, d, nodeLeft, ny, nodeW, nodeH, color);
       drawLabelBlock(svg, d, node.label, node.description, cx,
-        ny + (node.description ? nodeH / 2 - 6 : nodeH / 2 + 2), nodeW - 24);
+        ny + (node.description ? nodeH / 2 - 6 : nodeH / 2 + 2), nodeW - 24, 'middle', `nodes[${i}]`);
     }
+
+    svg.endItem();
   }
 
   return svg.build();

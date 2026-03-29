@@ -92,6 +92,8 @@ function renderClean(data: QuadrantData, title: string | undefined, d: DesignPre
     const qx = gridLeft + pos.col * (cellW + gap);
     const qy = contentTop + pos.row * (cellH + gap);
 
+    svg.beginItem(`labels[${qi}]`);
+
     // Cell card
     drawPresetCard(svg, d, qx, qy, cellW, cellH, color);
 
@@ -99,10 +101,13 @@ function renderClean(data: QuadrantData, title: string | undefined, d: DesignPre
     const labelFit = fitText(data.labels[qi]!, cellW - 24, 1, d.labelSize);
     svg.text(qx + 16, qy + 28, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `labels[${qi}]`,
     });
 
     // Items
     quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 50, cellW - 16, 12, d.text, color);
+
+    svg.endItem();
   }
 
   return svg.build();

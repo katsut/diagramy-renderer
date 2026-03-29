@@ -69,6 +69,8 @@ function renderClean(data: SwimlaneData, title: string | undefined, d: DesignPre
     const color = laneColor(d, li);
     const y = pad + titleH + li * (laneH + laneGap);
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Lane background
     svg.rect(pad, y, contentW, laneH, {
       fill: color, opacity: 0.04, rx: d.borderRadius > 8 ? 8 : d.borderRadius,
@@ -82,6 +84,7 @@ function renderClean(data: SwimlaneData, title: string | undefined, d: DesignPre
     const aFit = fitText(lane.actor, actorW - 16, 2, d.labelSize);
     svg.text(pad + actorW / 2, y + laneH / 2 + 4, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: 'white',
+      'data-field': `lanes[${li}].label`,
     });
 
     // Separator line
@@ -108,6 +111,8 @@ function renderClean(data: SwimlaneData, title: string | undefined, d: DesignPre
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();

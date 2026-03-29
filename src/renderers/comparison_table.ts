@@ -311,6 +311,8 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
     const rh = layout.rowHeights[r]!;
     const isOdd = r % 2 === 1;
 
+    svg.beginItem(`rows[${r}]`);
+
     // Preset-specific alternating row backgrounds
     if (t.id === 'neon') {
       if (isOdd) {
@@ -409,6 +411,7 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
       }
     }
 
+    svg.endItem();
     ry += rh;
   }
 

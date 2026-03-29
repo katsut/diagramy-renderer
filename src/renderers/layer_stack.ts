@@ -61,6 +61,8 @@ function renderClean(data: LayerStackData, title: string | undefined, d: DesignP
     const color = layerColor(d, i);
     const y = contentTop + i * (layerH + gap);
 
+    svg.beginItem(`layers[${i}]`);
+
     svg.rect(pad, y, layerW, layerH, {
       fill: d.surface,
       stroke: d.borderWidth > 0 ? d.border : 'none',
@@ -72,6 +74,8 @@ function renderClean(data: LayerStackData, title: string | undefined, d: DesignP
     svg.rect(pad, y + 4, 6, layerH - 8, { fill: color, rx: 3 });
 
     drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH);
+
+    svg.endItem();
   }
 
   return svg.build();

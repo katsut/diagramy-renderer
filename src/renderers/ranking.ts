@@ -70,6 +70,8 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.6;
     const barW = barMaxW * barRatio;
 
+    svg.beginItem(`items[${i}]`);
+
     // Rank badge
     svg.circle(pad + rankW / 2, y + rowH / 2, rankW / 2, {
       fill: `url(#rk${i})`, ...d.cardAttrs(),
@@ -83,6 +85,7 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
     const fit = fitText(item.label, labelW, 1, d.labelSize);
     svg.text(lx, y + rowH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Value bar
@@ -109,6 +112,8 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
         'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();

@@ -75,6 +75,8 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
     const nextW = i < count - 1 ? topW + (baseW - topW) * nextRatio : w;
     const nextX = pyramidX + (baseW - nextW) / 2;
 
+    svg.beginItem(`layers[${i}]`);
+
     svg.path(`M ${x} ${y} L ${x + w} ${y} L ${nextX + nextW} ${y + layerH} L ${nextX} ${y + layerH} Z`, {
       fill: `url(#py${i})`, opacity: 0.85,
     });
@@ -82,6 +84,7 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
     const fit = fitText(layer.label, w - 20, 1, d.labelSize);
     svg.text(pyramidX + baseW / 2, y + layerH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: 'white',
+      'data-field': `layers[${i}].label`,
     });
 
     // Description on the right
@@ -99,6 +102,8 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
         dy += Math.round(dfit.fontSize * 1.3);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();

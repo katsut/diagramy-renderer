@@ -126,12 +126,13 @@ export function drawTitle(svg: SvgBuilder, d: DesignPreset, title: string, width
     const fit = fitText(title, bannerW - 24, 1, d.titleSize);
     svg.text(cx, boldTy - 2, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
+      'data-field': 'title',
     });
   } else if (d.id === 'neon') {
-    // Glowing neon title
     svg.text(cx, ty, title, {
       'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 400,
       fill: d.primary, 'letter-spacing': '2', filter: 'url(#neon-glow)',
+      'data-field': 'title',
     });
     // Underline with dual-color glow
     const textW = estimateWidth(title, d.titleSize);
@@ -142,10 +143,9 @@ export function drawTitle(svg: SvgBuilder, d: DesignPreset, title: string, width
       stroke: '#00FFFF', 'stroke-width': 0.5, opacity: 0.3,
     });
   } else if (d.id === 'glass') {
-    // Light weight title with letter spacing
     svg.text(cx, ty, title, {
       'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 500,
-      fill: d.text, 'letter-spacing': '1',
+      fill: d.text, 'letter-spacing': '1', 'data-field': 'title',
     });
     // Subtle underline glow
     const textW = estimateWidth(title, d.titleSize);
@@ -160,11 +160,12 @@ export function drawTitle(svg: SvgBuilder, d: DesignPreset, title: string, width
     });
     svg.text(cx, ty, title, {
       'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 600, fill: d.text,
+      'data-field': 'title',
     });
   } else if (d.id === 'minimal') {
-    // Clean flat title with colored accent line
     svg.text(cx, ty, title, {
       'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 700, fill: d.text,
+      'data-field': 'title',
     });
     svg.rect(cx - 20, ty + 8, 40, 3, { fill: d.primary, rx: 1.5 });
   } else {
@@ -175,6 +176,7 @@ export function drawTitle(svg: SvgBuilder, d: DesignPreset, title: string, width
       fill: d.text,
     };
     if (d.id === 'sketch') attrs['text-decoration'] = 'underline';
+    attrs['data-field'] = 'title';
     svg.text(cx, ty, title, attrs);
   }
 }
@@ -190,6 +192,7 @@ export function drawLabelBlock(
   startY: number,
   maxWidth: number,
   anchor = 'middle',
+  dataPath?: string,
 ): number {
   const fit = fitText(label, maxWidth, 2, d.labelSize);
   const lh = Math.round(fit.fontSize * 1.6);
@@ -201,8 +204,8 @@ export function drawLabelBlock(
     'font-weight': d.fontWeight,
     fill: d.text,
   };
-  // Glass preset: add subtle letter spacing
   if (d.id === 'glass') labelAttrs['letter-spacing'] = '0.3';
+  if (dataPath) labelAttrs['data-field'] = `${dataPath}.label`;
 
   for (const line of fit.lines) {
     svg.text(cx, y, line, labelAttrs);
@@ -213,12 +216,14 @@ export function drawLabelBlock(
     const dfit = fitText(description, maxWidth, 2, d.captionSize);
     const dlh = Math.round(dfit.fontSize * 1.3);
     y += 3;
+    const descAttrs: Record<string, string | number> = {
+      'text-anchor': anchor,
+      'font-size': dfit.fontSize,
+      fill: d.textSecondary,
+    };
+    if (dataPath) descAttrs['data-field'] = `${dataPath}.description`;
     for (const line of dfit.lines) {
-      svg.text(cx, y, line, {
-        'text-anchor': anchor,
-        'font-size': dfit.fontSize,
-        fill: d.textSecondary,
-      });
+      svg.text(cx, y, line, descAttrs);
       y += dlh;
     }
   }

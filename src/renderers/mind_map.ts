@@ -89,9 +89,11 @@ function renderClean(data: MindMapData, title: string | undefined, d: DesignPres
     const by = lay.cy + Math.sin(angle) * lay.branchR;
     const color = branchColor(d, i);
 
+    svg.beginItem(`branches[${i}]`);
     drawCleanConnection(svg, d, lay.cx, lay.cy, bx, by, color);
     drawCleanBranch(svg, d, bx, by, color, branch, i);
     drawCleanChildren(svg, d, bx, by, angle, color, branch, lay);
+    svg.endItem();
   }
 
   // Center node on top
@@ -123,7 +125,7 @@ function drawCleanCenter(svg: SvgBuilder, d: DesignPreset, cx: number, cy: numbe
 
 function drawCleanBranch(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, color: string, branch: MindMapBranch, i: number): void {
   drawIconNode(svg, d, bx, by, 22, color, `mg${i}`, branchIcon(i), 18);
-  drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120);
+  drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120, 'middle', `branches[${i}]`);
 }
 
 function drawCleanChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, angle: number, color: string, branch: MindMapBranch, lay: ReturnType<typeof computeLayout>): void {

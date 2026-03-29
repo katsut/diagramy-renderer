@@ -132,6 +132,7 @@ function drawCell(
   svg: any, d: DesignPreset, x: number, y: number, w: number, h: number,
   block: CanvasBlock, colorIdx: number,
 ) {
+  svg.beginItem(`blocks[${colorIdx}]`);
   const color = blockColor(d, colorIdx);
   const rx = Math.min(d.borderRadius, 8);
 
@@ -223,6 +224,7 @@ function drawCell(
   const labelFit = fitText(block.label, w - 16, 1, d.captionSize);
   svg.text(x + w / 2, y + 18, labelFit.lines[0] ?? block.label, {
     'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: labelFill,
+    'data-field': `blocks[${colorIdx}].label`,
   });
 
   // Items
@@ -236,6 +238,7 @@ function drawCell(
     });
     iy += 16;
   }
+  svg.endItem();
 }
 
 // ========== 2-column layout (Before/After, As-Is/To-Be) ==========

@@ -104,7 +104,7 @@ function drawAnnotation(svg: SvgBuilder, d: DesignPreset, annotX: number, y: num
   drawIconNode(svg, d, iconCx, iconCy, 14, color, `fg${i}`, stageIcon(i), 12);
 
   const textX = annotX + 52;
-  drawLabelBlock(svg, d, stage.label, stage.description, textX, y + (stage.description ? 20 : h / 2 - 2), annotW - 60, 'start');
+  drawLabelBlock(svg, d, stage.label, stage.description, textX, y + (stage.description ? 20 : h / 2 - 2), annotW - 60, 'start', `stages[${i}]`);
 }
 
 // ========== CLEAN ==========
@@ -136,9 +136,11 @@ function renderClean(data: FunnelData, title: string | undefined, d: DesignPrese
     const y = contentTop + i * stageH;
     const { topHalf } = funnelRatios(i, count);
 
+    svg.beginItem(`stages[${i}]`);
     drawTrapezoid(svg, funnelCx, y, stageH, funnelW, i, count, { fill: color, opacity: 0.85 });
     drawStageLabel(svg, d, funnelCx, y, stageH, stage, 'white', color);
     drawAnnotation(svg, d, pad + funnelW + gap, y, stageH, annotW, funnelCx + funnelW * topHalf - 10, color, i, stage);
+    svg.endItem();
   }
 
   // Bottom circle

@@ -93,12 +93,14 @@ function renderClean(data: PieChartData, title: string | undefined, d: DesignPre
     const seg = data.segments[i]!;
     const sweep = (seg.value / total) * 360;
 
+    svg.beginItem(`segments[${i}]`);
     if (sweep > 0.5) {
       svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
         fill: `url(#ps${i})`, stroke: d.bg, 'stroke-width': 2,
         ...d.cardAttrs(),
       });
     }
+    svg.endItem();
 
     angle += sweep;
   }

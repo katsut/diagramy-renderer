@@ -90,11 +90,13 @@ function renderClean(data: BlockListData, title: string | undefined, d: DesignPr
     const cx = pad + col * (colW + gap) + colW / 2;
     const cy = contentTop + row * (cardH + gap);
 
+    svg.beginItem(`items[${i}]`);
     drawCleanCard(svg, d, cx, cy, colW, cardH, color, i);
     const iconY = compact ? cy + 36 : cy + 48;
     const labelY = compact ? cy + 68 : cy + 88;
     drawCleanIcon(svg, d, cx, iconY, color, i, item.label, item.description);
-    drawLabelBlock(svg, d, item.label, compact ? undefined : item.description, cx, labelY, colW - 24);
+    drawLabelBlock(svg, d, item.label, compact ? undefined : item.description, cx, labelY, colW - 24, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();

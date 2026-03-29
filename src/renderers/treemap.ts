@@ -86,8 +86,10 @@ function renderClean(data: TreemapData, title: string | undefined, d: DesignPres
   const rects = squarify(data.items, pad, pad + titleH, chartW, chartH, 0);
   const gap = 3;
 
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
     const color = itemColor(d, r.colorIdx);
+    svg.beginItem(`items[${i}]`);
     svg.rect(r.x + gap, r.y + gap, Math.max(r.w - gap * 2, 1), Math.max(r.h - gap * 2, 1), {
       fill: color, opacity: 0.75, rx: d.borderRadius > 8 ? 6 : d.borderRadius,
       ...d.cardAttrs(),
@@ -98,10 +100,12 @@ function renderClean(data: TreemapData, title: string | undefined, d: DesignPres
       for (const line of fit.lines) {
         svg.text(r.x + r.w / 2, ty, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: 'white',
+          'data-field': `items[${i}].label`,
         });
         ty += Math.round(fit.fontSize * 1.4);
       }
     }
+    svg.endItem();
   }
 
   return svg.build();

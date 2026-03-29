@@ -107,6 +107,16 @@ export class SvgBuilder {
     return this;
   }
 
+  beginItem(path: string): this {
+    this.parts.push(`<g data-item="${escapeXml(path)}">`);
+    return this;
+  }
+
+  endItem(): this {
+    this.parts.push('</g>');
+    return this;
+  }
+
   polygon(points: string, attrs: Record<string, string | number> = {}): this {
     const a = Object.entries(attrs).map(([k, v]) => `${k}="${v}"`).join(' ');
     this.parts.push(`<polygon points="${points}" ${a}/>`);

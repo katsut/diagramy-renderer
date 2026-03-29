@@ -83,10 +83,13 @@ function renderClean(data: StackedBarData, title: string | undefined, d: DesignP
     const item = data.items[i]!;
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
 
+    svg.beginItem(`items[${i}]`);
+
     // Row label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Stacked segments
@@ -104,6 +107,8 @@ function renderClean(data: StackedBarData, title: string | undefined, d: DesignP
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   // Legend

@@ -89,10 +89,13 @@ function renderClean(data: BarChartData, title: string | undefined, d: DesignPre
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
     const barW = Math.max(4, (item.value / lay.maxVal) * lay.chartW);
 
+    svg.beginItem(`items[${i}]`);
+
     // Label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Bar with gradient
@@ -106,6 +109,8 @@ function renderClean(data: BarChartData, title: string | undefined, d: DesignPre
     svg.text(lay.chartX + barW + 6, y + lay.barH / 2 + 4, valText, {
       'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
     });
+
+    svg.endItem();
   }
 
   return svg.build();

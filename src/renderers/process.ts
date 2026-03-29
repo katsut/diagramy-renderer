@@ -56,8 +56,8 @@ export function renderProcess(data: ProcessData, title?: string, design?: Design
 
 // --- Shared: draw node label + description ---
 
-function drawNodeText(svg: SvgBuilder, d: DesignPreset, node: ProcessNode, cx: number, startY: number, maxW: number): number {
-  return drawLabelBlock(svg, d, node.label, node.description, cx, startY, maxW);
+function drawNodeText(svg: SvgBuilder, d: DesignPreset, node: ProcessNode, cx: number, startY: number, maxW: number, idx?: number): number {
+  return drawLabelBlock(svg, d, node.label, node.description, cx, startY, maxW, 'middle', idx != null ? `nodes[${idx}]` : undefined);
 }
 
 function stepIcon(i: number): string {
@@ -84,9 +84,11 @@ function renderClean(data: ProcessData, title: string | undefined, d: DesignPres
     const color = stepColor(d, i);
     const cx = lay.cx(i);
 
+    svg.beginItem(`nodes[${i}]`);
     drawCleanCard(svg, d, cx, lay.contentTop, lay.stepW, lay.stepH, color, i);
     drawCleanIcon(svg, d, cx, lay.contentTop + 48, color, i);
-    drawNodeText(svg, d, node, cx, lay.contentTop + 86, lay.stepW - 36);
+    drawNodeText(svg, d, node, cx, lay.contentTop + 86, lay.stepW - 36, i);
+    svg.endItem();
     drawCleanArrow(svg, d, cx, lay, i);
   }
 

@@ -85,6 +85,8 @@ function renderClean(data: RoadmapData, title: string | undefined, d: DesignPres
     const x = lay.pad + i * (lay.phaseW + lay.phaseGap);
     const cx = x + lay.phaseW / 2;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Phase card
     drawPresetCard(svg, d, x, lay.contentTop + 40, lay.phaseW, lay.laneH - 44, color);
 
@@ -98,6 +100,7 @@ function renderClean(data: RoadmapData, title: string | undefined, d: DesignPres
     const fit = fitText(phase.label, lay.phaseW - 24, 1, d.labelSize);
     svg.text(cx, lay.contentTop + 62, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `phases[${i}].label`,
     });
 
     // Items
@@ -109,6 +112,8 @@ function renderClean(data: RoadmapData, title: string | undefined, d: DesignPres
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();

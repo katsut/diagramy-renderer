@@ -142,6 +142,7 @@ function renderClean(data: NetworkGraphData, title: string | undefined, d: Desig
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
     const color = nodeColor(d, p.group);
+    svg.beginItem(`nodes[${i}]`);
     drawIconNode(svg, d, p.x, p.y, nodeR, color, `ng${i}`, '', 0);
     const fit = fitText(p.label, nodeR * 2 - 16, 2, 12);
     const lh = Math.round(fit.fontSize * 1.5);
@@ -149,8 +150,10 @@ function renderClean(data: NetworkGraphData, title: string | undefined, d: Desig
     for (let l = 0; l < fit.lines.length; l++) {
       svg.text(p.x, startY + l * lh, fit.lines[l]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: 'white',
+        'data-field': `nodes[${i}].label`,
       });
     }
+    svg.endItem();
   }
 
   return svg.build();
