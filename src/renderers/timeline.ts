@@ -89,7 +89,7 @@ function renderClean(data: TimelineData, title: string | undefined, d: DesignPre
 
     svg.beginItem(`events[${i}]`);
     drawCleanDot(svg, d, cx, lay.axisY, color, i);
-    drawCleanTime(svg, d, cx, lay.axisY - 28, ev.time);
+    drawCleanTime(svg, d, cx, lay.axisY - 28, ev.time, `events[${i}]`);
     drawCleanCard(svg, d, cx, lay.axisY + 20, lay.stepW - 32, lay.cardH, color, ev, i);
     svg.endItem();
   }
@@ -106,11 +106,12 @@ function drawCleanDot(svg: SvgBuilder, d: DesignPreset, cx: number, cy: number, 
   });
 }
 
-function drawCleanTime(svg: SvgBuilder, d: DesignPreset, cx: number, y: number, time: string): void {
+function drawCleanTime(svg: SvgBuilder, d: DesignPreset, cx: number, y: number, time: string, dataPath?: string): void {
   const fit = fitText(time, 140, 1, d.captionSize);
   for (const line of fit.lines) {
     svg.text(cx, y, line, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.textSecondary,
+      ...(dataPath ? { 'data-field': `${dataPath}.time` } : {}),
     });
   }
 }

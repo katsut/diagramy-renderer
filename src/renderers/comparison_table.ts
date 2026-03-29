@@ -122,6 +122,7 @@ function computeLayout(data: ComparisonTableData): ColLayout {
 function renderCellText(
   svg: SvgBuilder, text: string, x: number, yCentre: number, maxW: number,
   anchor: string, fontSize: number, fontWeight: number, fill: string,
+  dataField?: string,
 ): void {
   const fit = fitText(text, maxW - 12, 3, fontSize);
   const lh = Math.round(fit.fontSize * 1.5);
@@ -130,6 +131,7 @@ function renderCellText(
   for (const line of fit.lines) {
     svg.text(x, y, line, {
       'text-anchor': anchor, 'font-size': fit.fontSize, 'font-weight': fontWeight, fill,
+      ...(dataField ? { 'data-field': dataField } : {}),
     });
     y += lh;
   }
@@ -284,6 +286,7 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
     if (t.id === 'neon') {
       headerTextAttrs['filter'] = 'url(#neon-glow)';
     }
+    headerTextAttrs['data-field'] = `headers[${c}]`;
     svg.text(hx + w / 2, tableTop + headerH / 2 + 4, fit.lines[0]!, headerTextAttrs);
 
     // Color-independent differentiator: underline for non-first columns
@@ -376,14 +379,14 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
       });
     }
 
-    renderCellText(svg, row.label, cx + 26, ry + rh / 2, paddedWidths[0]! - 30, 'start', 13, 600, t.text);
+    renderCellText(svg, row.label, cx + 26, ry + rh / 2, paddedWidths[0]! - 30, 'start', 13, 600, t.text, `rows[${r}].label`);
     cx += paddedWidths[0]!;
 
     // Value cells — slightly lighter
     for (let v = 0; v < row.values.length; v++) {
       if (v + 1 < layout.colCount) {
         const cw = paddedWidths[v + 1]!;
-        renderCellText(svg, row.values[v]!, cx + cw / 2, ry + rh / 2, cw - 8, 'middle', 13, 400, t.textSecondary);
+        renderCellText(svg, row.values[v]!, cx + cw / 2, ry + rh / 2, cw - 8, 'middle', 13, 400, t.textSecondary, `rows[${r}].values[${v}]`);
 
         // Subtle column divider — preset-specific
         if (v + 2 < layout.colCount) {

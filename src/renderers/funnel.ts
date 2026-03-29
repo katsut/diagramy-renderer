@@ -81,14 +81,16 @@ function contrastFill(bgColor: string, lightFill: string, darkFill: string): str
   return lum > 0.5 ? darkFill : lightFill;
 }
 
-function drawStageLabel(svg: SvgBuilder, d: DesignPreset, cx: number, y: number, h: number, stage: FunnelStage, fill: string, segColor?: string): void {
+function drawStageLabel(svg: SvgBuilder, d: DesignPreset, cx: number, y: number, h: number, stage: FunnelStage, fill: string, segColor?: string, dataPath?: string): void {
   const textFill = segColor ? contrastFill(segColor, fill, d.id === 'pixel' ? '#1A1A2E' : '#1E293B') : fill;
   svg.text(cx, y + h / 2 + 5, stage.label, {
     'text-anchor': 'middle', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: textFill,
+    ...(dataPath ? { 'data-field': `${dataPath}.label` } : {}),
   });
   if (stage.value) {
     svg.text(cx, y + h / 2 + 20, stage.value, {
       'text-anchor': 'middle', 'font-size': d.captionSize, fill: textFill,
+      ...(dataPath ? { 'data-field': `${dataPath}.value` } : {}),
     });
   }
 }
@@ -138,7 +140,7 @@ function renderClean(data: FunnelData, title: string | undefined, d: DesignPrese
 
     svg.beginItem(`stages[${i}]`);
     drawTrapezoid(svg, funnelCx, y, stageH, funnelW, i, count, { fill: color, opacity: 0.85 });
-    drawStageLabel(svg, d, funnelCx, y, stageH, stage, 'white', color);
+    drawStageLabel(svg, d, funnelCx, y, stageH, stage, 'white', color, `stages[${i}]`);
     drawAnnotation(svg, d, pad + funnelW + gap, y, stageH, annotW, funnelCx + funnelW * topHalf - 10, color, i, stage);
     svg.endItem();
   }

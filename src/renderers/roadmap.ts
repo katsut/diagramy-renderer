@@ -110,6 +110,7 @@ function renderClean(data: RoadmapData, title: string | undefined, d: DesignPres
       const itemFit = fitText(phase.items[j]!, lay.phaseW - 40, 1, d.captionSize);
       svg.text(x + 28, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
 

@@ -101,6 +101,7 @@ function renderClean(data: SwimlaneData, title: string | undefined, d: DesignPre
       const fit = fitText(step.label, stepW - 12, 1, d.captionSize + 1);
       svg.text(sx + stepW / 2, sy + 24, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
 
       // Arrow between steps

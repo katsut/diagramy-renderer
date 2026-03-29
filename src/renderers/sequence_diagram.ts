@@ -156,6 +156,7 @@ function drawMessages(
         'font-size': d.captionSize,
         fill: labelColor,
         'dominant-baseline': 'middle',
+        'data-field': `messages[${mi}].label`,
       });
     } else {
       const x1 = actorXs[fromIdx]!;
@@ -174,6 +175,7 @@ function drawMessages(
         'text-anchor': 'middle',
         'font-size': d.captionSize,
         fill: labelColor,
+        'data-field': `messages[${mi}].label`,
       });
     }
 

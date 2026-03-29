@@ -101,6 +101,7 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
     if (item.value) {
       svg.text(bx + barW - 8, y + rowH / 2 + 4, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: 'white',
+        'data-field': `items[${i}].value`,
       });
     }
 
@@ -110,6 +111,7 @@ function renderClean(data: RankingData, title: string | undefined, d: DesignPres
       const dfit = fitText(item.description, descMaxW, 1, d.captionSize);
       svg.text(lx, y + rowH / 2 + 18, dfit.lines[0]!, {
         'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+        'data-field': `items[${i}].description`,
       });
     }
 

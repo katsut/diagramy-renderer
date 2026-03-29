@@ -119,6 +119,7 @@ function renderClean(data: PieChartData, title: string | undefined, d: DesignPre
     const fit = fitText(seg.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 20, ly + 11, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
   }
 

@@ -108,6 +108,7 @@ function renderClean(data: BarChartData, title: string | undefined, d: DesignPre
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(lay.chartX + barW + 6, y + lay.barH / 2 + 4, valText, {
       'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
+      'data-field': `items[${i}].value`,
     });
 
     svg.endItem();

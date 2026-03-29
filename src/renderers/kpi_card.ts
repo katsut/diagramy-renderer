@@ -532,6 +532,7 @@ function drawKpiContent(
     const arrow = trendArrow(card.trend);
     svg.text(cx, top + 100, `${arrow}${card.trend}`, {
       'text-anchor': 'middle', 'font-size': d.labelSize, 'font-weight': 600, fill: tc,
+      ...(dataPath ? { 'data-field': `${dataPath}.trend` } : {}),
     });
   }
 
@@ -540,6 +541,7 @@ function drawKpiContent(
     const descFit = fitText(card.description, cardW - 24, 1, d.captionSize - 1);
     svg.text(cx, top + 125, descFit.lines[0] ?? card.description, {
       'text-anchor': 'middle', 'font-size': descFit.fontSize, fill: d.textSecondary,
+      ...(dataPath ? { 'data-field': `${dataPath}.description` } : {}),
     });
   }
 }
