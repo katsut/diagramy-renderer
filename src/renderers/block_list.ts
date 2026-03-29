@@ -64,10 +64,12 @@ function renderClean(data: BlockListData, title: string | undefined, d: DesignPr
   const pad = 40;
   const titleH = title ? 44 : 0;
   const count = data.items.length;
-  const colW = 200;
-  const cardH = 180;
-  const gap = 20;
-  const maxWidth = 960;
+  // Compact mode for 20+ items: smaller cards, wider canvas for 4 columns
+  const compact = count >= 20;
+  const colW = compact ? 180 : 200;
+  const cardH = compact ? 140 : 180;
+  const gap = compact ? 16 : 20;
+  const maxWidth = compact ? 960 : 960;
 
   const grid = computeGridLayout(count, colW, cardH, gap, pad, titleH, maxWidth);
   const { cols, rows, totalWidth: width, totalHeight: height } = grid;
@@ -89,8 +91,10 @@ function renderClean(data: BlockListData, title: string | undefined, d: DesignPr
     const cy = contentTop + row * (cardH + gap);
 
     drawCleanCard(svg, d, cx, cy, colW, cardH, color, i);
-    drawCleanIcon(svg, d, cx, cy + 48, color, i, item.label, item.description);
-    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 88, colW - 24);
+    const iconY = compact ? cy + 36 : cy + 48;
+    const labelY = compact ? cy + 68 : cy + 88;
+    drawCleanIcon(svg, d, cx, iconY, color, i, item.label, item.description);
+    drawLabelBlock(svg, d, item.label, compact ? undefined : item.description, cx, labelY, colW - 24);
   }
 
   return svg.build();

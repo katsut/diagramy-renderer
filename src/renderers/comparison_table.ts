@@ -85,9 +85,22 @@ function computeLayout(data: ComparisonTableData): ColLayout {
     }
   }
 
-  // Clamp
+  // Clamp individual columns
   for (let i = 0; i < colWidths.length; i++) {
     colWidths[i] = Math.min(colWidths[i]!, maxW);
+  }
+
+  // Shrink columns proportionally if total width exceeds 960px
+  const pad = 48;
+  const colPad = 2;
+  const tableInset = 16;
+  const maxTableW = 960 - pad * 2 - tableInset * 2 - colPad * colCount;
+  const totalColW = colWidths.reduce((s, w) => s + w, 0);
+  if (totalColW > maxTableW) {
+    const ratio = maxTableW / totalColW;
+    for (let i = 0; i < colWidths.length; i++) {
+      colWidths[i] = Math.max(minW, Math.round(colWidths[i]! * ratio));
+    }
   }
 
   // Row heights (base 48, expand for wrapping)

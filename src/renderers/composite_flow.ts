@@ -117,9 +117,11 @@ function renderClean(data: CompositeFlowData, title: string | undefined, d: Desi
   const pad = 48;
   const titleH = title ? 44 : 0;
   const count = data.nodes.length;
-  const nodeW = 220;
-  const nodeH = 56;
-  const vGap = 44;
+  // Compact mode for 8+ nodes: shrink nodes and gaps
+  const compact = count >= 8;
+  const nodeW = compact ? 200 : 220;
+  const nodeH = compact ? 44 : 56;
+  const vGap = compact ? 32 : 44;
   const edges = effectiveEdges(data);
   const hasFeedback = edges.some(e => e.edge_type === 'feedback');
   const feedbackMargin = hasFeedback ? 80 : 0;
@@ -211,9 +213,10 @@ function renderBold(data: CompositeFlowData, title: string | undefined, d: Desig
   const pad = 52;
   const titleH = title ? 56 : 0;
   const count = data.nodes.length;
-  const nodeW = 240;
-  const nodeH = 64;
-  const vGap = 48;
+  const compact = count >= 8;
+  const nodeW = compact ? 210 : 240;
+  const nodeH = compact ? 50 : 64;
+  const vGap = compact ? 36 : 48;
   const edges = effectiveEdges(data);
   const hasFeedback = edges.some(e => e.edge_type === 'feedback');
   const feedbackMargin = hasFeedback ? 80 : 0;
