@@ -168,16 +168,16 @@ function renderBold(data: PyramidData, title: string | undefined, d: DesignPrese
     const y = startY + geo.y;
 
     // Trapezoid with offset shadow
-    svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
+    svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: color, filter: 'url(#bold-offset)',
     });
     // Thick border
-    svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
+    svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: 'none', stroke: d.border, 'stroke-width': 3,
     });
 
     const fit = fitText(layer.label, baseW * 0.5, 1, d.labelSize + 2);
-    svg.text(pyramidX + baseW / 2, y + layerH / 2 + 6, fit.lines[0]!, {
+    svg.text(pyramidX + baseW / 2, y + geo.h / 2 + 6, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
     });
   }
@@ -258,11 +258,11 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
     const y = startY + geo.y;
 
     // Glow behind trapezoid
-    svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
+    svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: color, opacity: 0.06, filter: 'url(#shadow)',
     });
     // Frosted glass trapezoid
-    svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
+    svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: d.surface, opacity: 0.6, stroke: d.border, 'stroke-width': 1,
     });
     // Color accent line at top
@@ -274,18 +274,18 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
     });
 
     const fit = fitText(layer.label, w - 20, 1, d.labelSize);
-    svg.text(pyramidX + baseW / 2, y + layerH / 2 + 4, fit.lines[0]!, {
+    svg.text(pyramidX + baseW / 2, y + geo.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
       'letter-spacing': '0.3',
     });
 
     if (layer.description) {
       const descX = pyramidX + baseW + 20;
-      svg.line(lx + w, y + layerH / 2, descX - 4, y + layerH / 2, {
+      svg.line(lx + w, y + geo.h / 2, descX - 4, y + geo.h / 2, {
         stroke: color, 'stroke-width': 1, opacity: 0.2, 'stroke-dasharray': '3,3',
       });
       const dfit = fitText(layer.description, descW, 2, d.captionSize);
-      let dy = y + layerH / 2 - ((dfit.lines.length - 1) * dfit.fontSize * 0.65);
+      let dy = y + geo.h / 2 - ((dfit.lines.length - 1) * dfit.fontSize * 0.65);
       for (const line of dfit.lines) {
         svg.text(descX, dy, line, {
           'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
@@ -328,16 +328,16 @@ function renderNeon(data: PyramidData, title: string | undefined, d: DesignPrese
     const y = startY + geo.y;
 
     // Dark fill with neon border
-    svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
+    svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1,
     });
     // Glow border
-    svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
+    svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3, filter: 'url(#neon-glow)',
     });
 
     const fit = fitText(layer.label, baseW * 0.5, 1, d.labelSize);
-    svg.text(pyramidX + baseW / 2, y + layerH / 2 + 4, fit.lines[0]!, {
+    svg.text(pyramidX + baseW / 2, y + geo.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: color,
     });
   }
@@ -383,12 +383,12 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
       fill: color, opacity: 0.12, filter: 'url(#watercolor)',
     });
     // Watercolor trapezoid
-    svg.path(trapezoidPath(pyramidX, baseW, topW, y, layerH, i, count), {
+    svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: color, opacity: 0.5, filter: 'url(#watercolor)',
     });
 
     const fit = fitText(layer.label, w - 20, 1, d.labelSize);
-    svg.text(pyramidX + baseW / 2, y + layerH / 2 + 4, fit.lines[0]!, {
+    svg.text(pyramidX + baseW / 2, y + geo.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
     });
 
@@ -517,7 +517,13 @@ function renderHorizontalBars(data: PyramidData, title: string | undefined, d: D
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Pyramid horizontal',
     buildColorGradients(d, count, 'py'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const barX = pad + labelW + 12;
@@ -585,7 +591,13 @@ function renderBlocks(data: PyramidData, title: string | undefined, d: DesignPre
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Pyramid (blocks)',
     buildColorGradients(d, count, 'py'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const cx = pad + maxW / 2;
@@ -599,18 +611,31 @@ function renderBlocks(data: PyramidData, title: string | undefined, d: DesignPre
     const w = minW + (maxW - minW) * ratio;
     const x = cx - w / 2;
 
-    svg.rect(x, y, w, blockH, {
-      fill: `url(#py${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius, ...d.cardAttrs(),
-    });
+    if (d.id === 'neon') {
+      svg.rect(x, y, w, blockH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
+        rx: d.borderRadius > 8 ? 6 : d.borderRadius,
+      });
+      svg.rect(x, y, w, blockH, {
+        fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3,
+        rx: d.borderRadius > 8 ? 6 : d.borderRadius, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(x, y, w, blockH, {
+        fill: `url(#py${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius, ...d.cardAttrs(),
+      });
+    }
 
     const fit = fitText(layer.label, w - 24, 1, d.labelSize);
     svg.text(cx, y + blockH / 2 - (layer.description ? 4 : 0) + 4, fit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
+      fill: d.id === 'neon' ? color : '#FFFFFF',
     });
     if (layer.description) {
       const dfit = fitText(layer.description, w - 24, 1, d.captionSize);
       svg.text(cx, y + blockH / 2 + 16, dfit.lines[0]!, {
-        'text-anchor': 'middle', 'font-size': dfit.fontSize, fill: 'rgba(255,255,255,0.7)',
+        'text-anchor': 'middle', 'font-size': dfit.fontSize,
+        fill: d.id === 'neon' ? d.textSecondary : 'rgba(255,255,255,0.7)',
       });
     }
   }

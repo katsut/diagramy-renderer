@@ -27,6 +27,8 @@ export function renderTimeline(data: TimelineData, title?: string, design?: Desi
     case 'vertical': return renderVertical(data, title, d);
     case 'serpentine': return renderSerpentine(data, title, d);
     case 'alternating': return renderAlternating(data, title, d);
+    case 'grouped': return renderGrouped(data, title, d);
+    case 'nested': return renderNested(data, title, d);
     default:
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
@@ -529,7 +531,13 @@ function renderVertical(data: TimelineData, title: string | undefined, d: Design
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Timeline diagram (vertical)', gradientDefs);
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -537,9 +545,19 @@ function renderVertical(data: TimelineData, title: string | undefined, d: Design
   // Vertical axis line
   const lineTop = contentTop + 10;
   const lineBottom = contentTop + n * stepH - 10;
-  svg.line(lineX, lineTop, lineX, lineBottom, {
-    stroke: d.border, 'stroke-width': 2, 'stroke-linecap': 'round', opacity: 0.5,
-  });
+  if (d.lineJitter) {
+    svg.path(jitterLine(lineX, lineTop, lineX, lineBottom, 42), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    svg.line(lineX, lineTop, lineX, lineBottom, {
+      stroke: d.primary, 'stroke-width': 2, 'stroke-linecap': 'round', filter: 'url(#neon-glow)',
+    });
+  } else {
+    svg.line(lineX, lineTop, lineX, lineBottom, {
+      stroke: d.border, 'stroke-width': 2, 'stroke-linecap': 'round', opacity: 0.5,
+    });
+  }
 
   for (let i = 0; i < n; i++) {
     const ev = data.events[i]!;
@@ -547,8 +565,15 @@ function renderVertical(data: TimelineData, title: string | undefined, d: Design
     const cy = contentTop + i * stepH + stepH / 2;
 
     // Dot marker on the line
-    svg.circle(lineX, cy, 12, { fill: color, opacity: 0.15 });
-    svg.circle(lineX, cy, 6, { fill: color, stroke: d.surface, 'stroke-width': 2 });
+    if (d.lineJitter) {
+      svg.circle(lineX, cy, 6, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
+    } else if (d.id === 'neon') {
+      svg.circle(lineX, cy, 8, { fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)' });
+      svg.circle(lineX, cy, 3, { fill: color });
+    } else {
+      svg.circle(lineX, cy, 12, { fill: color, opacity: 0.15 });
+      svg.circle(lineX, cy, 6, { fill: color, stroke: d.surface, 'stroke-width': 2 });
+    }
 
     // Time label to the left of the line
     const fit = fitText(ev.time, timeColW - 24, 1, d.captionSize);
@@ -557,13 +582,42 @@ function renderVertical(data: TimelineData, title: string | undefined, d: Design
     });
 
     // Horizontal connector
-    svg.line(lineX + 6, cy, cardLeft - 4, cy, {
-      stroke: color, 'stroke-width': 1.5, opacity: 0.4,
-    });
+    if (d.lineJitter) {
+      svg.path(jitterLine(lineX + 6, cy, cardLeft - 4, cy, i * 19), {
+        fill: 'none', stroke: d.border, 'stroke-width': 1,
+      });
+    } else if (d.id === 'neon') {
+      svg.line(lineX + 8, cy, cardLeft - 4, cy, {
+        stroke: color, 'stroke-width': 1, opacity: 0.6,
+      });
+    } else {
+      svg.line(lineX + 6, cy, cardLeft - 4, cy, {
+        stroke: color, 'stroke-width': 1.5, opacity: 0.4,
+      });
+    }
 
     // Card
-    drawPresetCard(svg, d, cardLeft, cy - cardH / 2, cardW, cardH, color);
-    drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28);
+    if (d.lineJitter) {
+      const x = cardLeft;
+      svg.path(jitterRect(x, cy - cardH / 2, cardW, cardH, i * 11), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28);
+    } else if (d.id === 'neon') {
+      const x = cardLeft;
+      const top = cy - cardH / 2;
+      svg.rect(x, top, cardW, cardH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(x, top, cardW, cardH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28);
+    } else {
+      drawPresetCard(svg, d, cardLeft, cy - cardH / 2, cardW, cardH, color);
+      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28);
+    }
   }
 
   return svg.build();
@@ -589,7 +643,13 @@ function renderSerpentine(data: TimelineData, title: string | undefined, d: Desi
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Timeline diagram (serpentine)', gradientDefs);
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH + 20;
@@ -606,8 +666,15 @@ function renderSerpentine(data: TimelineData, title: string | undefined, d: Desi
     const cy = contentTop + row * rowH + 30;
 
     // Dot on connector path
-    svg.circle(cx, cy, 10, { fill: color, opacity: 0.15 });
-    svg.circle(cx, cy, 5, { fill: color, stroke: d.surface, 'stroke-width': 2 });
+    if (d.lineJitter) {
+      svg.circle(cx, cy, 6, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
+    } else if (d.id === 'neon') {
+      svg.circle(cx, cy, 8, { fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)' });
+      svg.circle(cx, cy, 3, { fill: color });
+    } else {
+      svg.circle(cx, cy, 10, { fill: color, opacity: 0.15 });
+      svg.circle(cx, cy, 5, { fill: color, stroke: d.surface, 'stroke-width': 2 });
+    }
 
     // Time label above dot
     svg.text(cx, cy - 18, ev.time, {
@@ -616,7 +683,21 @@ function renderSerpentine(data: TimelineData, title: string | undefined, d: Desi
 
     // Card below dot
     const cardTop = cy + 16;
-    drawPresetCard(svg, d, cx - cardW / 2, cardTop, cardW, cardH, color);
+    if (d.lineJitter) {
+      svg.path(jitterRect(cx - cardW / 2, cardTop, cardW, cardH, i * 11), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(cx - cardW / 2, cardTop, cardW, cardH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(cx - cardW / 2, cardTop, cardW, cardH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      drawPresetCard(svg, d, cx - cardW / 2, cardTop, cardW, cardH, color);
+    }
     drawLabelBlock(svg, d, ev.event, ev.details, cx, cardTop + 20, cardW - 24);
 
     // Connector to next event
@@ -629,16 +710,40 @@ function renderSerpentine(data: TimelineData, title: string | undefined, d: Desi
       const nextCy = contentTop + nextRow * rowH + 30;
 
       if (nextRow === row) {
-        // Horizontal connector within same row
-        svg.line(cx + 6, cy, nextCx - 6, cy, {
-          stroke: d.border, 'stroke-width': 1.5, opacity: 0.3, 'stroke-linecap': 'round',
-        });
+        if (d.lineJitter) {
+          svg.path(jitterLine(cx + 6, cy, nextCx - 6, cy, i * 19), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+          });
+        } else if (d.id === 'neon') {
+          svg.line(cx + 6, cy, nextCx - 6, cy, {
+            stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)',
+          });
+        } else {
+          svg.line(cx + 6, cy, nextCx - 6, cy, {
+            stroke: d.border, 'stroke-width': 1.5, opacity: 0.3, 'stroke-linecap': 'round',
+          });
+        }
       } else {
-        // Vertical U-turn connector between rows
         const turnY = cy + cardH + 30;
-        svg.path(`M ${cx} ${cy + 5} L ${cx} ${turnY} L ${nextCx} ${turnY} L ${nextCx} ${nextCy - 5}`, {
-          fill: 'none', stroke: d.border, 'stroke-width': 1.5, opacity: 0.3, 'stroke-linecap': 'round',
-        });
+        if (d.lineJitter) {
+          svg.path(jitterLine(cx, cy + 5, cx, turnY, i * 23), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+          });
+          svg.path(jitterLine(cx, turnY, nextCx, turnY, i * 29), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+          });
+          svg.path(jitterLine(nextCx, turnY, nextCx, nextCy - 5, i * 37), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+          });
+        } else if (d.id === 'neon') {
+          svg.path(`M ${cx} ${cy + 5} L ${cx} ${turnY} L ${nextCx} ${turnY} L ${nextCx} ${nextCy - 5}`, {
+            fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)',
+          });
+        } else {
+          svg.path(`M ${cx} ${cy + 5} L ${cx} ${turnY} L ${nextCx} ${turnY} L ${nextCx} ${nextCy - 5}`, {
+            fill: 'none', stroke: d.border, 'stroke-width': 1.5, opacity: 0.3, 'stroke-linecap': 'round',
+          });
+        }
       }
     }
   }
@@ -664,15 +769,31 @@ function renderAlternating(data: TimelineData, title: string | undefined, d: Des
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Timeline (alternating)', gradientDefs);
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
 
   // Vertical center line
-  svg.line(lineX, contentTop + 10, lineX, contentTop + n * stepH - 10, {
-    stroke: d.border, 'stroke-width': 2, opacity: 0.4, 'stroke-linecap': 'round',
-  });
+  if (d.lineJitter) {
+    svg.path(jitterLine(lineX, contentTop + 10, lineX, contentTop + n * stepH - 10, 42), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    svg.line(lineX, contentTop + 10, lineX, contentTop + n * stepH - 10, {
+      stroke: d.primary, 'stroke-width': 2, 'stroke-linecap': 'round', filter: 'url(#neon-glow)',
+    });
+  } else {
+    svg.line(lineX, contentTop + 10, lineX, contentTop + n * stepH - 10, {
+      stroke: d.border, 'stroke-width': 2, opacity: 0.4, 'stroke-linecap': 'round',
+    });
+  }
 
   for (let i = 0; i < n; i++) {
     const ev = data.events[i]!;
@@ -681,8 +802,15 @@ function renderAlternating(data: TimelineData, title: string | undefined, d: Des
     const isLeft = i % 2 === 0;
 
     // Dot marker on line
-    svg.circle(lineX, cy, 10, { fill: color, opacity: 0.15 });
-    svg.circle(lineX, cy, 5, { fill: color, stroke: d.surface, 'stroke-width': 2 });
+    if (d.lineJitter) {
+      svg.circle(lineX, cy, 6, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
+    } else if (d.id === 'neon') {
+      svg.circle(lineX, cy, 8, { fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)' });
+      svg.circle(lineX, cy, 3, { fill: color });
+    } else {
+      svg.circle(lineX, cy, 10, { fill: color, opacity: 0.15 });
+      svg.circle(lineX, cy, 5, { fill: color, stroke: d.surface, 'stroke-width': 2 });
+    }
 
     // Time label next to marker
     const timeX = isLeft ? lineX + 16 : lineX - 16;
@@ -692,17 +820,372 @@ function renderAlternating(data: TimelineData, title: string | undefined, d: Des
     });
 
     // Card on opposite side
-    const cardLeft = isLeft ? lineX - 36 - cardW : lineX + 36;
+    const cardLeftX = isLeft ? lineX - 36 - cardW : lineX + 36;
 
     // Horizontal connector from line to card
     const connFrom = isLeft ? lineX - 10 : lineX + 10;
-    const connTo = isLeft ? cardLeft + cardW + 4 : cardLeft - 4;
-    svg.line(connFrom, cy, connTo, cy, {
-      stroke: color, 'stroke-width': 1.5, opacity: 0.3,
+    const connTo = isLeft ? cardLeftX + cardW + 4 : cardLeftX - 4;
+    if (d.lineJitter) {
+      svg.path(jitterLine(connFrom, cy, connTo, cy, i * 19), {
+        fill: 'none', stroke: d.border, 'stroke-width': 1,
+      });
+    } else if (d.id === 'neon') {
+      svg.line(connFrom, cy, connTo, cy, {
+        stroke: color, 'stroke-width': 1, opacity: 0.6,
+      });
+    } else {
+      svg.line(connFrom, cy, connTo, cy, {
+        stroke: color, 'stroke-width': 1.5, opacity: 0.3,
+      });
+    }
+
+    if (d.lineJitter) {
+      svg.path(jitterRect(cardLeftX, cy - cardH / 2, cardW, cardH, i * 11), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(cardLeftX, cy - cardH / 2, cardW, cardH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(cardLeftX, cy - cardH / 2, cardW, cardH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      drawPresetCard(svg, d, cardLeftX, cy - cardH / 2, cardW, cardH, color);
+    }
+    drawLabelBlock(svg, d, ev.event, ev.details, cardLeftX + cardW / 2, cy - 10, cardW - 28);
+  }
+
+  return svg.build();
+}
+
+// ========== GROUPED (style variant) ==========
+// Events grouped by period (year / quarter / phase), with section headers
+
+interface GroupedPeriod {
+  period: string;
+  events: TimelineEvent[];
+}
+
+function extractPeriod(ev: TimelineEvent): string {
+  const anyEv = ev as unknown as Record<string, unknown>;
+  if (typeof anyEv['period'] === 'string') return anyEv['period'];
+  if (typeof anyEv['year'] === 'string') return anyEv['year'];
+  if (typeof anyEv['year'] === 'number') return String(anyEv['year']);
+  const yearMatch = ev.time.match(/\b((?:19|20)\d{2})\b/);
+  if (yearMatch) return yearMatch[1]!;
+  return ev.time;
+}
+
+function groupEvents(events: TimelineEvent[]): GroupedPeriod[] {
+  const map = new Map<string, TimelineEvent[]>();
+  const order: string[] = [];
+  for (const ev of events) {
+    const p = extractPeriod(ev);
+    if (!map.has(p)) {
+      map.set(p, []);
+      order.push(p);
+    }
+    map.get(p)!.push(ev);
+  }
+  return order.map(p => ({ period: p, events: map.get(p)! }));
+}
+
+function renderGrouped(data: TimelineData, title: string | undefined, d: DesignPreset): string {
+  const groups = groupEvents(data.events);
+  const pad = 48;
+  const titleH = title ? 44 : 0;
+  const headerH = 40;
+  const cardH = 70;
+  const cardGap = 12;
+  const cardW = 300;
+  const lineX = pad + 24;
+  const cardLeft = lineX + 36;
+
+  let totalContentH = 0;
+  for (const g of groups) {
+    totalContentH += headerH + g.events.length * (cardH + cardGap) + 16;
+  }
+
+  const width = pad * 2 + 60 + cardW;
+  const height = pad * 2 + titleH + totalContentH;
+
+  const gradientDefs = buildColorGradients(d, data.events.length, 'tg');
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Timeline (grouped)', gradientDefs);
+  svg.defs(defs);
+
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+  let y = contentTop;
+  let globalIdx = 0;
+
+  const lineTop = contentTop + 8;
+  const lineBottom = contentTop + totalContentH - 8;
+  if (d.lineJitter) {
+    svg.path(jitterLine(lineX, lineTop, lineX, lineBottom, 42), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    svg.line(lineX, lineTop, lineX, lineBottom, {
+      stroke: d.primary, 'stroke-width': 2, 'stroke-linecap': 'round', filter: 'url(#neon-glow)',
+    });
+  } else {
+    svg.line(lineX, lineTop, lineX, lineBottom, {
+      stroke: d.border, 'stroke-width': 2, 'stroke-linecap': 'round', opacity: 0.4,
+    });
+  }
+
+  for (const g of groups) {
+    const periodColor = eventColor(d, globalIdx);
+    const headerY = y + headerH / 2 + 4;
+
+    if (d.lineJitter) {
+      svg.circle(lineX, headerY, 10, { fill: 'none', stroke: d.border, 'stroke-width': 2 });
+    } else if (d.id === 'neon') {
+      svg.circle(lineX, headerY, 12, { fill: 'none', stroke: periodColor, 'stroke-width': 2, filter: 'url(#neon-glow)' });
+      svg.circle(lineX, headerY, 5, { fill: periodColor });
+    } else {
+      svg.circle(lineX, headerY, 14, { fill: periodColor, opacity: 0.15 });
+      svg.circle(lineX, headerY, 8, { fill: periodColor, stroke: d.surface, 'stroke-width': 2 });
+    }
+
+    const periodFit = fitText(g.period, cardW - 20, 1, d.labelSize + 2);
+    svg.text(cardLeft + 4, headerY + 2, periodFit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': periodFit.fontSize, 'font-weight': 700,
+      fill: d.id === 'neon' ? periodColor : d.text,
+      ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
     });
 
-    drawPresetCard(svg, d, cardLeft, cy - cardH / 2, cardW, cardH, color);
-    drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28);
+    if (d.id === 'neon') {
+      svg.line(cardLeft, headerY + 12, cardLeft + cardW - 8, headerY + 12, {
+        stroke: periodColor, 'stroke-width': 1, opacity: 0.5, filter: 'url(#neon-glow)',
+      });
+    } else if (!d.lineJitter) {
+      svg.line(cardLeft, headerY + 12, cardLeft + cardW - 8, headerY + 12, {
+        stroke: periodColor, 'stroke-width': 2, opacity: 0.3,
+      });
+    }
+
+    y += headerH;
+
+    for (const ev of g.events) {
+      const color = eventColor(d, globalIdx);
+      const cardTop = y + 4;
+      const dotY = cardTop + cardH / 2;
+
+      if (d.lineJitter) {
+        svg.circle(lineX, dotY, 4, { fill: d.border });
+      } else if (d.id === 'neon') {
+        svg.circle(lineX, dotY, 5, { fill: 'none', stroke: color, 'stroke-width': 1.5 });
+      } else {
+        svg.circle(lineX, dotY, 5, { fill: color, opacity: 0.4 });
+      }
+
+      if (d.lineJitter) {
+        svg.path(jitterLine(lineX + 4, dotY, cardLeft - 4, dotY, globalIdx * 19), {
+          fill: 'none', stroke: d.border, 'stroke-width': 1, opacity: 0.5,
+        });
+      } else if (d.id === 'neon') {
+        svg.line(lineX + 5, dotY, cardLeft - 4, dotY, {
+          stroke: color, 'stroke-width': 1, opacity: 0.4,
+        });
+      } else {
+        svg.line(lineX + 5, dotY, cardLeft - 4, dotY, {
+          stroke: color, 'stroke-width': 1, opacity: 0.3,
+        });
+      }
+
+      if (d.lineJitter) {
+        svg.path(jitterRect(cardLeft, cardTop, cardW, cardH, globalIdx * 11), {
+          fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+        });
+      } else if (d.id === 'neon') {
+        svg.rect(cardLeft, cardTop, cardW, cardH, {
+          fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+        });
+        svg.rect(cardLeft, cardTop, cardW, cardH, {
+          fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+          opacity: 0.3, filter: 'url(#neon-glow)',
+        });
+      } else {
+        drawPresetCard(svg, d, cardLeft, cardTop, cardW, cardH, color);
+      }
+
+      const timeFit = fitText(ev.time, 100, 1, d.captionSize - 1);
+      svg.text(cardLeft + cardW - 12, cardTop + 16, timeFit.lines[0]!, {
+        'text-anchor': 'end', 'font-size': timeFit.fontSize, fill: d.textSecondary,
+      });
+
+      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cardTop + 24, cardW - 32);
+
+      y += cardH + cardGap;
+      globalIdx++;
+    }
+    y += 16;
+  }
+
+  return svg.build();
+}
+
+// ========== NESTED (style variant) ==========
+// Each timeline event can have sub-items rendered as indented bullets
+
+function getSubItems(ev: TimelineEvent): string[] {
+  const anyEv = ev as unknown as Record<string, unknown>;
+  for (const key of ['items', 'children', 'details_list', 'subitems']) {
+    const val = anyEv[key];
+    if (Array.isArray(val)) {
+      return val.filter((v): v is string => typeof v === 'string');
+    }
+  }
+  return [];
+}
+
+function renderNested(data: TimelineData, title: string | undefined, d: DesignPreset): string {
+  const n = data.events.length;
+  const pad = 48;
+  const titleH = title ? 44 : 0;
+  const lineX = pad + 24;
+  const cardLeft = lineX + 36;
+  const cardW = 320;
+  const baseCardH = 60;
+  const subItemH = 22;
+  const cardGap = 20;
+
+  const eventHeights: number[] = [];
+  for (const ev of data.events) {
+    const subs = getSubItems(ev);
+    const h = baseCardH + subs.length * subItemH + (subs.length > 0 ? 12 : 0);
+    eventHeights.push(h);
+  }
+
+  const totalContentH = eventHeights.reduce((sum, h) => sum + h + cardGap, 0);
+  const width = pad * 2 + 60 + cardW;
+  const height = pad * 2 + titleH + totalContentH;
+
+  const gradientDefs = buildColorGradients(d, n, 'tg');
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Timeline (nested)', gradientDefs);
+  svg.defs(defs);
+
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+
+  const lineTop = contentTop + 8;
+  const lineBottom = contentTop + totalContentH - 8;
+  if (d.lineJitter) {
+    svg.path(jitterLine(lineX, lineTop, lineX, lineBottom, 42), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    svg.line(lineX, lineTop, lineX, lineBottom, {
+      stroke: d.primary, 'stroke-width': 2, 'stroke-linecap': 'round', filter: 'url(#neon-glow)',
+    });
+  } else {
+    svg.line(lineX, lineTop, lineX, lineBottom, {
+      stroke: d.border, 'stroke-width': 2, 'stroke-linecap': 'round', opacity: 0.4,
+    });
+  }
+
+  let y = contentTop;
+
+  for (let i = 0; i < n; i++) {
+    const ev = data.events[i]!;
+    const subs = getSubItems(ev);
+    const color = eventColor(d, i);
+    const cardH = eventHeights[i]!;
+    const cardTop = y + 4;
+    const dotY = cardTop + 24;
+
+    if (d.lineJitter) {
+      svg.circle(lineX, dotY, 6, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
+    } else if (d.id === 'neon') {
+      svg.circle(lineX, dotY, 8, { fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)' });
+      svg.circle(lineX, dotY, 3, { fill: color });
+    } else {
+      svg.circle(lineX, dotY, 10, { fill: color, opacity: 0.15 });
+      svg.circle(lineX, dotY, 6, { fill: color, stroke: d.surface, 'stroke-width': 2 });
+    }
+
+    if (d.lineJitter) {
+      svg.path(jitterLine(lineX + 6, dotY, cardLeft - 4, dotY, i * 19), {
+        fill: 'none', stroke: d.border, 'stroke-width': 1,
+      });
+    } else if (d.id === 'neon') {
+      svg.line(lineX + 8, dotY, cardLeft - 4, dotY, {
+        stroke: color, 'stroke-width': 1, opacity: 0.6,
+      });
+    } else {
+      svg.line(lineX + 6, dotY, cardLeft - 4, dotY, {
+        stroke: color, 'stroke-width': 1.5, opacity: 0.3,
+      });
+    }
+
+    if (d.lineJitter) {
+      svg.path(jitterRect(cardLeft, cardTop, cardW, cardH, i * 11), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(cardLeft, cardTop, cardW, cardH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(cardLeft, cardTop, cardW, cardH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      drawPresetCard(svg, d, cardLeft, cardTop, cardW, cardH, color);
+    }
+
+    const timeFit = fitText(ev.time, 120, 1, d.captionSize);
+    svg.text(cardLeft + cardW - 12, cardTop + 18, timeFit.lines[0]!, {
+      'text-anchor': 'end', 'font-size': timeFit.fontSize, 'font-weight': d.fontWeight, fill: d.textSecondary,
+    });
+
+    const labelFit = fitText(ev.event, cardW - 48, 1, d.labelSize);
+    svg.text(cardLeft + 16, cardTop + 20, labelFit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+
+    let subStartY = cardTop + 38;
+    if (ev.details) {
+      const detFit = fitText(ev.details, cardW - 48, 1, d.captionSize);
+      svg.text(cardLeft + 16, subStartY, detFit.lines[0]!, {
+        'text-anchor': 'start', 'font-size': detFit.fontSize, fill: d.textSecondary,
+      });
+      subStartY += 16;
+    }
+
+    if (subs.length > 0) {
+      subStartY += 4;
+      for (let j = 0; j < subs.length; j++) {
+        const subY = subStartY + j * subItemH;
+        const bulletColor = d.id === 'neon' ? color : (d.lineJitter ? d.border : color);
+        svg.circle(cardLeft + 28, subY - 3, 3, { fill: bulletColor, opacity: 0.6 });
+        const subFit = fitText(subs[j]!, cardW - 80, 1, d.captionSize);
+        svg.text(cardLeft + 40, subY, subFit.lines[0]!, {
+          'text-anchor': 'start', 'font-size': subFit.fontSize, fill: d.textSecondary,
+        });
+      }
+    }
+
+    y += cardH + cardGap;
   }
 
   return svg.build();

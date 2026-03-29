@@ -1,5 +1,5 @@
 import { SvgBuilder, escapeXml, FILTER_SHADOW, FILTER_CARD_SHADOW, linearGradient } from '../shared/svg.js';
-import { getDesign as getTheme, jitterRect, pixelBorder, type DesignPreset } from '../shared/design.js';
+import { getDesign as getTheme, jitterRect, jitterLine, pixelBorder, type DesignPreset } from '../shared/design.js';
 import { fitText, estimateWidth } from '../shared/text.js';
 import { createDiagramSvg, drawBackground, drawTitle, drawSketchBackground, drawPixelBackground } from '../shared/render-utils.js';
 
@@ -144,7 +144,7 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
   const { svg, defs } = createDiagramSvg(t, width, height, title, 'Comparison table');
   svg.defs(defs);
 
-  drawBackground(svg, t, width, height);
+  drawPresetBackground(svg, t, width, height);
   if (title) drawTitle(svg, t, title, width, pad);
 
   const tableLeft = pad + tableInset;
@@ -152,21 +152,103 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
 
   // --- Inner table card (subtle inset) ---
   const tableH = headerH + totalRowH + 4;
-  svg.rect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, {
-    fill: t.surface, rx: t.borderRadius, stroke: t.borderWidth > 0 ? t.border : 'none',
-    'stroke-width': t.borderWidth > 0 ? 0.5 : 0,
-    ...tableCardAttrs(t),
-  });
+
+  if (t.id === 'sketch') {
+    svg.path(jitterRect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, 0), {
+      fill: 'none', stroke: t.border, 'stroke-width': t.borderWidth,
+    });
+  } else if (t.id === 'pixel') {
+    pixelTableCard(svg, t, tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8);
+  } else if (t.id === 'neon') {
+    svg.rect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, {
+      fill: 'rgba(0,0,0,0.4)', rx: t.borderRadius,
+      stroke: t.border, 'stroke-width': 1,
+    });
+  } else if (t.id === 'glass') {
+    svg.rect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, {
+      fill: t.surface, rx: t.borderRadius,
+      stroke: t.border, 'stroke-width': 1,
+      ...t.cardAttrs(),
+    });
+  } else if (t.id === 'watercolor') {
+    svg.rect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, {
+      fill: t.surface, rx: t.borderRadius, opacity: 0.9,
+      filter: 'url(#watercolor)',
+    });
+  } else if (t.id === 'bold') {
+    svg.rect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, {
+      fill: t.surface, rx: t.borderRadius,
+      stroke: t.border, 'stroke-width': 3,
+      filter: 'url(#bold-offset)',
+    });
+    svg.rect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, {
+      fill: 'url(#halftone)', rx: t.borderRadius,
+    });
+  } else if (t.id === 'minimal') {
+    svg.rect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, {
+      fill: t.surface, rx: t.borderRadius,
+    });
+  } else {
+    svg.rect(tableLeft - 4, tableTop - 4, totalW + 8, tableH + 8, {
+      fill: t.surface, rx: t.borderRadius, stroke: t.borderWidth > 0 ? t.border : 'none',
+      'stroke-width': t.borderWidth > 0 ? 0.5 : 0,
+      ...tableCardAttrs(t),
+    });
+  }
 
   // --- Header row ---
-  // Subtle background, not heavy colors
-  svg.rect(tableLeft, tableTop, totalW, headerH, {
-    fill: t.bg, rx: 0,
-  });
-  // Bottom accent line under header (using primary color)
-  svg.line(tableLeft + 8, tableTop + headerH, tableLeft + totalW - 8, tableTop + headerH, {
-    stroke: t.primary, 'stroke-width': 2, opacity: 0.25,
-  });
+  if (t.id === 'sketch') {
+    // Hand-drawn header underline
+    svg.path(jitterLine(tableLeft + 8, tableTop + headerH, tableLeft + totalW - 8, tableTop + headerH, 1), {
+      fill: 'none', stroke: t.border, 'stroke-width': t.borderWidth,
+    });
+  } else if (t.id === 'pixel') {
+    svg.rect(tableLeft, tableTop, totalW, headerH, {
+      fill: t.primary, opacity: 0.15, 'shape-rendering': 'crispEdges',
+    });
+    svg.raw(pixelBorder(tableLeft, tableTop, totalW, headerH, t.primary, 3));
+  } else if (t.id === 'bold') {
+    svg.rect(tableLeft, tableTop, totalW, headerH, {
+      fill: t.primary, opacity: 0.15, rx: 0,
+    });
+    svg.rect(tableLeft, tableTop, totalW, headerH, {
+      fill: 'url(#halftone)', rx: 0,
+    });
+    svg.line(tableLeft, tableTop + headerH, tableLeft + totalW, tableTop + headerH, {
+      stroke: t.border, 'stroke-width': 3,
+    });
+  } else if (t.id === 'neon') {
+    svg.rect(tableLeft, tableTop, totalW, headerH, {
+      fill: 'rgba(0,255,255,0.06)', rx: 0,
+    });
+    svg.line(tableLeft, tableTop + headerH, tableLeft + totalW, tableTop + headerH, {
+      stroke: t.primary, 'stroke-width': 1, opacity: 0.6, filter: 'url(#neon-glow)',
+    });
+  } else if (t.id === 'glass') {
+    svg.rect(tableLeft, tableTop, totalW, headerH, {
+      fill: 'rgba(255,255,255,0.05)', rx: 0,
+    });
+    svg.line(tableLeft + 8, tableTop + headerH, tableLeft + totalW - 8, tableTop + headerH, {
+      stroke: t.primary, 'stroke-width': 1, opacity: 0.4,
+    });
+  } else if (t.id === 'watercolor') {
+    svg.rect(tableLeft, tableTop, totalW, headerH, {
+      fill: t.primary, opacity: 0.08, rx: 0, filter: 'url(#wc-light)',
+    });
+  } else if (t.id === 'minimal') {
+    // No header bg, just a clean bottom line
+    svg.line(tableLeft, tableTop + headerH, tableLeft + totalW, tableTop + headerH, {
+      stroke: t.border, 'stroke-width': 1,
+    });
+  } else {
+    // clean default
+    svg.rect(tableLeft, tableTop, totalW, headerH, {
+      fill: t.bg, rx: 0,
+    });
+    svg.line(tableLeft + 8, tableTop + headerH, tableLeft + totalW - 8, tableTop + headerH, {
+      stroke: t.primary, 'stroke-width': 2, opacity: 0.25,
+    });
+  }
 
   let hx = tableLeft;
   for (let c = 0; c < layout.colCount; c++) {
@@ -177,17 +259,34 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
     // Header text — bold, colored subtly
     const fit = fitText(headerText, w - 20, 1, 12);
     const textColor = c === 0 ? t.text : color;
-    svg.text(hx + w / 2, tableTop + headerH / 2 + 4, fit.lines[0]!, {
+
+    const headerTextAttrs: Record<string, string | number> = {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700,
       fill: textColor, opacity: c === 0 ? 1 : 0.85, 'letter-spacing': 0.2,
-    });
+    };
+    if (t.id === 'bold') {
+      headerTextAttrs['font-weight'] = 900;
+      headerTextAttrs['font-size'] = fit.fontSize + 1;
+      headerTextAttrs['filter'] = 'url(#bold-offset)';
+    }
+    if (t.id === 'neon') {
+      headerTextAttrs['filter'] = 'url(#neon-glow)';
+    }
+    svg.text(hx + w / 2, tableTop + headerH / 2 + 4, fit.lines[0]!, headerTextAttrs);
+
     // Color-independent differentiator: underline for non-first columns
-    if (c > 0) {
+    if (c > 0 && t.id !== 'minimal') {
       const underY = tableTop + headerH / 2 + 8;
       const uw = Math.min(estimateWidth(fit.lines[0]!, fit.fontSize), w - 24);
-      svg.line(hx + w / 2 - uw / 2, underY, hx + w / 2 + uw / 2, underY, {
-        stroke: textColor, 'stroke-width': 2, opacity: 0.5,
-      });
+      if (t.id === 'sketch') {
+        svg.path(jitterLine(hx + w / 2 - uw / 2, underY, hx + w / 2 + uw / 2, underY, c * 7), {
+          fill: 'none', stroke: textColor, 'stroke-width': t.borderWidth, opacity: 0.5,
+        });
+      } else {
+        svg.line(hx + w / 2 - uw / 2, underY, hx + w / 2 + uw / 2, underY, {
+          stroke: textColor, 'stroke-width': 2, opacity: 0.5,
+        });
+      }
     }
 
     hx += w;
@@ -200,16 +299,55 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
     const rh = layout.rowHeights[r]!;
     const isOdd = r % 2 === 1;
 
-    // Subtle alternating row bg
-    if (isOdd) {
-      svg.rect(tableLeft, ry, totalW, rh, { fill: t.surface, opacity: 0.5 });
+    // Preset-specific alternating row backgrounds
+    if (t.id === 'neon') {
+      if (isOdd) {
+        svg.rect(tableLeft, ry, totalW, rh, { fill: 'rgba(0,255,255,0.03)' });
+      }
+    } else if (t.id === 'glass') {
+      if (isOdd) {
+        svg.rect(tableLeft, ry, totalW, rh, { fill: 'rgba(255,255,255,0.03)' });
+      }
+    } else if (t.id === 'watercolor') {
+      if (isOdd) {
+        svg.rect(tableLeft, ry, totalW, rh, { fill: t.primary, opacity: 0.04, filter: 'url(#wc-light)' });
+      }
+    } else if (t.id === 'bold') {
+      if (isOdd) {
+        svg.rect(tableLeft, ry, totalW, rh, { fill: t.surface, opacity: 0.5 });
+        svg.rect(tableLeft, ry, totalW, rh, { fill: 'url(#halftone)' });
+      }
+    } else if (t.id !== 'sketch' && t.id !== 'pixel') {
+      if (isOdd) {
+        svg.rect(tableLeft, ry, totalW, rh, { fill: t.surface, opacity: 0.5 });
+      }
     }
 
-    // Row separator
+    // Row separator — preset-specific
     if (r > 0) {
-      svg.line(tableLeft + 12, ry, tableLeft + totalW - 12, ry, {
-        stroke: t.border, 'stroke-width': 0.5, opacity: 0.3,
-      });
+      if (t.id === 'sketch') {
+        svg.path(jitterLine(tableLeft + 12, ry, tableLeft + totalW - 12, ry, r * 11), {
+          fill: 'none', stroke: t.border, 'stroke-width': 1, opacity: 0.3,
+        });
+      } else if (t.id === 'pixel') {
+        svg.line(tableLeft, ry, tableLeft + totalW, ry, {
+          stroke: t.border, 'stroke-width': 1, 'shape-rendering': 'crispEdges', opacity: 0.4,
+        });
+      } else if (t.id === 'bold') {
+        svg.line(tableLeft, ry, tableLeft + totalW, ry, {
+          stroke: t.border, 'stroke-width': 3, opacity: 0.15,
+        });
+      } else if (t.id === 'neon') {
+        svg.line(tableLeft + 8, ry, tableLeft + totalW - 8, ry, {
+          stroke: t.primary, 'stroke-width': 0.5, opacity: 0.2,
+        });
+      } else if (t.id === 'minimal') {
+        // Only bottom line for the entire table, no inter-row separators
+      } else {
+        svg.line(tableLeft + 12, ry, tableLeft + totalW - 12, ry, {
+          stroke: t.border, 'stroke-width': 0.5, opacity: 0.3,
+        });
+      }
     }
 
     // Label cell (first column)
@@ -217,7 +355,12 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
     const labelColor = t.colors[r % t.colors.length]!;
 
     // Accent dot
-    svg.circle(cx + 14, ry + rh / 2, 3.5, { fill: labelColor });
+    if (t.id !== 'minimal' && t.id !== 'sketch') {
+      svg.circle(cx + 14, ry + rh / 2, 3.5, {
+        fill: labelColor,
+        ...(t.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
+      });
+    }
 
     renderCellText(svg, row.label, cx + 26, ry + rh / 2, paddedWidths[0]! - 30, 'start', 13, 600, t.text);
     cx += paddedWidths[0]!;
@@ -228,17 +371,40 @@ function renderGraphic(data: ComparisonTableData, title?: string, design?: Desig
         const cw = paddedWidths[v + 1]!;
         renderCellText(svg, row.values[v]!, cx + cw / 2, ry + rh / 2, cw - 8, 'middle', 13, 400, t.textSecondary);
 
-        // Subtle column divider
+        // Subtle column divider — preset-specific
         if (v + 2 < layout.colCount) {
-          svg.line(cx + cw, ry + 8, cx + cw, ry + rh - 8, {
-            stroke: t.border, 'stroke-width': 0.5, opacity: 0.15,
-          });
+          if (t.id === 'sketch') {
+            svg.path(jitterLine(cx + cw, ry + 8, cx + cw, ry + rh - 8, r * 13 + v * 5), {
+              fill: 'none', stroke: t.border, 'stroke-width': 1, opacity: 0.15,
+            });
+          } else if (t.id === 'pixel') {
+            svg.line(cx + cw, ry, cx + cw, ry + rh, {
+              stroke: t.border, 'stroke-width': 1, 'shape-rendering': 'crispEdges', opacity: 0.2,
+            });
+          } else if (t.id === 'neon') {
+            svg.line(cx + cw, ry + 8, cx + cw, ry + rh - 8, {
+              stroke: t.primary, 'stroke-width': 0.5, opacity: 0.15,
+            });
+          } else if (t.id === 'minimal') {
+            // No column dividers for minimal
+          } else {
+            svg.line(cx + cw, ry + 8, cx + cw, ry + rh - 8, {
+              stroke: t.border, 'stroke-width': 0.5, opacity: 0.15,
+            });
+          }
         }
         cx += cw;
       }
     }
 
     ry += rh;
+  }
+
+  // Minimal: single bottom line under the entire table
+  if (t.id === 'minimal') {
+    svg.line(tableLeft, ry, tableLeft + totalW, ry, {
+      stroke: t.border, 'stroke-width': 1,
+    });
   }
 
   return svg.build();

@@ -26,6 +26,7 @@ export function renderCycle(data: CycleData, title?: string, design?: DesignPres
   switch (style) {
     case 'flywheel': return renderFlywheel(data, title, d);
     case 'gear': return renderGear(data, title, d);
+    case 'feedback-loop': return renderFeedbackLoop(data, title, d);
     default:
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
@@ -548,7 +549,13 @@ function renderGear(data: CycleData, title: string | undefined, d: DesignPreset)
   const { svg, defs: baseDefs } = createDiagramSvg(d, width, height, title, 'Cycle diagram (gear)',
     buildColorGradients(d, count, 'cg'));
   svg.defs(baseDefs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const positions = circlePositions(count, cx, cy, ringR);
@@ -587,13 +594,20 @@ function renderGear(data: CycleData, title: string | undefined, d: DesignPreset)
     }
     gearPath += 'Z';
 
-    // Shadow
-    svg.path(gearPath, { fill: color, opacity: 0.15, transform: `translate(2, 2)` });
-    // Gear body
-    svg.path(gearPath, { fill: color, opacity: 0.85, stroke: d.surface, 'stroke-width': 1.5 });
-    // Inner circle
-    svg.circle(x, y, innerR, { fill: d.surface, opacity: 0.9 });
-    svg.circle(x, y, 6, { fill: color, opacity: 0.3 });
+    if (d.id === 'neon') {
+      svg.path(gearPath, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+      svg.path(gearPath, { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)' });
+      svg.circle(x, y, innerR, { fill: 'rgba(0,0,0,0.6)' });
+      svg.circle(x, y, 6, { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.5 });
+    } else {
+      // Shadow
+      svg.path(gearPath, { fill: color, opacity: 0.15, transform: `translate(2, 2)` });
+      // Gear body
+      svg.path(gearPath, { fill: color, opacity: 0.85, stroke: d.surface, 'stroke-width': 1.5 });
+      // Inner circle
+      svg.circle(x, y, innerR, { fill: d.surface, opacity: 0.9 });
+      svg.circle(x, y, 6, { fill: color, opacity: 0.3 });
+    }
 
     // Step number
     svg.text(x, y + 5, `${i + 1}`, {
@@ -627,7 +641,13 @@ function renderFlywheel(data: CycleData, title: string | undefined, d: DesignPre
     buildColorGradients(d, count, 'cg'));
   const arrowDef = `<marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="${d.border}"/></marker>`;
   svg.defs(baseDefs + arrowDef);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   // Outer ring with motion lines
@@ -655,10 +675,13 @@ function renderFlywheel(data: CycleData, title: string | undefined, d: DesignPre
     const y2o = cy + outerR * Math.sin(endAngle);
     const largeArc = angleStep - 2 * gapAngle > Math.PI ? 1 : 0;
 
-    svg.path(
-      `M ${x1i.toFixed(1)} ${y1i.toFixed(1)} L ${x1o.toFixed(1)} ${y1o.toFixed(1)} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o.toFixed(1)} ${y2o.toFixed(1)} L ${x2i.toFixed(1)} ${y2i.toFixed(1)} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1i.toFixed(1)} ${y1i.toFixed(1)}`,
-      { fill: color, opacity: 0.75, stroke: d.surface, 'stroke-width': 1.5 },
-    );
+    const arcD = `M ${x1i.toFixed(1)} ${y1i.toFixed(1)} L ${x1o.toFixed(1)} ${y1o.toFixed(1)} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o.toFixed(1)} ${y2o.toFixed(1)} L ${x2i.toFixed(1)} ${y2i.toFixed(1)} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1i.toFixed(1)} ${y1i.toFixed(1)}`;
+    if (d.id === 'neon') {
+      svg.path(arcD, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+      svg.path(arcD, { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)' });
+    } else {
+      svg.path(arcD, { fill: color, opacity: 0.75, stroke: d.surface, 'stroke-width': 1.5 });
+    }
 
     // Arrow on outer edge (clockwise direction indicator)
     const midAngle = (startAngle + endAngle) / 2;
@@ -696,6 +719,114 @@ function renderFlywheel(data: CycleData, title: string | undefined, d: DesignPre
     `M ${cx} ${cy - iconR} A ${iconR} ${iconR} 0 1 1 ${cx - iconR} ${cy}`,
     { fill: 'none', stroke: d.text, 'stroke-width': 2, opacity: 0.5, 'stroke-linecap': 'round', 'marker-end': 'url(#arr)' },
   );
+
+  return svg.build();
+}
+
+// ========== FEEDBACK LOOP ==========
+// Emphasizes iterative self-correction: horizontal chain with a prominent return arrow
+
+function renderFeedbackLoop(data: CycleData, title: string | undefined, d: DesignPreset): string {
+  const pad = 48;
+  const titleH = title ? 48 : 0;
+  const count = data.steps.length;
+  const nodeW = 140;
+  const nodeH = 64;
+  const gapX = 48;
+  const arrowH = 56;
+  const totalW = count * nodeW + (count - 1) * gapX;
+  const width = pad * 2 + totalW;
+  const height = pad * 2 + titleH + nodeH + arrowH + 40;
+
+  const { svg, defs: baseDefs } = createDiagramSvg(d, width, height, title, 'Cycle diagram (feedback loop)',
+    buildColorGradients(d, count, 'cg'));
+  const feedColor = d.colors[0]!;
+  const arrowDef = `<marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="${d.border}"/></marker>`;
+  const feedArrowDef = `<marker id="farr" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><polygon points="0,0 10,4 0,8" fill="${feedColor}"/></marker>`;
+  svg.defs(baseDefs + arrowDef + feedArrowDef);
+
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+  const nodeY = contentTop;
+
+  // Forward arrows between nodes
+  for (let i = 0; i < count - 1; i++) {
+    const x1 = pad + i * (nodeW + gapX) + nodeW;
+    const x2 = pad + (i + 1) * (nodeW + gapX);
+    const cy = nodeY + nodeH / 2;
+    svg.path(`M ${x1 + 4} ${cy} L ${x2 - 6} ${cy}`, {
+      fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.5,
+      'stroke-linecap': 'round', 'marker-end': 'url(#arr)',
+    });
+  }
+
+  // Feedback return arrow (bottom, right to left)
+  const returnY = nodeY + nodeH + 20;
+  const lastRight = pad + (count - 1) * (nodeW + gapX) + nodeW / 2;
+  const firstLeft = pad + nodeW / 2;
+  const curveY = returnY + arrowH - 16;
+
+  if (d.id === 'neon') {
+    svg.path(`M ${lastRight} ${nodeY + nodeH + 4} L ${lastRight} ${returnY} C ${lastRight} ${curveY}, ${firstLeft} ${curveY}, ${firstLeft} ${returnY} L ${firstLeft} ${nodeY + nodeH + 8}`, {
+      fill: 'none', stroke: feedColor, 'stroke-width': 2, 'stroke-dasharray': '8,4',
+      'stroke-linecap': 'round', 'marker-end': 'url(#farr)', filter: 'url(#neon-glow)',
+    });
+  } else {
+    svg.path(`M ${lastRight} ${nodeY + nodeH + 4} L ${lastRight} ${returnY} C ${lastRight} ${curveY}, ${firstLeft} ${curveY}, ${firstLeft} ${returnY} L ${firstLeft} ${nodeY + nodeH + 8}`, {
+      fill: 'none', stroke: feedColor, 'stroke-width': 2.5, 'stroke-dasharray': '8,4',
+      'stroke-linecap': 'round', opacity: 0.6, 'marker-end': 'url(#farr)',
+    });
+  }
+
+  // Feedback label
+  const feedLabelX = (firstLeft + lastRight) / 2;
+  svg.text(feedLabelX, curveY + 4, 'feedback', {
+    'text-anchor': 'middle', 'font-size': d.captionSize - 1, 'font-style': 'italic',
+    fill: feedColor, opacity: 0.7,
+  });
+
+  // Draw nodes
+  for (let i = 0; i < count; i++) {
+    const step = data.steps[i]!;
+    const color = stepColor(d, i);
+    const x = pad + i * (nodeW + gapX);
+
+    if (d.id === 'neon') {
+      svg.rect(x, nodeY, nodeW, nodeH, {
+        fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+      });
+      svg.rect(x, nodeY, nodeW, nodeH, {
+        fill: 'none', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else if (d.id === 'sketch') {
+      svg.path(jitterRect(x, nodeY, nodeW, nodeH, i * 17), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else {
+      svg.rect(x, nodeY, nodeW, nodeH, {
+        fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
+        rx: d.borderRadius, ...d.cardAttrs(),
+      });
+      svg.rect(x, nodeY, nodeW, 4, { fill: color, rx: 2 });
+    }
+
+    // Step number
+    svg.text(x + 16, nodeY + 20, `${i + 1}`, {
+      'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: color, opacity: 0.7,
+    });
+
+    // Label & description
+    drawLabelBlock(svg, d, step.label, step.description, x + nodeW / 2, nodeY + 26, nodeW - 16);
+  }
 
   return svg.build();
 }

@@ -499,7 +499,13 @@ function renderHorizontalStyle(data: StackedBarData, title: string | undefined, 
     buildColorGradients(d, data.categories.length, 'sc'));
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const baseY = pad + titleH + chartH;
@@ -519,9 +525,20 @@ function renderHorizontalStyle(data: StackedBarData, title: string | undefined, 
     for (let c = 0; c < item.values.length; c++) {
       const segH = Math.max(0, (item.values[c]! / maxTotal) * chartH);
       if (segH > 0) {
-        svg.rect(x, baseY - yOff - segH, barW, segH, {
-          fill: catColor(d, c), rx: 0, ...d.cardAttrs(),
-        });
+        const color = catColor(d, c);
+        if (d.id === 'neon') {
+          svg.rect(x, baseY - yOff - segH, barW, segH, {
+            fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1, rx: 0,
+          });
+          svg.rect(x, baseY - yOff - segH, barW, segH, {
+            fill: 'none', stroke: color, 'stroke-width': 1.5, rx: 0,
+            opacity: 0.3, filter: 'url(#neon-glow)',
+          });
+        } else {
+          svg.rect(x, baseY - yOff - segH, barW, segH, {
+            fill: color, rx: 0, ...d.cardAttrs(),
+          });
+        }
       }
       yOff += segH;
     }
@@ -560,7 +577,13 @@ function renderPercentage(data: StackedBarData, title: string | undefined, d: De
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Stacked bar (100%)',
     buildColorGradients(d, data.categories.length, 'sc'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const chartX = pad + labelW + 12;
@@ -591,15 +614,27 @@ function renderPercentage(data: StackedBarData, title: string | undefined, d: De
         const isFirst = c === 0;
         const isLast = c === item.values.length - 1;
         const rx = d.borderRadius > 8 ? 6 : d.borderRadius;
-        svg.rect(chartX + xOff, y, segW, barH, {
-          fill: catColor(d, c), opacity: 0.85,
-          rx: (isFirst || isLast) ? rx : 0,
-        });
+        const color = catColor(d, c);
+        if (d.id === 'neon') {
+          svg.rect(chartX + xOff, y, segW, barH, {
+            fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1,
+            rx: (isFirst || isLast) ? rx : 0,
+          });
+          svg.rect(chartX + xOff, y, segW, barH, {
+            fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3,
+            rx: (isFirst || isLast) ? rx : 0, filter: 'url(#neon-glow)',
+          });
+        } else {
+          svg.rect(chartX + xOff, y, segW, barH, {
+            fill: color, opacity: 0.85,
+            rx: (isFirst || isLast) ? rx : 0,
+          });
+        }
         // Percentage label inside segment
         const pctText = `${Math.round(pct * 100)}%`;
         if (segW > 36) {
           svg.text(chartX + xOff + segW / 2, y + barH / 2 + 4, pctText, {
-            'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: '#FFFFFF',
+            'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: d.id === 'neon' ? color : '#FFFFFF',
           });
         }
       }
@@ -608,7 +643,11 @@ function renderPercentage(data: StackedBarData, title: string | undefined, d: De
   }
 
   // Legend
-  drawLegend(svg, d, data.categories, chartX, legendY, chartW);
+  if (d.id === 'neon') {
+    drawNeonLegend(svg, d, data.categories, chartX, legendY, chartW);
+  } else {
+    drawLegend(svg, d, data.categories, chartX, legendY, chartW);
+  }
 
   return svg.build();
 }

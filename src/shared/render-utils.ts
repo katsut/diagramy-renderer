@@ -51,6 +51,10 @@ export function createDiagramSvg(
   if (title) svg.title(title);
   svg.desc(desc);
 
+  // Footer branding — subtle "Figney" text at bottom-right
+  const isDark = d.id === 'neon' || d.id === 'glass' || d.id === 'pixel';
+  svg.setFooter(isDark ? 'rgba(255,255,255,0.25)' : d.textSecondary, isDark ? 1 : 0.3);
+
   const defs = [d.shadow, d.cardShadow, d.extraDefs, extraDefs]
     .filter(Boolean)
     .join('');
@@ -121,12 +125,16 @@ export function drawTitle(svg: SvgBuilder, d: DesignPreset, title: string, width
   const ty = pad + 30;
 
   if (d.id === 'bold') {
-    // Background pill behind title — extra top margin for bold border frame
+    // Background pill behind title — clamp to viewBox width
     const boldTy = pad + 38;
-    const textW = estimateWidth(title, d.titleSize) + 32;
-    svg.rect(cx - textW / 2, boldTy - 20, textW, 32, { fill: d.primary, rx: 6, filter: 'url(#bold-offset)' });
-    svg.text(cx, boldTy + 2, title, {
-      'text-anchor': 'middle', 'font-size': d.titleSize, 'font-weight': 900, fill: '#FFFFFF',
+    const maxBannerW = width - 12;
+    const rawTextW = estimateWidth(title, d.titleSize) + 32;
+    const bannerW = Math.min(rawTextW, maxBannerW);
+    const bannerH = 38;
+    svg.rect(cx - bannerW / 2, boldTy - 24, bannerW, bannerH, { fill: d.primary, rx: 6, filter: 'url(#bold-offset)' });
+    const fit = fitText(title, bannerW - 24, 1, d.titleSize);
+    svg.text(cx, boldTy - 2, fit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
     });
   } else if (d.id === 'neon') {
     // Glowing neon title
@@ -388,17 +396,17 @@ export function drawIconNode(
 // --- Sketch background (dot grid) ---
 
 export function drawSketchBackground(svg: SvgBuilder, width: number, height: number, bg: string): void {
-  svg.rect(0, 0, width, height, { fill: bg, rx: 4 });
-  // Dot grid pattern (wider spacing, lower opacity for subtlety)
+  const h = height + FOOTER_MARGIN;
+  svg.rect(0, 0, width, h, { fill: bg, rx: 4 });
   svg.raw(`<defs><pattern id="sketch-dots" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="14" cy="14" r="0.5" fill="#CCC" opacity="0.2"/></pattern></defs>`);
-  svg.rect(0, 0, width, height, { fill: 'url(#sketch-dots)' });
+  svg.rect(0, 0, width, h, { fill: 'url(#sketch-dots)' });
 }
 
 // --- Pixel background (scanlines) ---
 
 export function drawPixelBackground(svg: SvgBuilder, width: number, height: number, bg: string): void {
-  svg.rect(0, 0, width, height, { fill: bg, 'shape-rendering': 'crispEdges' });
-  // Scanlines via <pattern> for performance
+  const h = height + FOOTER_MARGIN;
+  svg.rect(0, 0, width, h, { fill: bg, 'shape-rendering': 'crispEdges' });
   svg.raw(`<defs><pattern id="scanlines" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="4" y2="0" stroke="#000" stroke-width="0.5" opacity="0.2" shape-rendering="crispEdges"/></pattern></defs>`);
-  svg.rect(0, 0, width, height, { fill: 'url(#scanlines)', 'shape-rendering': 'crispEdges' });
+  svg.rect(0, 0, width, h, { fill: 'url(#scanlines)', 'shape-rendering': 'crispEdges' });
 }

@@ -1,7 +1,7 @@
 // Block list renderer — design-system aware
 
 import type { SvgBuilder } from '../shared/svg.js';
-import { getDesign, jitterRect, pixelBorder, type DesignPreset } from '../shared/design.js';
+import { getDesign, jitterRect, jitterLine, pixelBorder, type DesignPreset } from '../shared/design.js';
 import { fitText, estimateWidth } from '../shared/text.js';
 import { icon, inferIcon } from '../shared/icons.js';
 import {
@@ -42,6 +42,8 @@ export function renderBlockList(data: BlockListData, title?: string, design?: De
     case 'timeline': return renderTimeline(data, title, d);
     case 'simple': return renderSimple(data, title, d);
     case 'inline': return renderInline(data, title, d);
+    case 'warning': return renderWarning(data, title, d);
+    case 'catalog': return renderCatalog(data, title, d);
     default:
       switch (d.id) {
         case 'sketch': return renderSketch(data, title, d);
@@ -455,7 +457,13 @@ function renderGrid(data: BlockListData, title: string | undefined, d: DesignPre
   const gradientDefs = buildColorGradients(d, count, 'bg');
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list diagram (grid)', gradientDefs);
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -463,27 +471,58 @@ function renderGrid(data: BlockListData, title: string | undefined, d: DesignPre
   const tableY = contentTop;
 
   // Outer border
-  svg.rect(tableX, tableY, totalW, totalH, {
-    fill: d.surface,
-    stroke: d.borderWidth > 0 ? d.border : d.text,
-    'stroke-width': d.borderWidth || 1,
-    rx: Math.min(d.borderRadius, 6),
-  });
+  if (d.lineJitter) {
+    svg.rect(tableX, tableY, totalW, totalH, { fill: d.surface, rx: 0 });
+    svg.path(jitterRect(tableX, tableY, totalW, totalH, 0), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    svg.rect(tableX, tableY, totalW, totalH, {
+      fill: 'rgba(0,0,0,0.4)', stroke: d.border, 'stroke-width': 1,
+      rx: Math.min(d.borderRadius, 6),
+    });
+    svg.rect(tableX, tableY, totalW, totalH, {
+      fill: 'none', stroke: d.colors[0], 'stroke-width': 1, rx: Math.min(d.borderRadius, 6),
+      opacity: 0.3, filter: 'url(#neon-glow)',
+    });
+  } else {
+    svg.rect(tableX, tableY, totalW, totalH, {
+      fill: d.surface,
+      stroke: d.borderWidth > 0 ? d.border : d.text,
+      'stroke-width': d.borderWidth || 1,
+      rx: Math.min(d.borderRadius, 6),
+      ...d.cardAttrs(),
+    });
+  }
 
   // Vertical divider lines
   for (let c = 1; c < cols; c++) {
     const lx = tableX + c * cellW;
-    svg.line(lx, tableY, lx, tableY + totalH, {
-      stroke: d.border || d.textSecondary, 'stroke-width': 1, opacity: 0.5,
-    });
+    if (d.lineJitter) {
+      svg.path(jitterLine(lx, tableY + 4, lx, tableY + totalH - 4, c * 13), {
+        fill: 'none', stroke: d.border, 'stroke-width': 1, opacity: 0.5,
+      });
+    } else {
+      svg.line(lx, tableY, lx, tableY + totalH, {
+        stroke: d.border || d.textSecondary, 'stroke-width': 1, opacity: 0.5,
+        ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' } : {}),
+      });
+    }
   }
 
   // Horizontal divider lines
   for (let r = 1; r < rows; r++) {
     const ly = tableY + r * cellH;
-    svg.line(tableX, ly, tableX + totalW, ly, {
-      stroke: d.border || d.textSecondary, 'stroke-width': 1, opacity: 0.5,
-    });
+    if (d.lineJitter) {
+      svg.path(jitterLine(tableX + 4, ly, tableX + totalW - 4, ly, r * 17), {
+        fill: 'none', stroke: d.border, 'stroke-width': 1, opacity: 0.5,
+      });
+    } else {
+      svg.line(tableX, ly, tableX + totalW, ly, {
+        stroke: d.border || d.textSecondary, 'stroke-width': 1, opacity: 0.5,
+        ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' } : {}),
+      });
+    }
   }
 
   // Cell content (icon + label + description)
@@ -520,7 +559,13 @@ function renderPillars(data: BlockListData, title: string | undefined, d: Design
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (pillars)',
     buildColorGradients(d, count, 'bg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -535,21 +580,30 @@ function renderPillars(data: BlockListData, title: string | undefined, d: Design
     const cx = px + pillarW / 2;
 
     // Pillar rectangle
-    svg.rect(px, py, pillarW, pillarH, {
-      fill: d.surface, rx: d.borderRadius,
-      stroke: d.borderWidth > 0 ? d.border : 'none',
-      'stroke-width': d.borderWidth,
-      ...d.cardAttrs(),
-    });
-
-    // Top accent strip
-    svg.rect(px + 1, py + 1, pillarW - 2, 4, { fill: color, rx: 2 });
+    if (d.lineJitter) {
+      svg.path(jitterRect(px, py, pillarW, pillarH, i * 7), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.shapeRendering === 'crispEdges') {
+      svg.raw(pixelBorder(px, py, pillarW, pillarH, color, 3));
+      svg.rect(px + 3, py + 3, pillarW - 6, pillarH - 6, {
+        fill: d.surface, 'shape-rendering': 'crispEdges',
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(px, py, pillarW, pillarH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(px, py, pillarW, pillarH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      drawPresetCard(svg, d, px, py, pillarW, pillarH, color);
+    }
 
     // Icon circle at top of pillar
     const iconY = py + 36;
-    svg.circle(cx, iconY, iconR, { fill: color, opacity: 0.15 });
-    svg.circle(cx, iconY, iconR - 4, { fill: color });
-    svg.raw(icon(itemIcon(item.label, item.description), cx, iconY, 16, '#FFFFFF'));
+    drawIconNode(svg, d, cx, iconY, iconR - 4, color, `bg${i}`, itemIcon(item.label, item.description), 16);
 
     // Label in middle
     drawLabelBlock(svg, d, item.label, item.description, cx, py + 80, pillarW - 24);
@@ -562,8 +616,6 @@ function renderPillars(data: BlockListData, title: string | undefined, d: Design
 // Vertical list with connecting line and numbered circle badges
 
 function renderNumbered(data: BlockListData, title: string | undefined, d: DesignPreset): string {
-  const isPixel = d.id === 'pixel';
-  const isSketch = d.id === 'sketch';
   const pad = 44;
   const titleH = title ? 48 : 0;
   const count = data.items.length;
@@ -578,9 +630,9 @@ function renderNumbered(data: BlockListData, title: string | undefined, d: Desig
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (numbered)',
     buildColorGradients(d, count, 'bg'));
   svg.defs(defs);
-  if (isSketch) {
+  if (d.lineJitter) {
     drawSketchBackground(svg, width, height, d.bg);
-  } else if (isPixel) {
+  } else if (d.shapeRendering === 'crispEdges') {
     drawPixelBackground(svg, width, height, d.bg);
   } else {
     drawBackground(svg, d, width, height);
@@ -592,17 +644,23 @@ function renderNumbered(data: BlockListData, title: string | undefined, d: Desig
   // Vertical connecting line
   const lineTop = contentTop + 20;
   const lineBottom = contentTop + (count - 1) * (itemH + gap) + 20;
-  svg.rect(lineX - 1.5, lineTop, 3, lineBottom - lineTop, {
-    fill: d.border, opacity: 0.3, rx: isPixel ? 0 : 1.5,
-    ...(isPixel ? { 'shape-rendering': 'crispEdges' } : {}),
-  });
+  if (d.lineJitter) {
+    svg.path(jitterLine(lineX, lineTop, lineX, lineBottom, 99), {
+      fill: 'none', stroke: d.border, 'stroke-width': 1.5, opacity: 0.3,
+    });
+  } else {
+    svg.rect(lineX - 1.5, lineTop, 3, lineBottom - lineTop, {
+      fill: d.border, opacity: 0.3, rx: d.shapeRendering === 'crispEdges' ? 0 : 1.5,
+      ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' } : {}),
+    });
+  }
 
   for (let i = 0; i < count; i++) {
     const item = data.items[i]!;
     const color = itemColor(d, i);
     const y = contentTop + i * (itemH + gap);
 
-    if (isSketch) {
+    if (d.lineJitter) {
       // Hand-drawn wobbly circle badge
       const rx = 16 + (i % 3 - 1) * 1.5;
       const ry = 16 + ((i + 1) % 3 - 1) * 1.5;
@@ -610,19 +668,26 @@ function renderNumbered(data: BlockListData, title: string | undefined, d: Desig
       svg.text(lineX, y + 25, `${i + 1}`, {
         'text-anchor': 'middle', 'font-size': 13, 'font-weight': 400, fill: d.text,
       });
-    } else if (isPixel) {
+    } else if (d.shapeRendering === 'crispEdges') {
       // Pixel-style stepped border badge
-      const px = 3;
-      svg.raw(pixelBorder(lineX - 16, y + 4, 32, 32, color, px));
-      svg.rect(lineX - 16 + px, y + 4 + px, 32 - px * 2, 32 - px * 2, {
+      const bpx = 3;
+      svg.raw(pixelBorder(lineX - 16, y + 4, 32, 32, color, bpx));
+      svg.rect(lineX - 16 + bpx, y + 4 + bpx, 32 - bpx * 2, 32 - bpx * 2, {
         fill: color, 'shape-rendering': 'crispEdges',
       });
       svg.text(lineX, y + 25, `${i + 1}`, {
         'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: '#FFFFFF',
       });
+    } else if (d.id === 'neon') {
+      // Neon glow circle badge
+      svg.circle(lineX, y + 20, 16, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+      svg.circle(lineX, y + 20, 16, { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)' });
+      svg.text(lineX, y + 25, `${i + 1}`, {
+        'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: color,
+      });
     } else {
       // Numbered circle badge on the line
-      svg.circle(lineX, y + 20, 16, { fill: color });
+      svg.circle(lineX, y + 20, 16, { fill: color, ...d.cardAttrs() });
       svg.text(lineX, y + 25, `${i + 1}`, {
         'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: '#FFFFFF',
       });
@@ -639,9 +704,7 @@ function renderNumbered(data: BlockListData, title: string | undefined, d: Desig
 // 2-column layout with large feature cards, icon + bold label + description
 
 function renderCards(data: BlockListData, title: string | undefined, d: DesignPreset): string {
-  const isPixel = d.id === 'pixel';
-  const isSketch = d.id === 'sketch';
-  const px = 3;
+  const bpx = 3;
   const pad = 44;
   const titleH = title ? 52 : 0;
   const count = data.items.length;
@@ -659,9 +722,9 @@ function renderCards(data: BlockListData, title: string | undefined, d: DesignPr
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (cards)',
     buildColorGradients(d, count, 'bg'));
   svg.defs(defs);
-  if (isSketch) {
+  if (d.lineJitter) {
     drawSketchBackground(svg, width, height, d.bg);
-  } else if (isPixel) {
+  } else if (d.shapeRendering === 'crispEdges') {
     drawPixelBackground(svg, width, height, d.bg);
   } else {
     drawBackground(svg, d, width, height);
@@ -678,13 +741,13 @@ function renderCards(data: BlockListData, title: string | undefined, d: DesignPr
     const x = pad + col * (cardW + gapX);
     const y = contentTop + row * (cardH + gapY);
 
-    if (isSketch) {
+    if (d.lineJitter) {
       svg.path(jitterRect(x + 4, y + 4, cardW - 8, cardH - 8, i * 7), {
         fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
       });
-    } else if (isPixel) {
-      svg.raw(pixelBorder(x, y, cardW, cardH, color, px));
-      svg.rect(x + px, y + px, cardW - px * 2, cardH - px * 2, {
+    } else if (d.shapeRendering === 'crispEdges') {
+      svg.raw(pixelBorder(x, y, cardW, cardH, color, bpx));
+      svg.rect(x + bpx, y + bpx, cardW - bpx * 2, cardH - bpx * 2, {
         fill: d.surface, 'shape-rendering': 'crispEdges',
       });
     } else {
@@ -694,19 +757,7 @@ function renderCards(data: BlockListData, title: string | undefined, d: DesignPr
     // Large icon circle
     const iconCx = x + 40;
     const iconCy = y + cardH / 2;
-    if (isSketch) {
-      const rx = 18 + (i % 3 - 1) * 1.5;
-      const ry = 18 + ((i + 1) % 3 - 1) * 1.5;
-      svg.raw(`<ellipse cx="${iconCx}" cy="${iconCy}" rx="${rx}" ry="${ry}" fill="none" stroke="${d.border}" stroke-width="1.5"/>`);
-    } else if (isPixel) {
-      svg.rect(iconCx - 18, iconCy - 18, 36, 36, {
-        fill: color, 'shape-rendering': 'crispEdges',
-      });
-    } else {
-      svg.circle(iconCx, iconCy, 24, { fill: color, opacity: 0.15 });
-      svg.circle(iconCx, iconCy, 18, { fill: color });
-    }
-    svg.raw(icon(itemIcon(item.label, item.description), iconCx, iconCy, 16, isSketch ? d.border : '#FFFFFF'));
+    drawIconNode(svg, d, iconCx, iconCy, 18, color, `bg${i}`, itemIcon(item.label, item.description), 16);
 
     // Label + description to the right of icon
     drawLabelBlock(svg, d, item.label, item.description, x + 76, y + cardH / 2 - 6, cardW - 96, 'start');
@@ -719,8 +770,6 @@ function renderCards(data: BlockListData, title: string | undefined, d: DesignPr
 // Icon-dominant grid (3-4 columns), large icon circle + short label
 
 function renderIcons(data: BlockListData, title: string | undefined, d: DesignPreset): string {
-  const isPixel = d.id === 'pixel';
-  const isSketch = d.id === 'sketch';
   const pad = 40;
   const titleH = title ? 48 : 0;
   const count = data.items.length;
@@ -738,9 +787,9 @@ function renderIcons(data: BlockListData, title: string | undefined, d: DesignPr
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (icons)',
     buildColorGradients(d, count, 'bg'));
   svg.defs(defs);
-  if (isSketch) {
+  if (d.lineJitter) {
     drawSketchBackground(svg, width, height, d.bg);
-  } else if (isPixel) {
+  } else if (d.shapeRendering === 'crispEdges') {
     drawPixelBackground(svg, width, height, d.bg);
   } else {
     drawBackground(svg, d, width, height);
@@ -758,19 +807,7 @@ function renderIcons(data: BlockListData, title: string | undefined, d: DesignPr
     const y = contentTop + row * (cellH + gapY);
 
     // Large icon
-    if (isSketch) {
-      const rx = 24 + (i % 3 - 1) * 2;
-      const ry = 24 + ((i + 1) % 3 - 1) * 2;
-      svg.raw(`<ellipse cx="${cx}" cy="${y + 38}" rx="${rx}" ry="${ry}" fill="none" stroke="${d.border}" stroke-width="${d.borderWidth}"/>`);
-    } else if (isPixel) {
-      svg.rect(cx - 24, y + 14, 48, 48, {
-        fill: color, 'shape-rendering': 'crispEdges',
-      });
-    } else {
-      svg.circle(cx, y + 38, 30, { fill: color, opacity: 0.15 });
-      svg.circle(cx, y + 38, 24, { fill: color });
-    }
-    svg.raw(icon(itemIcon(item.label, item.description), cx, y + 38, 20, isSketch ? d.border : '#FFFFFF'));
+    drawIconNode(svg, d, cx, y + 38, 24, color, `bg${i}`, itemIcon(item.label, item.description), 20);
 
     // Short label below
     const fit = fitText(item.label, cellW - 12, 2, d.labelSize - 1);
@@ -791,8 +828,6 @@ function renderIcons(data: BlockListData, title: string | undefined, d: DesignPr
 // Full-width horizontal bars with alternating backgrounds
 
 function renderStripe(data: BlockListData, title: string | undefined, d: DesignPreset): string {
-  const isPixel = d.id === 'pixel';
-  const isSketch = d.id === 'sketch';
   const pad = 36;
   const titleH = title ? 48 : 0;
   const count = data.items.length;
@@ -804,9 +839,9 @@ function renderStripe(data: BlockListData, title: string | undefined, d: DesignP
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (stripe)');
   svg.defs(defs);
-  if (isSketch) {
+  if (d.lineJitter) {
     drawSketchBackground(svg, width, height, d.bg);
-  } else if (isPixel) {
+  } else if (d.shapeRendering === 'crispEdges') {
     drawPixelBackground(svg, width, height, d.bg);
   } else {
     drawBackground(svg, d, width, height);
@@ -820,28 +855,40 @@ function renderStripe(data: BlockListData, title: string | undefined, d: DesignP
     const color = itemColor(d, i);
     const y = contentTop + i * (barH + gap);
 
-    if (isSketch) {
+    if (d.lineJitter) {
       // Hand-drawn bar border
       svg.path(jitterRect(pad + 2, y + 2, barW - 4, barH - 4, i * 11), {
         fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
       });
+    } else if (d.id === 'neon') {
+      // Neon bar with glow border
+      svg.rect(pad, y, barW, barH, {
+        fill: 'rgba(0,0,0,0.3)', rx: d.borderRadius,
+      });
+      svg.rect(pad, y, barW, barH, {
+        fill: 'none', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+        opacity: 0.4, filter: 'url(#neon-glow)',
+      });
+      // Left color accent
+      svg.rect(pad, y, 5, barH, { fill: color, rx: 1 });
     } else {
       // Alternating background
       const bgFill = i % 2 === 0 ? d.surface : d.bg;
       svg.rect(pad, y, barW, barH, {
-        fill: bgFill, rx: isPixel ? 0 : d.borderRadius,
-        ...(isPixel ? { 'shape-rendering': 'crispEdges' } : {}),
+        fill: bgFill, rx: d.shapeRendering === 'crispEdges' ? 0 : d.borderRadius,
+        ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' } : {}),
+        ...d.cardAttrs(),
       });
 
       // Left color accent
       svg.rect(pad, y, 5, barH, {
-        fill: color, rx: isPixel ? 0 : 2,
-        ...(isPixel ? { 'shape-rendering': 'crispEdges' } : {}),
+        fill: color, rx: d.shapeRendering === 'crispEdges' ? 0 : 2,
+        ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' } : {}),
       });
     }
 
     // Icon
-    svg.raw(icon(itemIcon(item.label, item.description), pad + 28, y + barH / 2, 16, isSketch ? d.border : color));
+    svg.raw(icon(itemIcon(item.label, item.description), pad + 28, y + barH / 2, 16, d.lineJitter ? d.border : color));
 
     // Label + description
     drawLabelBlock(svg, d, item.label, item.description, pad + 52, y + (item.description ? barH / 2 - 4 : barH / 2 + 5), barW - 72, 'start');
@@ -854,8 +901,6 @@ function renderStripe(data: BlockListData, title: string | undefined, d: DesignP
 // Items alternate left/right with a dashed center line
 
 function renderZigzag(data: BlockListData, title: string | undefined, d: DesignPreset): string {
-  const isPixel = d.id === 'pixel';
-  const isSketch = d.id === 'sketch';
   const pad = 44;
   const titleH = title ? 52 : 0;
   const count = data.items.length;
@@ -869,9 +914,9 @@ function renderZigzag(data: BlockListData, title: string | undefined, d: DesignP
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (zigzag)',
     buildColorGradients(d, count, 'bg'));
   svg.defs(defs);
-  if (isSketch) {
+  if (d.lineJitter) {
     drawSketchBackground(svg, width, height, d.bg);
-  } else if (isPixel) {
+  } else if (d.shapeRendering === 'crispEdges') {
     drawPixelBackground(svg, width, height, d.bg);
   } else {
     drawBackground(svg, d, width, height);
@@ -883,11 +928,17 @@ function renderZigzag(data: BlockListData, title: string | undefined, d: DesignP
   // Dashed center line
   const lineTop = contentTop;
   const lineBottom = contentTop + count * (itemH + gap) - gap;
-  svg.rect(centerX - 0.5, lineTop, 1, lineBottom - lineTop, {
-    fill: 'none', stroke: d.border, 'stroke-width': 1,
-    'stroke-dasharray': isPixel ? '3,3' : '6,4', opacity: 0.4,
-    ...(isPixel ? { 'shape-rendering': 'crispEdges' } : {}),
-  });
+  if (d.lineJitter) {
+    svg.path(jitterLine(centerX, lineTop, centerX, lineBottom, 77), {
+      fill: 'none', stroke: d.border, 'stroke-width': 1, opacity: 0.4,
+    });
+  } else {
+    svg.rect(centerX - 0.5, lineTop, 1, lineBottom - lineTop, {
+      fill: 'none', stroke: d.border, 'stroke-width': 1,
+      'stroke-dasharray': d.shapeRendering === 'crispEdges' ? '3,3' : '6,4', opacity: 0.4,
+      ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' } : {}),
+    });
+  }
 
   const sideW = totalW / 2 - 40;
 
@@ -898,18 +949,21 @@ function renderZigzag(data: BlockListData, title: string | undefined, d: DesignP
     const isLeft = i % 2 === 0;
 
     // Icon on the center line
-    if (isSketch) {
+    if (d.lineJitter) {
       const rx = 16 + (i % 3 - 1) * 1.5;
       const ry = 16 + ((i + 1) % 3 - 1) * 1.5;
       svg.raw(`<ellipse cx="${centerX}" cy="${y + 24}" rx="${rx}" ry="${ry}" fill="none" stroke="${d.border}" stroke-width="${d.borderWidth}"/>`);
-    } else if (isPixel) {
+    } else if (d.shapeRendering === 'crispEdges') {
       svg.rect(centerX - 16, y + 8, 32, 32, {
         fill: color, 'shape-rendering': 'crispEdges',
       });
+    } else if (d.id === 'neon') {
+      svg.circle(centerX, y + 24, 16, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+      svg.circle(centerX, y + 24, 16, { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)' });
     } else {
-      svg.circle(centerX, y + 24, 16, { fill: color });
+      svg.circle(centerX, y + 24, 16, { fill: color, ...d.cardAttrs() });
     }
-    svg.raw(icon(itemIcon(item.label, item.description), centerX, y + 24, 14, isSketch ? d.border : '#FFFFFF'));
+    svg.raw(icon(itemIcon(item.label, item.description), centerX, y + 24, 14, d.lineJitter ? d.border : (d.id === 'neon' ? color : '#FFFFFF')));
 
     // Label + description on alternating sides
     if (isLeft) {
@@ -941,7 +995,13 @@ function renderSimple(data: BlockListData, title: string | undefined, d: DesignP
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (simple)');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   let y = pad + titleH + 16;
@@ -951,7 +1011,13 @@ function renderSimple(data: BlockListData, title: string | undefined, d: DesignP
     const color = itemColor(d, i);
 
     // Bullet dot
-    svg.circle(pad + 6, y, 3, { fill: color });
+    if (d.shapeRendering === 'crispEdges') {
+      svg.rect(pad + 3, y - 3, 6, 6, { fill: color, 'shape-rendering': 'crispEdges' });
+    } else if (d.id === 'neon') {
+      svg.circle(pad + 6, y, 3, { fill: color, filter: 'url(#neon-glow)' });
+    } else {
+      svg.circle(pad + 6, y, 3, { fill: color });
+    }
 
     // Label
     const lfit = fitText(item.label, maxW - 24, 1, d.labelSize);
@@ -997,7 +1063,13 @@ function renderInline(data: BlockListData, title: string | undefined, d: DesignP
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (inline)');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const y = pad + titleH + 24;
@@ -1015,7 +1087,13 @@ function renderInline(data: BlockListData, title: string | undefined, d: DesignP
 
     // Separator (except last)
     if (i < count - 1) {
-      svg.circle(x + sepW / 2 - 2, y - 4, 2, { fill: color, opacity: 0.5 });
+      if (d.shapeRendering === 'crispEdges') {
+        svg.rect(x + sepW / 2 - 3, y - 6, 4, 4, { fill: color, opacity: 0.5, 'shape-rendering': 'crispEdges' });
+      } else if (d.id === 'neon') {
+        svg.circle(x + sepW / 2 - 2, y - 4, 2, { fill: color, opacity: 0.7, filter: 'url(#neon-glow)' });
+      } else {
+        svg.circle(x + sepW / 2 - 2, y - 4, 2, { fill: color, opacity: 0.5 });
+      }
       x += sepW;
     }
   }
@@ -1043,7 +1121,13 @@ function renderTimeline(data: BlockListData, title: string | undefined, d: Desig
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (timeline)',
     buildColorGradients(d, count, 'bg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -1057,16 +1141,30 @@ function renderTimeline(data: BlockListData, title: string | undefined, d: Desig
     const lineY = contentTop + row * rowH + rowH / 2;
 
     // Horizontal line
-    svg.line(rowStartX, lineY, rowStartX + rowLineW, lineY, {
-      stroke: d.border, 'stroke-width': 2, opacity: 0.3,
-    });
+    if (d.lineJitter) {
+      svg.path(jitterLine(rowStartX, lineY, rowStartX + rowLineW, lineY, row * 31), {
+        fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.3,
+      });
+    } else {
+      svg.line(rowStartX, lineY, rowStartX + rowLineW, lineY, {
+        stroke: d.border, 'stroke-width': 2, opacity: 0.3,
+        ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' } : {}),
+      });
+    }
 
     // Connect rows with a vertical segment if zigzag
     if (row > 0) {
       const prevLineY = contentTop + (row - 1) * rowH + rowH / 2;
-      svg.line(rowStartX, prevLineY, rowStartX, lineY, {
-        stroke: d.border, 'stroke-width': 2, opacity: 0.15, 'stroke-dasharray': '4,4',
-      });
+      if (d.lineJitter) {
+        svg.path(jitterLine(rowStartX, prevLineY, rowStartX, lineY, row * 41), {
+          fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.15,
+        });
+      } else {
+        svg.line(rowStartX, prevLineY, rowStartX, lineY, {
+          stroke: d.border, 'stroke-width': 2, opacity: 0.15, 'stroke-dasharray': '4,4',
+          ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' } : {}),
+        });
+      }
     }
 
     for (let j = 0; j < itemsInRow; j++) {
@@ -1076,8 +1174,21 @@ function renderTimeline(data: BlockListData, title: string | undefined, d: Desig
       const cx = rowStartX + j * spacing;
 
       // Dot
-      svg.circle(cx, lineY, dotR, { fill: color, ...d.cardAttrs() });
-      svg.circle(cx, lineY, dotR + 4, { fill: color, opacity: 0.15 });
+      if (d.lineJitter) {
+        const rx = dotR + (i % 3 - 1) * 1.5;
+        const ry = dotR + ((i + 1) % 3 - 1) * 1.5;
+        svg.raw(`<ellipse cx="${cx}" cy="${lineY}" rx="${rx}" ry="${ry}" fill="none" stroke="${d.border}" stroke-width="${d.borderWidth}"/>`);
+      } else if (d.shapeRendering === 'crispEdges') {
+        svg.rect(cx - dotR, lineY - dotR, dotR * 2, dotR * 2, {
+          fill: color, 'shape-rendering': 'crispEdges',
+        });
+      } else if (d.id === 'neon') {
+        svg.circle(cx, lineY, dotR + 4, { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)' });
+        svg.circle(cx, lineY, dotR, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+      } else {
+        svg.circle(cx, lineY, dotR, { fill: color, ...d.cardAttrs() });
+        svg.circle(cx, lineY, dotR + 4, { fill: color, opacity: 0.15 });
+      }
 
       // Label above
       const fit = fitText(item.label, spacing - 16, 2, d.labelSize);
@@ -1103,6 +1214,289 @@ function renderTimeline(data: BlockListData, title: string | undefined, d: Desig
         }
       }
     }
+  }
+
+  return svg.build();
+}
+
+// ========== WARNING ==========
+// Red/orange alert-style cards with warning icon and dark left edge strip
+
+function renderWarning(data: BlockListData, title: string | undefined, d: DesignPreset): string {
+  const pad = 40;
+  const titleH = title ? 48 : 0;
+  const count = data.items.length;
+  const cardW = 500;
+  const gap = 12;
+
+  // Pre-calculate card heights based on content
+  const cardHeights: number[] = [];
+  for (const item of data.items) {
+    const labelFit = fitText(item.label, cardW - 72, 2, d.labelSize);
+    let h = 24 + labelFit.lines.length * Math.round(labelFit.fontSize * 1.6);
+    if (item.description) {
+      const descFit = fitText(item.description, cardW - 72, 3, d.captionSize);
+      h += 4 + descFit.lines.length * Math.round(descFit.fontSize * 1.3);
+    }
+    cardHeights.push(Math.max(h + 16, 60));
+  }
+
+  const totalCardH = cardHeights.reduce((a, b) => a + b, 0) + (count - 1) * gap;
+  const width = pad * 2 + cardW;
+  const height = pad * 2 + titleH + totalCardH;
+
+  // Warning accent colors based on design preset
+  const warnBg = d.id === 'neon' ? 'rgba(255,69,0,0.08)' :
+    d.id === 'glass' ? 'rgba(239,68,68,0.12)' :
+    d.id === 'pixel' ? '#1A0808' :
+    d.id === 'watercolor' ? '#FFF0ED' :
+    '#FEF2F2';
+  const warnStrip = d.id === 'neon' ? '#FF4500' :
+    d.id === 'glass' ? '#EF4444' :
+    d.id === 'pixel' ? '#E94560' :
+    d.id === 'watercolor' ? '#D4756B' :
+    d.id === 'bold' ? '#FF3366' :
+    '#DC2626';
+  const warnIcon = d.id === 'neon' ? '#FF4500' :
+    d.id === 'glass' ? '#F87171' :
+    d.id === 'watercolor' ? '#D4756B' :
+    '#EF4444';
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (warning)');
+  svg.defs(defs);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  let y = pad + titleH;
+
+  for (let i = 0; i < count; i++) {
+    const item = data.items[i]!;
+    const cardH = cardHeights[i]!;
+
+    if (d.lineJitter) {
+      svg.path(jitterRect(pad, y, cardW, cardH, i * 17), {
+        fill: 'none', stroke: warnStrip, 'stroke-width': d.borderWidth,
+      });
+      svg.rect(pad, y, 6, cardH, { fill: warnStrip, rx: 1 });
+    } else if (d.shapeRendering === 'crispEdges') {
+      svg.raw(pixelBorder(pad, y, cardW, cardH, warnStrip, 3));
+      svg.rect(pad + 3, y + 3, cardW - 6, cardH - 6, {
+        fill: warnBg, 'shape-rendering': 'crispEdges',
+      });
+      svg.rect(pad, y, 6, cardH, { fill: warnStrip, 'shape-rendering': 'crispEdges' });
+    } else if (d.id === 'neon') {
+      svg.rect(pad, y, cardW, cardH, {
+        fill: 'rgba(0,0,0,0.3)', rx: d.borderRadius,
+      });
+      svg.rect(pad, y, cardW, cardH, {
+        fill: 'none', stroke: warnStrip, 'stroke-width': 1, rx: d.borderRadius,
+        opacity: 0.4, filter: 'url(#neon-glow)',
+      });
+      svg.rect(pad, y, 6, cardH, { fill: warnStrip, rx: 1 });
+    } else {
+      svg.rect(pad, y, cardW, cardH, {
+        fill: warnBg, rx: d.borderRadius,
+        stroke: d.borderWidth > 0 ? warnStrip : 'none',
+        'stroke-width': d.borderWidth > 0 ? 0.5 : 0,
+        ...d.cardAttrs(),
+      });
+      svg.rect(pad, y, 6, cardH, {
+        fill: warnStrip,
+        rx: d.id === 'bold' ? 0 : 2,
+      });
+    }
+
+    // Warning icon
+    const iconY = y + cardH / 2;
+    svg.raw(icon(inferIcon('warning'), pad + 28, iconY, 18, warnIcon));
+
+    // Label
+    const labelFit = fitText(item.label, cardW - 72, 2, d.labelSize);
+    const lh = Math.round(labelFit.fontSize * 1.6);
+    let textY = y + 20;
+    if (!item.description) {
+      textY = y + cardH / 2 - (labelFit.lines.length - 1) * lh / 2 + 4;
+    }
+    for (const line of labelFit.lines) {
+      svg.text(pad + 48, textY, line, {
+        'text-anchor': 'start', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      });
+      textY += lh;
+    }
+
+    // Description
+    if (item.description) {
+      const descFit = fitText(item.description, cardW - 72, 3, d.captionSize);
+      const dlh = Math.round(descFit.fontSize * 1.3);
+      textY += 2;
+      for (const line of descFit.lines) {
+        svg.text(pad + 48, textY, line, {
+          'text-anchor': 'start', 'font-size': descFit.fontSize, fill: d.textSecondary,
+        });
+        textY += dlh;
+      }
+    }
+
+    y += cardH + gap;
+  }
+
+  return svg.build();
+}
+
+// ========== CATALOG ==========
+// Compact grid for large lists — small cards with category badge + label
+
+function renderCatalog(data: BlockListData, title: string | undefined, d: DesignPreset): string {
+  const pad = 32;
+  const titleH = title ? 44 : 0;
+  const count = data.items.length;
+
+  // Group items by category/group if available
+  interface CatalogGroup {
+    name: string;
+    items: { label: string; description?: string; index: number }[];
+  }
+  const groups: CatalogGroup[] = [];
+  const groupMap = new Map<string, CatalogGroup>();
+
+  for (let i = 0; i < count; i++) {
+    const item = data.items[i]!;
+    const cat = (item as any).category || (item as any).group || '';
+    if (!groupMap.has(cat)) {
+      const g: CatalogGroup = { name: cat, items: [] };
+      groupMap.set(cat, g);
+      groups.push(g);
+    }
+    groupMap.get(cat)!.items.push({ label: item.label, description: item.description, index: i });
+  }
+
+  // Compact card sizing
+  const cardW = 150;
+  const cardH = 44;
+  const gridGap = 8;
+  const maxCols = 5;
+  const groupHeaderH = 28;
+  const groupGap = 16;
+  const cols = Math.min(maxCols, count);
+  const contentW = cols * (cardW + gridGap) - gridGap;
+  const width = pad * 2 + contentW;
+
+  // Calculate total height
+  let totalH = 0;
+  for (const group of groups) {
+    if (group.name) totalH += groupHeaderH + 4;
+    const rows = Math.ceil(group.items.length / cols);
+    totalH += rows * (cardH + gridGap) - gridGap + groupGap;
+  }
+  totalH -= groupGap;
+  const height = pad * 2 + titleH + totalH;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Block list (catalog)');
+  svg.defs(defs);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  let y = pad + titleH;
+  const fontSize = Math.min(d.labelSize, 12);
+  const badgeFontSize = 9;
+
+  for (const group of groups) {
+    // Group header
+    if (group.name) {
+      const headerColor = d.colors[groups.indexOf(group) % d.colors.length]!;
+      if (d.id === 'neon') {
+        svg.text(pad + 4, y + 16, group.name, {
+          'text-anchor': 'start', 'font-size': 11, 'font-weight': 700,
+          fill: headerColor, 'letter-spacing': '1', filter: 'url(#neon-glow)',
+        });
+      } else {
+        svg.text(pad + 4, y + 16, group.name, {
+          'text-anchor': 'start', 'font-size': 11, 'font-weight': 700,
+          fill: headerColor, 'letter-spacing': '0.5',
+        });
+      }
+      svg.line(pad, y + groupHeaderH - 4, pad + contentW, y + groupHeaderH - 4, {
+        stroke: headerColor, 'stroke-width': d.id === 'bold' ? 2 : 1, opacity: 0.3,
+      });
+      y += groupHeaderH + 4;
+    }
+
+    // Cards in grid
+    for (let i = 0; i < group.items.length; i++) {
+      const gItem = group.items[i]!;
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cx = pad + col * (cardW + gridGap);
+      const cy = y + row * (cardH + gridGap);
+      const color = itemColor(d, gItem.index);
+
+      if (d.lineJitter) {
+        svg.path(jitterRect(cx, cy, cardW, cardH, gItem.index * 13), {
+          fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+        });
+      } else if (d.shapeRendering === 'crispEdges') {
+        svg.rect(cx, cy, cardW, cardH, {
+          fill: d.surface, 'shape-rendering': 'crispEdges',
+          stroke: d.border, 'stroke-width': 1,
+        });
+      } else if (d.id === 'neon') {
+        svg.rect(cx, cy, cardW, cardH, {
+          fill: 'rgba(0,0,0,0.3)', rx: d.borderRadius,
+        });
+        svg.rect(cx, cy, cardW, cardH, {
+          fill: 'none', stroke: color, 'stroke-width': 0.5, rx: d.borderRadius,
+          opacity: 0.3,
+        });
+      } else {
+        svg.rect(cx, cy, cardW, cardH, {
+          fill: d.surface, rx: d.borderRadius,
+          stroke: d.borderWidth > 0 ? d.border : 'none',
+          'stroke-width': d.borderWidth > 0 ? 0.5 : 0,
+          ...d.cardAttrs(),
+        });
+      }
+
+      // Category badge
+      if (group.name) {
+        const badgeW = estimateWidth(group.name, badgeFontSize) + 8;
+        const badgeH = 14;
+        const bx = cx + 6;
+        const by = cy + 4;
+        svg.rect(bx, by, badgeW, badgeH, {
+          fill: color, rx: d.shapeRendering === 'crispEdges' ? 0 : 3, opacity: 0.15,
+        });
+        svg.text(bx + badgeW / 2, by + 10, group.name, {
+          'text-anchor': 'middle', 'font-size': badgeFontSize, fill: color, 'font-weight': 600,
+        });
+      }
+
+      // Label
+      const labelTop = group.name ? cy + 26 : cy + cardH / 2 + 4;
+      const fit = fitText(gItem.label, cardW - 16, group.name ? 1 : 2, fontSize);
+      svg.text(cx + 8, labelTop, fit.lines[0]!, {
+        'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      });
+      if (fit.lines.length > 1) {
+        svg.text(cx + 8, labelTop + Math.round(fit.fontSize * 1.3), fit.lines[1]!, {
+          'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        });
+      }
+    }
+
+    const rows = Math.ceil(group.items.length / cols);
+    y += rows * (cardH + gridGap) - gridGap + groupGap;
   }
 
   return svg.build();

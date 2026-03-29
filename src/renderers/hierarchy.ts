@@ -628,7 +628,13 @@ function renderHorizontal(data: HierarchyData, title: string | undefined, d: Des
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Hierarchy diagram (horizontal)',
     buildColorGradients(d, depth, 'hg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const root = offsetHTree(layout, pad, pad + titleH);
@@ -640,9 +646,23 @@ function drawHorizontalNode(svg: SvgBuilder, d: DesignPreset, node: HLayoutNode,
   const color = stepColor(d, depth);
   const isRoot = depth === 0;
   const fs = isRoot ? 15 : 13;
-  const textFill = isRoot ? 'white' : d.text;
+  const textFill = d.id === 'neon' ? color : (isRoot ? 'white' : d.text);
 
-  if (isRoot) {
+  if (d.lineJitter) {
+    // Sketch: jittered rect outlines
+    svg.path(jitterRect(node.x, node.y, node.w, NODE_H, depth * 7 + node.x), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    // Neon: dark fill + neon stroke
+    svg.rect(node.x, node.y, node.w, NODE_H, {
+      fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+    });
+    svg.rect(node.x, node.y, node.w, NODE_H, {
+      fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+      opacity: 0.3, filter: 'url(#neon-glow)',
+    });
+  } else if (isRoot) {
     svg.rect(node.x, node.y, node.w, NODE_H, {
       fill: `url(#hg${depth})`, stroke: color, 'stroke-width': d.borderWidth,
       rx: d.borderRadius > 8 ? 10 : d.borderRadius, ...d.cardAttrs(),
@@ -660,7 +680,21 @@ function drawHorizontalNode(svg: SvgBuilder, d: DesignPreset, node: HLayoutNode,
   const parentCy = node.y + NODE_H / 2;
 
   for (const child of node.children) {
-    drawHConnector(svg, parentRight, parentCy, child.x, child.y + NODE_H / 2, d.border, 1.5);
+    if (d.lineJitter) {
+      svg.path(jitterLine(parentRight, parentCy, child.x, child.y + NODE_H / 2, depth * 31 + child.x), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      drawHConnector(svg, parentRight, parentCy, child.x, child.y + NODE_H / 2, color, 2);
+      // Glow overlay
+      const midX = (parentRight + child.x) / 2;
+      const childCy = child.y + NODE_H / 2;
+      svg.path(`M ${parentRight} ${parentCy} L ${midX} ${parentCy} L ${midX} ${childCy} L ${child.x} ${childCy}`, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      drawHConnector(svg, parentRight, parentCy, child.x, child.y + NODE_H / 2, d.border, 1.5);
+    }
     drawHorizontalNode(svg, d, child, depth + 1);
   }
 }
@@ -721,7 +755,13 @@ function renderRadial(data: HierarchyData, title: string | undefined, d: DesignP
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Hierarchy diagram (radial)',
     buildColorGradients(d, depth, 'hg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   // Concentric ring guides
@@ -757,16 +797,34 @@ function drawRadialNode(
   if (node.children) {
     for (const child of node.children) {
       const childPos = positions.get(child)!;
-      svg.path(`M ${pos.x.toFixed(1)} ${pos.y.toFixed(1)} Q ${((pos.x + childPos.x) / 2).toFixed(1)} ${((pos.y + childPos.y) / 2).toFixed(1)} ${childPos.x.toFixed(1)} ${childPos.y.toFixed(1)}`, {
-        fill: 'none', stroke: d.border, 'stroke-width': 1.5, opacity: 0.3,
-      });
+      if (d.lineJitter) {
+        svg.path(jitterLine(pos.x, pos.y, childPos.x, childPos.y, depth * 17 + child.label.length), {
+          fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+        });
+      } else if (d.id === 'neon') {
+        const childColor = stepColor(d, depth + 1);
+        svg.path(`M ${pos.x.toFixed(1)} ${pos.y.toFixed(1)} Q ${((pos.x + childPos.x) / 2).toFixed(1)} ${((pos.y + childPos.y) / 2).toFixed(1)} ${childPos.x.toFixed(1)} ${childPos.y.toFixed(1)}`, {
+          fill: 'none', stroke: childColor, 'stroke-width': 1.5, filter: 'url(#neon-glow)',
+        });
+      } else {
+        svg.path(`M ${pos.x.toFixed(1)} ${pos.y.toFixed(1)} Q ${((pos.x + childPos.x) / 2).toFixed(1)} ${((pos.y + childPos.y) / 2).toFixed(1)} ${childPos.x.toFixed(1)} ${childPos.y.toFixed(1)}`, {
+          fill: 'none', stroke: d.border, 'stroke-width': 1.5, opacity: 0.3,
+        });
+      }
       drawRadialNode(svg, d, child, positions, depth + 1);
     }
   }
 
   // Node circle
   if (isRoot) {
-    svg.circle(pos.x, pos.y, nodeR, { fill: color, stroke: d.border, 'stroke-width': 1.5 });
+    if (d.lineJitter) {
+      svg.circle(pos.x, pos.y, nodeR, { fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth });
+    } else if (d.id === 'neon') {
+      svg.circle(pos.x, pos.y, nodeR, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 2 });
+      svg.circle(pos.x, pos.y, nodeR, { fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)' });
+    } else {
+      svg.circle(pos.x, pos.y, nodeR, { fill: color, stroke: d.border, 'stroke-width': 1.5 });
+    }
     // Root label inside circle — allow more lines for large text
     const fit = fitText(node.label, nodeR * 2 - 12, 3, 12);
     const lh = Math.round(12 * 1.3);
@@ -779,9 +837,16 @@ function drawRadialNode(
       textY += lh;
     }
   } else {
-    svg.circle(pos.x, pos.y, nodeR, { fill: d.surface, stroke: color, 'stroke-width': 1.5, ...d.cardAttrs() });
-    // Depth number inside node
-    svg.circle(pos.x, pos.y, nodeR - 2, { fill: color, opacity: 0.12 });
+    if (d.lineJitter) {
+      svg.circle(pos.x, pos.y, nodeR, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
+    } else if (d.id === 'neon') {
+      svg.circle(pos.x, pos.y, nodeR, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+      svg.circle(pos.x, pos.y, nodeR, { fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3, filter: 'url(#neon-glow)' });
+    } else {
+      svg.circle(pos.x, pos.y, nodeR, { fill: d.surface, stroke: color, 'stroke-width': 1.5, ...d.cardAttrs() });
+      // Depth number inside node
+      svg.circle(pos.x, pos.y, nodeR - 2, { fill: color, opacity: 0.12 });
+    }
     // Label OUTSIDE node — positioned radially
     const labelR = nodeR + 10;
     const labelX = pos.x + labelR * Math.cos(pos.angle);
@@ -850,7 +915,13 @@ function renderBracket(data: HierarchyData, title: string | undefined, d: Design
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Hierarchy diagram (bracket)',
     buildColorGradients(d, depth, 'hg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   drawBracketNode(svg, d, layout, 0, pad, pad + titleH);
@@ -863,9 +934,22 @@ function drawBracketNode(svg: SvgBuilder, d: DesignPreset, node: BracketNode, de
   const fs = isRoot ? 15 : 13;
   const nx = ox + node.x;
   const ny = oy + node.y;
+  const textFill = d.id === 'neon' ? color : (isRoot ? 'white' : d.text);
 
   // Draw node box
-  if (isRoot) {
+  if (d.lineJitter) {
+    svg.path(jitterRect(nx, ny, node.w, NODE_H, depth * 7 + nx), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    svg.rect(nx, ny, node.w, NODE_H, {
+      fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+    });
+    svg.rect(nx, ny, node.w, NODE_H, {
+      fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+      opacity: 0.3, filter: 'url(#neon-glow)',
+    });
+  } else if (isRoot) {
     svg.rect(nx, ny, node.w, NODE_H, {
       fill: `url(#hg${depth})`, stroke: color, 'stroke-width': d.borderWidth,
       rx: d.borderRadius > 8 ? 10 : d.borderRadius, ...d.cardAttrs(),
@@ -877,7 +961,7 @@ function drawBracketNode(svg: SvgBuilder, d: DesignPreset, node: BracketNode, de
   const fit = fitText(node.label, node.w - 16, 1, fs);
   svg.text(nx + node.w / 2, ny + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize,
-    'font-weight': isRoot ? 700 : d.fontWeight, fill: isRoot ? 'white' : d.text,
+    'font-weight': isRoot ? 700 : d.fontWeight, fill: textFill,
   });
 
   // Draw right-angle connectors to children
@@ -887,26 +971,61 @@ function drawBracketNode(svg: SvgBuilder, d: DesignPreset, node: BracketNode, de
   if (node.children.length > 0) {
     const bridgeX = parentRight + 16;
 
-    // Horizontal stub from parent
-    svg.line(parentRight, parentCy, bridgeX, parentCy, {
-      stroke: d.border, 'stroke-width': 1.5,
-    });
-
-    // Vertical bracket line
-    const firstChildY = oy + node.children[0]!.y + NODE_H / 2;
-    const lastChildY = oy + node.children[node.children.length - 1]!.y + NODE_H / 2;
-    svg.line(bridgeX, firstChildY, bridgeX, lastChildY, {
-      stroke: d.border, 'stroke-width': 1.5,
-    });
-
-    for (const child of node.children) {
-      const childY = oy + child.y + NODE_H / 2;
-      const childX = ox + child.x;
-      // Horizontal line from bracket to child
-      svg.line(bridgeX, childY, childX, childY, {
+    if (d.lineJitter) {
+      // Sketch: jittered connector lines
+      svg.path(jitterLine(parentRight, parentCy, bridgeX, parentCy, depth * 31), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      const firstChildY = oy + node.children[0]!.y + NODE_H / 2;
+      const lastChildY = oy + node.children[node.children.length - 1]!.y + NODE_H / 2;
+      svg.path(jitterLine(bridgeX, firstChildY, bridgeX, lastChildY, depth * 37), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      for (const child of node.children) {
+        const childY = oy + child.y + NODE_H / 2;
+        const childX = ox + child.x;
+        svg.path(jitterLine(bridgeX, childY, childX, childY, depth * 43 + child.y), {
+          fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+        });
+        drawBracketNode(svg, d, child, depth + 1, ox, oy);
+      }
+    } else if (d.id === 'neon') {
+      // Neon: glowing connector lines
+      svg.line(parentRight, parentCy, bridgeX, parentCy, {
+        stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)',
+      });
+      const firstChildY = oy + node.children[0]!.y + NODE_H / 2;
+      const lastChildY = oy + node.children[node.children.length - 1]!.y + NODE_H / 2;
+      svg.line(bridgeX, firstChildY, bridgeX, lastChildY, {
+        stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)',
+      });
+      for (const child of node.children) {
+        const childY = oy + child.y + NODE_H / 2;
+        const childX = ox + child.x;
+        const childColor = stepColor(d, depth + 1);
+        svg.line(bridgeX, childY, childX, childY, {
+          stroke: childColor, 'stroke-width': 2, filter: 'url(#neon-glow)',
+        });
+        drawBracketNode(svg, d, child, depth + 1, ox, oy);
+      }
+    } else {
+      // Default connector lines
+      svg.line(parentRight, parentCy, bridgeX, parentCy, {
         stroke: d.border, 'stroke-width': 1.5,
       });
-      drawBracketNode(svg, d, child, depth + 1, ox, oy);
+      const firstChildY = oy + node.children[0]!.y + NODE_H / 2;
+      const lastChildY = oy + node.children[node.children.length - 1]!.y + NODE_H / 2;
+      svg.line(bridgeX, firstChildY, bridgeX, lastChildY, {
+        stroke: d.border, 'stroke-width': 1.5,
+      });
+      for (const child of node.children) {
+        const childY = oy + child.y + NODE_H / 2;
+        const childX = ox + child.x;
+        svg.line(bridgeX, childY, childX, childY, {
+          stroke: d.border, 'stroke-width': 1.5,
+        });
+        drawBracketNode(svg, d, child, depth + 1, ox, oy);
+      }
     }
   }
 }

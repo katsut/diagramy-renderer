@@ -34,6 +34,7 @@ export function renderProcess(data: ProcessData, title?: string, design?: Design
     case 'staircase': return renderStaircase(data, title, d);
     case 'numbered': return renderNumbered(data, title, d);
     case 'pipeline': return renderPipeline(data, title, d);
+    case 'escalation': return renderEscalation(data, title, d);
     default: {
       // Auto-switch to serpentine when horizontal layout would exceed 960px
       if (!style && data.nodes.length > 4) {
@@ -504,7 +505,13 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Process diagram (chevron)');
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -520,7 +527,19 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
     const leftNotch = `${x},${y} ${x + ln},${y + chevH / 2} ${x},${y + chevH} `;
     const points = `${leftNotch}${x + chevW - notch},${y + chevH} ${x + chevW},${y + chevH / 2} ${x + chevW - notch},${y}`;
 
-    svg.polygon(points, { fill: color, stroke: d.surface, 'stroke-width': 1 });
+    if (d.lineJitter) {
+      // Sketch: hand-drawn chevron outline, no fill
+      svg.polygon(points, { fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth });
+    } else if (d.shapeRendering === 'crispEdges') {
+      // Pixel: crisp edges
+      svg.polygon(points, { fill: color, stroke: d.surface, 'stroke-width': 1, 'shape-rendering': 'crispEdges' });
+    } else if (d.id === 'neon') {
+      // Neon: dark fill + neon stroke + glow
+      svg.polygon(points, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1 });
+      svg.polygon(points, { fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3, filter: 'url(#neon-glow)' });
+    } else {
+      svg.polygon(points, { fill: color, stroke: d.surface, 'stroke-width': 1 });
+    }
 
     // Label text — white on colored background for readability
     const textCx = x + chevW / 2 + (ln - overlap) / 2;
@@ -529,17 +548,19 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
     const lh = Math.round(labelFit.fontSize * 1.4);
     const descFit = node.description ? fitText(node.description, maxW, 2, d.captionSize) : null;
     const totalLines = labelFit.lines.length + (descFit ? descFit.lines.length : 0);
+    const textFill = d.id === 'neon' ? color : (d.lineJitter ? d.text : '#FFFFFF');
+    const descFill = d.id === 'neon' ? color : (d.lineJitter ? d.text : 'rgba(255,255,255,0.8)');
     let ly = y + chevH / 2 - ((totalLines - 1) * lh) / 2 + 4;
     for (const line of labelFit.lines) {
       svg.text(textCx, ly, line, {
-        'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+        'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: textFill,
       });
       ly += lh;
     }
     if (descFit) {
       for (const line of descFit.lines) {
         svg.text(textCx, ly, line, {
-          'text-anchor': 'middle', 'font-size': descFit.fontSize, fill: 'rgba(255,255,255,0.8)',
+          'text-anchor': 'middle', 'font-size': descFit.fontSize, fill: descFill, opacity: d.lineJitter ? 0.7 : 1,
         });
         ly += Math.round(descFit.fontSize * 1.3);
       }
@@ -547,7 +568,7 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
 
     // Step number badge
     svg.text(x + chevW - notch - 8, y + 14, `${i + 1}`, {
-      'text-anchor': 'middle', 'font-size': 9, 'font-weight': 600, fill: '#FFFFFF', opacity: 0.5,
+      'text-anchor': 'middle', 'font-size': 9, 'font-weight': 600, fill: d.id === 'neon' ? color : (d.lineJitter ? d.text : '#FFFFFF'), opacity: 0.5,
     });
   }
 
@@ -570,7 +591,13 @@ function renderVertical(data: ProcessData, title: string | undefined, d: DesignP
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Process diagram (vertical)');
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -581,17 +608,52 @@ function renderVertical(data: ProcessData, title: string | undefined, d: DesignP
     const color = stepColor(d, i);
     const y = contentTop + i * (cardH + arrowH);
 
-    // Card with preset styling
-    drawPresetCard(svg, d, pad, y, cardW, cardH, color);
+    // Card with preset-aware styling
+    if (d.lineJitter) {
+      svg.path(jitterRect(pad, y, cardW, cardH, i * 7), {
+        fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.shapeRendering === 'crispEdges') {
+      svg.raw(pixelBorder(pad, y, cardW, cardH, color, 3));
+      svg.rect(pad + 3, y + 3, cardW - 6, cardH - 6, {
+        fill: d.surface, opacity: 0.9, 'shape-rendering': 'crispEdges',
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(pad, y, cardW, cardH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(pad, y, cardW, cardH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      drawPresetCard(svg, d, pad, y, cardW, cardH, color);
+    }
 
     // Left color accent bar
-    svg.rect(pad + 1, y + 6, 5, cardH - 12, { fill: color, rx: 2 });
+    if (d.lineJitter) {
+      svg.path(jitterLine(pad + 4, y + 6, pad + 4, y + cardH - 6, i * 7 + 100), {
+        stroke: color, 'stroke-width': 3, opacity: 0.6,
+      });
+    } else {
+      svg.rect(pad + 1, y + 6, 5, cardH - 12, {
+        fill: color, rx: 2,
+        ...(d.shapeRendering === 'crispEdges' ? { 'shape-rendering': 'crispEdges' as const } : {}),
+      });
+    }
 
     // Number circle
-    svg.circle(pad + 32, y + cardH / 2, 14, { fill: color });
-    svg.text(pad + 32, y + cardH / 2 + 4, `${i + 1}`, {
-      'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: '#FFFFFF',
-    });
+    if (d.id === 'neon') {
+      svg.circle(pad + 32, y + cardH / 2, 14, { fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)' });
+      svg.text(pad + 32, y + cardH / 2 + 4, `${i + 1}`, {
+        'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: color,
+      });
+    } else {
+      svg.circle(pad + 32, y + cardH / 2, 14, { fill: color });
+      svg.text(pad + 32, y + cardH / 2 + 4, `${i + 1}`, {
+        'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: d.lineJitter ? d.text : '#FFFFFF',
+      });
+    }
 
     // Label + description
     drawLabelBlock(svg, d, node.label, node.description, pad + 60, y + (node.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 80, 'start');
@@ -601,11 +663,22 @@ function renderVertical(data: ProcessData, title: string | undefined, d: DesignP
       const arrowX = cx;
       const ay1 = y + cardH + 4;
       const ay2 = ay1 + arrowH - 8;
-      svg.path(`M ${arrowX} ${ay1} L ${arrowX} ${ay2}`, {
-        fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.4,
-      });
+      if (d.lineJitter) {
+        svg.path(jitterLine(arrowX, ay1, arrowX, ay2, i * 7 + 50), {
+          fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth, opacity: 0.4,
+        });
+      } else if (d.id === 'neon') {
+        svg.path(`M ${arrowX} ${ay1} L ${arrowX} ${ay2}`, {
+          fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)',
+        });
+      } else {
+        svg.path(`M ${arrowX} ${ay1} L ${arrowX} ${ay2}`, {
+          fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.4,
+        });
+      }
       svg.path(`M ${arrowX - 6} ${ay2 - 6} L ${arrowX} ${ay2} L ${arrowX + 6} ${ay2 - 6}`, {
-        fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.4,
+        fill: 'none', stroke: d.id === 'neon' ? color : d.border, 'stroke-width': 2, opacity: d.id === 'neon' ? 1 : 0.4,
+        ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
       });
     }
   }
@@ -633,7 +706,11 @@ function renderSerpentine(data: ProcessData, title: string | undefined, d: Desig
     buildColorGradients(d, count, 'pg') + arrowMarkerDef(d));
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -650,19 +727,29 @@ function renderSerpentine(data: ProcessData, title: string | undefined, d: Desig
     const y = contentTop + row * (stepH + gapY);
     const cx = x + stepW / 2;
 
-    // Step card
-    drawPresetCard(svg, d, x, y, stepW, stepH, color);
+    // Step card — use jitterRect for sketch preset
+    if (d.lineJitter) {
+      svg.path(jitterRect(x, y, stepW, stepH, i * 7), {
+        fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      // Color accent bar at top
+      svg.path(jitterLine(x + 4, y + 3, x + stepW - 4, y + 3, i * 7 + 100), {
+        stroke: color, 'stroke-width': 2, opacity: 0.6,
+      });
+    } else {
+      drawPresetCard(svg, d, x, y, stepW, stepH, color);
+    }
 
     // Number badge
     svg.circle(x + stepW - 16, y + 14, 10, { fill: color });
     svg.text(x + stepW - 16, y + 18, `${i + 1}`, {
-      'text-anchor': 'middle', 'font-size': 9, 'font-weight': 700, fill: '#FFFFFF',
+      'text-anchor': 'middle', 'font-size': 9, 'font-weight': 700, fill: d.lineJitter ? d.text : '#FFFFFF',
     });
 
     // Label
     drawLabelBlock(svg, d, node.label, node.description, cx, y + (node.description ? stepH / 2 - 2 : stepH / 2 + 5), stepW - 24);
 
-    // Arrows
+    // Arrows — use jitterLine for sketch preset
     if (i < count - 1) {
       const nextRow = Math.floor((i + 1) / perRow);
       if (nextRow === row) {
@@ -673,9 +760,15 @@ function renderSerpentine(data: ProcessData, title: string | undefined, d: Desig
         const ax1 = dir > 0 ? x + stepW + 4 : x - 4;
         const ax2 = dir > 0 ? ax1 + gapX - 12 : ax1 - gapX + 12;
         const ay = y + stepH / 2;
-        svg.path(`M ${ax1} ${ay} L ${ax2} ${ay}`, {
-          fill: 'none', stroke: d.border, 'stroke-width': 2, 'marker-end': 'url(#arr)',
-        });
+        if (d.lineJitter) {
+          svg.path(jitterLine(ax1, ay, ax2, ay, i * 7 + 50), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth, 'marker-end': 'url(#arr)',
+          });
+        } else {
+          svg.path(`M ${ax1} ${ay} L ${ax2} ${ay}`, {
+            fill: 'none', stroke: d.border, 'stroke-width': 2, 'marker-end': 'url(#arr)',
+          });
+        }
       } else {
         // U-turn: down from current, then across to next row start
         const ay1 = y + stepH + 4;
@@ -683,9 +776,21 @@ function renderSerpentine(data: ProcessData, title: string | undefined, d: Desig
         const nextReversed = nextRow % 2 === 1;
         const nextActualCol = nextReversed ? perRow - 1 : 0;
         const nx = pad + nextActualCol * (stepW + gapX) + stepW / 2;
-        svg.path(`M ${cx} ${ay1} L ${cx} ${(ay1 + ay2) / 2} L ${nx} ${(ay1 + ay2) / 2} L ${nx} ${ay2}`, {
-          fill: 'none', stroke: d.border, 'stroke-width': 2, 'marker-end': 'url(#arr)',
-        });
+        if (d.lineJitter) {
+          svg.path(jitterLine(cx, ay1, cx, (ay1 + ay2) / 2, i * 7 + 60), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+          });
+          svg.path(jitterLine(cx, (ay1 + ay2) / 2, nx, (ay1 + ay2) / 2, i * 7 + 70), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+          });
+          svg.path(jitterLine(nx, (ay1 + ay2) / 2, nx, ay2, i * 7 + 80), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth, 'marker-end': 'url(#arr)',
+          });
+        } else {
+          svg.path(`M ${cx} ${ay1} L ${cx} ${(ay1 + ay2) / 2} L ${nx} ${(ay1 + ay2) / 2} L ${nx} ${ay2}`, {
+            fill: 'none', stroke: d.border, 'stroke-width': 2, 'marker-end': 'url(#arr)',
+          });
+        }
       }
     }
   }
@@ -713,7 +818,13 @@ function renderStaircase(data: ProcessData, title: string | undefined, d: Design
     buildColorGradients(d, count, 'pg'));
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -725,18 +836,42 @@ function renderStaircase(data: ProcessData, title: string | undefined, d: Design
     const x = pad + i * offsetX;
     const y = contentTop + totalH - stepH - i * offsetY;
 
-    // Step block
-    svg.rect(x, y, stepW, stepH, {
-      fill: color, rx: d.borderRadius, opacity: 0.85,
-    });
-    // Lighter inner area
-    svg.rect(x + 3, y + 3, stepW - 6, stepH - 6, {
-      fill: d.surface, rx: Math.max(0, d.borderRadius - 2), opacity: 0.7,
-    });
+    // Step block — preset-aware
+    if (d.lineJitter) {
+      svg.path(jitterRect(x, y, stepW, stepH, i * 7), {
+        fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      // Color accent at top
+      svg.path(jitterLine(x + 4, y + 3, x + stepW - 4, y + 3, i * 7 + 100), {
+        stroke: color, 'stroke-width': 2, opacity: 0.6,
+      });
+    } else if (d.shapeRendering === 'crispEdges') {
+      svg.raw(pixelBorder(x, y, stepW, stepH, color, 3));
+      svg.rect(x + 3, y + 3, stepW - 6, stepH - 6, {
+        fill: d.surface, opacity: 0.9, 'shape-rendering': 'crispEdges',
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(x, y, stepW, stepH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(x, y, stepW, stepH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(x, y, stepW, stepH, {
+        fill: color, rx: d.borderRadius, opacity: 0.85,
+      });
+      svg.rect(x + 3, y + 3, stepW - 6, stepH - 6, {
+        fill: d.surface, rx: Math.max(0, d.borderRadius - 2), opacity: 0.7,
+      });
+    }
 
     // Number
     svg.text(x + 16, y + 20, `${i + 1}`, {
-      'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: color,
+      'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700,
+      fill: d.id === 'neon' ? color : (d.lineJitter ? d.text : color),
+      ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
     });
 
     // Label
@@ -750,12 +885,23 @@ function renderStaircase(data: ProcessData, title: string | undefined, d: Design
       const ay1 = y - 2;
       const ax2 = nextX + stepW / 2 - offsetX / 2;
       const ay2 = nextY + stepH + 2;
-      svg.path(`M ${ax1} ${ay1} C ${ax1} ${ay1 - 12}, ${ax2} ${ay2 + 12}, ${ax2} ${ay2}`, {
-        fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.5,
-      });
+      if (d.lineJitter) {
+        svg.path(jitterLine(ax1, ay1, ax2, ay2, i * 7 + 50), {
+          fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth, opacity: 0.5,
+        });
+      } else if (d.id === 'neon') {
+        svg.path(`M ${ax1} ${ay1} C ${ax1} ${ay1 - 12}, ${ax2} ${ay2 + 12}, ${ax2} ${ay2}`, {
+          fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)',
+        });
+      } else {
+        svg.path(`M ${ax1} ${ay1} C ${ax1} ${ay1 - 12}, ${ax2} ${ay2 + 12}, ${ax2} ${ay2}`, {
+          fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.5,
+        });
+      }
       // Arrow head
       svg.path(`M ${ax2 - 4} ${ay2 + 6} L ${ax2} ${ay2} L ${ax2 + 4} ${ay2 + 6}`, {
-        fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.5,
+        fill: 'none', stroke: d.id === 'neon' ? color : color, 'stroke-width': 2, opacity: d.id === 'neon' ? 1 : 0.5,
+        ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
       });
     }
   }
@@ -780,7 +926,13 @@ function renderNumbered(data: ProcessData, title: string | undefined, d: DesignP
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Process diagram (numbered)');
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -793,12 +945,36 @@ function renderNumbered(data: ProcessData, title: string | undefined, d: DesignP
     // Large numbered circle (60px diameter)
     const circleR = 30;
     const circleY = contentTop + circleR + 8;
-    svg.circle(cx, circleY, circleR, { fill: color });
-    // Number text in white
-    const numStr = String(i + 1).padStart(2, '0');
-    svg.text(cx, circleY + 8, numStr, {
-      'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800, fill: '#FFFFFF',
-    });
+
+    if (d.lineJitter) {
+      // Sketch: hand-drawn circle outline
+      svg.circle(cx, circleY, circleR, { fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth });
+      const numStr = String(i + 1).padStart(2, '0');
+      svg.text(cx, circleY + 8, numStr, {
+        'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800, fill: d.text,
+      });
+    } else if (d.shapeRendering === 'crispEdges') {
+      // Pixel: crisp circle
+      svg.circle(cx, circleY, circleR, { fill: color, 'shape-rendering': 'crispEdges' });
+      const numStr = String(i + 1).padStart(2, '0');
+      svg.text(cx, circleY + 8, numStr, {
+        'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800, fill: d.bg,
+      });
+    } else if (d.id === 'neon') {
+      // Neon: dark fill + neon stroke + glow
+      svg.circle(cx, circleY, circleR, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 2 });
+      svg.circle(cx, circleY, circleR, { fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)' });
+      const numStr = String(i + 1).padStart(2, '0');
+      svg.text(cx, circleY + 8, numStr, {
+        'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800, fill: color,
+      });
+    } else {
+      svg.circle(cx, circleY, circleR, { fill: color });
+      const numStr = String(i + 1).padStart(2, '0');
+      svg.text(cx, circleY + 8, numStr, {
+        'text-anchor': 'middle', 'font-size': 22, 'font-weight': 800, fill: '#FFFFFF',
+      });
+    }
 
     // Label + description below the circle
     drawNodeText(svg, d, node, cx, circleY + circleR + 20, colW - 24);
@@ -824,7 +1000,13 @@ function renderPipeline(data: ProcessData, title: string | undefined, d: DesignP
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Process diagram (pipeline)');
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -835,18 +1017,43 @@ function renderPipeline(data: ProcessData, title: string | undefined, d: DesignP
     const x = pad + i * (barW + gateW);
     const y = contentTop;
 
-    // Bar rectangle
-    svg.rect(x, y, barW, barH, {
-      fill: color, opacity: 0.85, rx: i === 0 ? d.borderRadius : 0,
-    });
-    // Lighter inner overlay
-    svg.rect(x + 2, y + 2, barW - 4, barH - 4, {
-      fill: d.surface, opacity: 0.6, rx: i === 0 ? Math.max(0, d.borderRadius - 2) : 0,
-    });
+    // Bar rectangle — preset-aware
+    if (d.lineJitter) {
+      svg.path(jitterRect(x, y, barW, barH, i * 7), {
+        fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      // Color accent at top
+      svg.path(jitterLine(x + 4, y + 3, x + barW - 4, y + 3, i * 7 + 100), {
+        stroke: color, 'stroke-width': 2, opacity: 0.6,
+      });
+    } else if (d.shapeRendering === 'crispEdges') {
+      svg.raw(pixelBorder(x, y, barW, barH, color, 3));
+      svg.rect(x + 3, y + 3, barW - 6, barH - 6, {
+        fill: d.surface, opacity: 0.9, 'shape-rendering': 'crispEdges',
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(x, y, barW, barH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: i === 0 ? d.borderRadius : 0,
+      });
+      svg.rect(x, y, barW, barH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: i === 0 ? d.borderRadius : 0,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(x, y, barW, barH, {
+        fill: color, opacity: 0.85, rx: i === 0 ? d.borderRadius : 0,
+      });
+      svg.rect(x + 2, y + 2, barW - 4, barH - 4, {
+        fill: d.surface, opacity: 0.6, rx: i === 0 ? Math.max(0, d.borderRadius - 2) : 0,
+      });
+    }
 
     // Step number (top-left badge)
     svg.text(x + 14, y + 18, `${i + 1}`, {
-      'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: color, opacity: 0.7,
+      'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700,
+      fill: d.id === 'neon' ? color : (d.lineJitter ? d.text : color),
+      opacity: 0.7,
+      ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
     });
 
     // Label + description
@@ -856,15 +1063,185 @@ function renderPipeline(data: ProcessData, title: string | undefined, d: DesignP
     if (i < count - 1) {
       const gx = x + barW;
       const nextColor = stepColor(d, i + 1);
-      // Triangle pointing right
-      svg.polygon(`${gx},${y} ${gx + gateW},${y + barH / 2} ${gx},${y + barH}`, {
-        fill: color, opacity: 0.6,
+      if (d.lineJitter) {
+        // Sketch: hand-drawn triangle
+        svg.path(jitterLine(gx, y, gx + gateW, y + barH / 2, i * 7 + 200), {
+          stroke: d.border, 'stroke-width': d.borderWidth, fill: 'none',
+        });
+        svg.path(jitterLine(gx + gateW, y + barH / 2, gx, y + barH, i * 7 + 210), {
+          stroke: d.border, 'stroke-width': d.borderWidth, fill: 'none',
+        });
+      } else if (d.shapeRendering === 'crispEdges') {
+        svg.polygon(`${gx},${y} ${gx + gateW},${y + barH / 2} ${gx},${y + barH}`, {
+          fill: color, opacity: 0.6, 'shape-rendering': 'crispEdges',
+        });
+      } else if (d.id === 'neon') {
+        svg.polygon(`${gx},${y} ${gx + gateW},${y + barH / 2} ${gx},${y + barH}`, {
+          fill: 'none', stroke: color, 'stroke-width': 1, filter: 'url(#neon-glow)',
+        });
+      } else {
+        // Triangle pointing right
+        svg.polygon(`${gx},${y} ${gx + gateW},${y + barH / 2} ${gx},${y + barH}`, {
+          fill: color, opacity: 0.6,
+        });
+        // Small background fill for next bar connection
+        svg.rect(gx, y, gateW, barH, {
+          fill: nextColor, opacity: 0.15,
+        });
+      }
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== ESCALATION (style variant) ==========
+// Ascending staircase from bottom-left to top-right, emphasizing escalation/progression
+
+function renderEscalation(data: ProcessData, title: string | undefined, d: DesignPreset): string {
+  const count = data.nodes.length;
+  const pad = 44;
+  const titleH = title ? 48 : 0;
+  const stepW = 160;
+  const stepH = 72;
+  const riseY = 60; // vertical rise per step
+  const riseX = 20; // horizontal stagger per step
+  const totalW = count * stepW + (count - 1) * riseX;
+  const totalH = stepH + (count - 1) * riseY;
+  const width = pad * 2 + totalW;
+  const height = pad * 2 + titleH + totalH + 40;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Process diagram (escalation)',
+    buildColorGradients(d, count, 'pg'));
+  svg.defs(defs);
+
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+
+  for (let i = 0; i < count; i++) {
+    const node = data.nodes[i]!;
+    const color = stepColor(d, i);
+    // Bottom-left = step 0, top-right = step N-1
+    const x = pad + i * (stepW + riseX);
+    const y = contentTop + totalH - stepH - i * riseY;
+
+    // Step block
+    if (d.lineJitter) {
+      svg.path(jitterRect(x, y, stepW, stepH, i * 7), {
+        fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
       });
-      // Small background fill for next bar connection
-      svg.rect(gx, y, gateW, barH, {
-        fill: nextColor, opacity: 0.15,
+      svg.path(jitterLine(x + 4, y + 3, x + stepW - 4, y + 3, i * 7 + 100), {
+        stroke: color, 'stroke-width': 2, opacity: 0.6,
+      });
+    } else if (d.shapeRendering === 'crispEdges') {
+      svg.raw(pixelBorder(x, y, stepW, stepH, color, 3));
+      svg.rect(x + 3, y + 3, stepW - 6, stepH - 6, {
+        fill: d.surface, opacity: 0.9, 'shape-rendering': 'crispEdges',
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(x, y, stepW, stepH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(x, y, stepW, stepH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else if (d.id === 'bold') {
+      svg.rect(x, y, stepW, stepH, {
+        fill: color, opacity: 0.85, rx: d.borderRadius, filter: 'url(#bold-offset)',
+      });
+      svg.rect(x + 3, y + 3, stepW - 6, stepH - 6, {
+        fill: d.surface, rx: Math.max(0, d.borderRadius - 2), opacity: 0.7,
+      });
+    } else if (d.id === 'watercolor') {
+      svg.rect(x, y, stepW, stepH, {
+        fill: color, opacity: 0.2, rx: d.borderRadius, filter: 'url(#watercolor)',
+      });
+      svg.rect(x + 2, y + 2, stepW - 4, stepH - 4, {
+        fill: d.surface, opacity: 0.5, rx: d.borderRadius,
+      });
+    } else {
+      svg.rect(x, y, stepW, stepH, {
+        fill: color, rx: d.borderRadius, opacity: 0.12,
+      });
+      svg.rect(x, y, stepW, stepH, {
+        fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
+        rx: d.borderRadius, ...d.cardAttrs(),
+      });
+      // Color accent at top
+      svg.rect(x + 12, y + 1, stepW - 24, 3, { fill: color, rx: 1.5 });
+    }
+
+    // Level indicator (left side)
+    const levelLabel = `Lv.${i + 1}`;
+    svg.text(x + 14, y + 18, levelLabel, {
+      'text-anchor': 'start', 'font-size': 10, 'font-weight': 700,
+      fill: d.id === 'neon' ? color : (d.lineJitter ? d.text : color),
+      opacity: 0.7,
+      ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
+    });
+
+    // Label + description
+    drawLabelBlock(svg, d, node.label, node.description,
+      x + stepW / 2, y + (node.description ? stepH / 2 + 6 : stepH / 2 + 10), stepW - 36);
+
+    // Connector arrow from this step to next (upward-right curve)
+    if (i < count - 1) {
+      const nextX = pad + (i + 1) * (stepW + riseX);
+      const nextY = contentTop + totalH - stepH - (i + 1) * riseY;
+      const ax1 = x + stepW;
+      const ay1 = y + stepH / 2;
+      const ax2 = nextX;
+      const ay2 = nextY + stepH / 2;
+
+      if (d.lineJitter) {
+        svg.path(jitterLine(ax1, ay1, ax2, ay2, i * 7 + 50), {
+          fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth, opacity: 0.5,
+        });
+      } else if (d.id === 'neon') {
+        svg.path(`M ${ax1} ${ay1} C ${ax1 + riseX} ${ay1}, ${ax2 - riseX} ${ay2}, ${ax2} ${ay2}`, {
+          fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)',
+        });
+      } else {
+        svg.path(`M ${ax1} ${ay1} C ${ax1 + riseX} ${ay1}, ${ax2 - riseX} ${ay2}, ${ax2} ${ay2}`, {
+          fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.5,
+        });
+      }
+      // Arrowhead pointing right-up
+      svg.path(`M ${ax2 - 6} ${ay2 - 4} L ${ax2} ${ay2} L ${ax2 - 6} ${ay2 + 4}`, {
+        fill: 'none', stroke: d.id === 'neon' ? color : color, 'stroke-width': 2,
+        opacity: d.id === 'neon' ? 1 : 0.5,
+        ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
       });
     }
+  }
+
+  // Upward arrow at the top-right corner indicating escalation direction
+  const arrowX = width - pad - 10;
+  const arrowTopY = contentTop + 10;
+  const arrowBotY = contentTop + totalH + 10;
+  if (d.id === 'neon') {
+    svg.line(arrowX, arrowBotY, arrowX, arrowTopY, {
+      stroke: d.primary, 'stroke-width': 2, opacity: 0.4, filter: 'url(#neon-glow)',
+    });
+    svg.path(`M ${arrowX - 6} ${arrowTopY + 8} L ${arrowX} ${arrowTopY} L ${arrowX + 6} ${arrowTopY + 8}`, {
+      fill: 'none', stroke: d.primary, 'stroke-width': 2, opacity: 0.6, filter: 'url(#neon-glow)',
+    });
+  } else if (!d.lineJitter && d.shapeRendering !== 'crispEdges') {
+    svg.line(arrowX, arrowBotY, arrowX, arrowTopY, {
+      stroke: d.border, 'stroke-width': 1.5, opacity: 0.2, 'stroke-dasharray': '6,4',
+    });
+    svg.path(`M ${arrowX - 5} ${arrowTopY + 7} L ${arrowX} ${arrowTopY} L ${arrowX + 5} ${arrowTopY + 7}`, {
+      fill: 'none', stroke: d.border, 'stroke-width': 1.5, opacity: 0.3,
+    });
   }
 
   return svg.build();

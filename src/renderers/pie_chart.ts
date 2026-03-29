@@ -603,7 +603,13 @@ function renderWaffle(data: PieChartData, title: string | undefined, d: DesignPr
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Waffle chart');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const total = data.segments.reduce((s, seg) => s + seg.value, 0) || 1;
@@ -635,9 +641,19 @@ function renderWaffle(data: PieChartData, title: string | undefined, d: DesignPr
       const color = segColor(d, segIdx);
       const x = pad + col * (cellSize + cellGap);
       const y = gridTop + row * (cellSize + cellGap);
-      svg.rect(x, y, cellSize, cellSize, {
-        fill: color, rx: 3, opacity: 0.85, ...d.cardAttrs(),
-      });
+      if (d.id === 'neon') {
+        svg.rect(x, y, cellSize, cellSize, {
+          fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: 3,
+        });
+        svg.rect(x, y, cellSize, cellSize, {
+          fill: 'none', stroke: color, 'stroke-width': 1, rx: 3,
+          opacity: 0.3, filter: 'url(#neon-glow)',
+        });
+      } else {
+        svg.rect(x, y, cellSize, cellSize, {
+          fill: color, rx: 3, opacity: 0.85, ...d.cardAttrs(),
+        });
+      }
       segUsed++;
     }
   }
@@ -679,7 +695,13 @@ function renderDonut(data: PieChartData, title: string | undefined, d: DesignPre
     buildColorGradients(d, data.segments.length, 'ps'));
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const total = data.segments.reduce((s, seg) => s + seg.value, 0) || 1;
@@ -687,13 +709,24 @@ function renderDonut(data: PieChartData, title: string | undefined, d: DesignPre
 
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
+    const color = segColor(d, i);
     const sweep = (seg.value / total) * 360;
 
     if (sweep > 0.5) {
-      svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
-        fill: `url(#ps${i})`, stroke: d.bg, 'stroke-width': 2,
-        ...d.cardAttrs(),
-      });
+      if (d.id === 'neon') {
+        svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
+          fill: color, opacity: 0.15, stroke: color, 'stroke-width': 1.5,
+        });
+        svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
+          fill: 'none', stroke: color, 'stroke-width': 2,
+          opacity: 0.5, filter: 'url(#neon-glow)',
+        });
+      } else {
+        svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
+          fill: `url(#ps${i})`, stroke: d.bg, 'stroke-width': 2,
+          ...d.cardAttrs(),
+        });
+      }
     }
 
     angle += sweep;

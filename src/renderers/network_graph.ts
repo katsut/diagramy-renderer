@@ -528,7 +528,13 @@ function renderCardFlow(data: NetworkGraphData, title: string | undefined, d: De
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Network graph (card flow)');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const positions = layoutNodes(data, cx, cy, ringR);
@@ -561,10 +567,20 @@ function renderCardFlow(data: NetworkGraphData, title: string | undefined, d: De
     const rx = p.x - cardW / 2;
     const ry = p.y - cardH / 2;
 
-    svg.rect(rx, ry, cardW, cardH, {
-      fill: d.surface, stroke: color, 'stroke-width': 2, rx: d.borderRadius,
-      ...d.cardAttrs(),
-    });
+    if (d.id === 'neon') {
+      svg.rect(rx, ry, cardW, cardH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(rx, ry, cardW, cardH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(rx, ry, cardW, cardH, {
+        fill: d.surface, stroke: color, 'stroke-width': 2, rx: d.borderRadius,
+        ...d.cardAttrs(),
+      });
+    }
 
     const fit = fitText(p.label, cardW - 16, 2, d.labelSize);
     const lh = Math.round(fit.fontSize * 1.4);
@@ -595,7 +611,13 @@ function renderArc(data: NetworkGraphData, title: string | undefined, d: DesignP
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Network graph (arc)');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const groups = [...new Set(data.nodes.map(nn => nn.group ?? ''))];
@@ -662,7 +684,13 @@ function renderMatrix(data: NetworkGraphData, title: string | undefined, d: Desi
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Network graph (matrix)');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const gridX = pad + labelW;

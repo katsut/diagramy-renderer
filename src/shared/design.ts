@@ -107,7 +107,7 @@ const PIXEL: DesignPreset = {
   text: '#E0E0E0',
   textSecondary: '#8888AA',
   border: '#333366',
-  colors: ['#E94560', '#0F3460', '#00D2FF', '#FFCC00', '#53D769', '#FF6B6B', '#4ECDC4', '#FFE66D', '#A29BFE', '#FD79A8'],
+  colors: ['#E94560', '#4D7FFF', '#00D2FF', '#FFCC00', '#53D769', '#FF6B6B', '#4ECDC4', '#FFE66D', '#A29BFE', '#FD79A8'],
   borderRadius: 0,
   borderWidth: 2,
   shadow: '',

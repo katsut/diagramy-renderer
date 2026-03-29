@@ -677,7 +677,13 @@ function renderHorizontal(data: DecisionTreeData, title: string | undefined, d: 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Decision tree (horizontal)',
     buildColorGradients(d, depth, 'dt'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const root = offsetHLayout(layout, pad, pad + titleH);
@@ -690,7 +696,21 @@ function drawHNode(svg: SvgBuilder, d: DesignPreset, node: HLayoutNode, depth: n
   const cx = node.x + node.w / 2;
   const cy = node.y + NODE_H / 2;
 
-  if (node.isLeaf) {
+  if (d.lineJitter) {
+    // Sketch: jittered rect for all nodes
+    svg.path(jitterRect(node.x, node.y, node.w, NODE_H, depth * 11 + node.x), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    // Neon: dark fill + neon stroke
+    svg.rect(node.x, node.y, node.w, NODE_H, {
+      fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+    });
+    svg.rect(node.x, node.y, node.w, NODE_H, {
+      fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+      opacity: 0.3, filter: 'url(#neon-glow)',
+    });
+  } else if (node.isLeaf) {
     drawPresetCard(svg, d, node.x, node.y, node.w, NODE_H, color);
   } else {
     svg.rect(node.x, node.y, node.w, NODE_H, {
@@ -703,16 +723,38 @@ function drawHNode(svg: SvgBuilder, d: DesignPreset, node: HLayoutNode, depth: n
   svg.text(cx, cy + 4, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize,
     'font-weight': node.isLeaf ? d.fontWeight : 700,
-    fill: node.isLeaf ? d.text : 'white',
+    fill: d.id === 'neon' ? color : (node.isLeaf ? d.text : 'white'),
   });
 
   const right = node.x + node.w;
   if (node.yes) {
-    drawHConnector(svg, right, cy, node.yes.x, node.yes.y + NODE_H / 2, depthColor(d, depth), 1.5, 'Yes');
+    if (d.lineJitter) {
+      svg.path(jitterLine(right, cy, node.yes.x, node.yes.y + NODE_H / 2, depth * 31), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      svg.text((right + node.yes.x) / 2 + 4, Math.min(cy, node.yes.y + NODE_H / 2) - 4, 'Yes', {
+        'text-anchor': 'start', 'font-size': 10, fill: d.text, opacity: 0.7,
+      });
+    } else if (d.id === 'neon') {
+      drawHConnector(svg, right, cy, node.yes.x, node.yes.y + NODE_H / 2, color, 2, 'Yes');
+    } else {
+      drawHConnector(svg, right, cy, node.yes.x, node.yes.y + NODE_H / 2, depthColor(d, depth), 1.5, 'Yes');
+    }
     drawHNode(svg, d, node.yes, depth + 1);
   }
   if (node.no) {
-    drawHConnector(svg, right, cy, node.no.x, node.no.y + NODE_H / 2, depthColor(d, depth), 1.5, 'No');
+    if (d.lineJitter) {
+      svg.path(jitterLine(right, cy, node.no.x, node.no.y + NODE_H / 2, depth * 37), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      svg.text((right + node.no.x) / 2 + 4, Math.min(cy, node.no.y + NODE_H / 2) - 4, 'No', {
+        'text-anchor': 'start', 'font-size': 10, fill: d.text, opacity: 0.7,
+      });
+    } else if (d.id === 'neon') {
+      drawHConnector(svg, right, cy, node.no.x, node.no.y + NODE_H / 2, color, 2, 'No');
+    } else {
+      drawHConnector(svg, right, cy, node.no.x, node.no.y + NODE_H / 2, depthColor(d, depth), 1.5, 'No');
+    }
     drawHNode(svg, d, node.no, depth + 1);
   }
 }
@@ -734,7 +776,13 @@ function renderFlowchart(data: DecisionTreeData, title: string | undefined, d: D
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Decision tree (flowchart)',
     buildColorGradients(d, depth, 'dt'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const root = offsetLayout(layout, pad, pad + titleH);
@@ -747,30 +795,61 @@ function drawFlowchartNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, d
   const cx = node.x + node.w / 2;
   const cy = node.y + NODE_H / 2;
 
+  const yesColor = d.id === 'neon' ? '#00E676' : '#4CAF50';
+  const noColor = d.id === 'neon' ? '#FF5252' : '#F44336';
+
   if (node.isLeaf) {
-    // Rectangular outcome node with rounded corners
-    svg.rect(node.x + 2, node.y + 2, node.w, NODE_H, {
-      fill: '#000', opacity: 0.05, rx: 6,
-    });
-    svg.rect(node.x, node.y, node.w, NODE_H, {
-      fill: d.surface, stroke: color, 'stroke-width': 2, rx: 6,
-    });
+    if (d.lineJitter) {
+      svg.path(jitterRect(node.x, node.y, node.w, NODE_H, depth * 11 + node.x), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(node.x, node.y, node.w, NODE_H, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: 6,
+      });
+      svg.rect(node.x, node.y, node.w, NODE_H, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: 6,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      // Rectangular outcome node with rounded corners
+      svg.rect(node.x + 2, node.y + 2, node.w, NODE_H, {
+        fill: '#000', opacity: 0.05, rx: 6,
+      });
+      svg.rect(node.x, node.y, node.w, NODE_H, {
+        fill: d.surface, stroke: color, 'stroke-width': 2, rx: 6,
+      });
+    }
     const fit = fitText(node.label, node.w - 16, 1, 12);
     svg.text(cx, cy + 4, fit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
+      fill: d.id === 'neon' ? color : d.text,
     });
   } else {
     // Diamond decision node
     const hw = node.w / 2 + 8;
-    const hh = NODE_H / 2 + 4;
-    // Shadow
-    svg.path(`M ${cx + 2} ${node.y + 2} L ${cx + hw + 2} ${cy + 2} L ${cx + 2} ${node.y + NODE_H + 6} L ${cx - hw + 2} ${cy + 2} Z`, {
-      fill: '#000', opacity: 0.05,
-    });
-    // Diamond
-    svg.path(`M ${cx} ${node.y - 4} L ${cx + hw} ${cy} L ${cx} ${node.y + NODE_H + 4} L ${cx - hw} ${cy} Z`, {
-      fill: color, opacity: 0.15, stroke: color, 'stroke-width': 2,
-    });
+    if (d.lineJitter) {
+      // Sketch diamond (no jitter helper for diamond, use regular path)
+      svg.path(`M ${cx} ${node.y - 4} L ${cx + hw} ${cy} L ${cx} ${node.y + NODE_H + 4} L ${cx - hw} ${cy} Z`, {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.path(`M ${cx} ${node.y - 4} L ${cx + hw} ${cy} L ${cx} ${node.y + NODE_H + 4} L ${cx - hw} ${cy} Z`, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1,
+      });
+      svg.path(`M ${cx} ${node.y - 4} L ${cx + hw} ${cy} L ${cx} ${node.y + NODE_H + 4} L ${cx - hw} ${cy} Z`, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      // Shadow
+      svg.path(`M ${cx + 2} ${node.y + 2} L ${cx + hw + 2} ${cy + 2} L ${cx + 2} ${node.y + NODE_H + 6} L ${cx - hw + 2} ${cy + 2} Z`, {
+        fill: '#000', opacity: 0.05,
+      });
+      // Diamond
+      svg.path(`M ${cx} ${node.y - 4} L ${cx + hw} ${cy} L ${cx} ${node.y + NODE_H + 4} L ${cx - hw} ${cy} Z`, {
+        fill: color, opacity: 0.15, stroke: color, 'stroke-width': 2,
+      });
+    }
     const fit = fitText(node.label, node.w - 16, 1, 12);
     svg.text(cx, cy + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: color,
@@ -781,24 +860,54 @@ function drawFlowchartNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, d
   if (node.yes) {
     const childCx = node.yes.x + node.yes.w / 2;
     const midY = (bottom + node.yes.y) / 2;
-    svg.path(`M ${cx} ${bottom + 4} L ${cx} ${midY} L ${childCx} ${midY} L ${childCx} ${node.yes.y}`, {
-      fill: 'none', stroke: '#4CAF50', 'stroke-width': 2,
-    });
-    // Yes label
+    if (d.lineJitter) {
+      svg.path(jitterLine(cx, bottom + 4, cx, midY, depth * 31), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      svg.path(jitterLine(cx, midY, childCx, midY, depth * 37), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      svg.path(jitterLine(childCx, midY, childCx, node.yes.y, depth * 43), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.path(`M ${cx} ${bottom + 4} L ${cx} ${midY} L ${childCx} ${midY} L ${childCx} ${node.yes.y}`, {
+        fill: 'none', stroke: yesColor, 'stroke-width': 2, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.path(`M ${cx} ${bottom + 4} L ${cx} ${midY} L ${childCx} ${midY} L ${childCx} ${node.yes.y}`, {
+        fill: 'none', stroke: yesColor, 'stroke-width': 2,
+      });
+    }
     svg.text((cx + childCx) / 2, midY - 5, 'Yes', {
-      'text-anchor': 'middle', 'font-size': 10, 'font-weight': 600, fill: '#4CAF50',
+      'text-anchor': 'middle', 'font-size': 10, 'font-weight': 600, fill: yesColor,
     });
     drawFlowchartNode(svg, d, node.yes, depth + 1);
   }
   if (node.no) {
     const childCx = node.no.x + node.no.w / 2;
     const midY = (bottom + node.no.y) / 2;
-    svg.path(`M ${cx} ${bottom + 4} L ${cx} ${midY} L ${childCx} ${midY} L ${childCx} ${node.no.y}`, {
-      fill: 'none', stroke: '#F44336', 'stroke-width': 2,
-    });
-    // No label
+    if (d.lineJitter) {
+      svg.path(jitterLine(cx, bottom + 4, cx, midY, depth * 47), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      svg.path(jitterLine(cx, midY, childCx, midY, depth * 53), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      svg.path(jitterLine(childCx, midY, childCx, node.no.y, depth * 59), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.path(`M ${cx} ${bottom + 4} L ${cx} ${midY} L ${childCx} ${midY} L ${childCx} ${node.no.y}`, {
+        fill: 'none', stroke: noColor, 'stroke-width': 2, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.path(`M ${cx} ${bottom + 4} L ${cx} ${midY} L ${childCx} ${midY} L ${childCx} ${node.no.y}`, {
+        fill: 'none', stroke: noColor, 'stroke-width': 2,
+      });
+    }
     svg.text((cx + childCx) / 2, midY - 5, 'No', {
-      'text-anchor': 'middle', 'font-size': 10, 'font-weight': 600, fill: '#F44336',
+      'text-anchor': 'middle', 'font-size': 10, 'font-weight': 600, fill: noColor,
     });
     drawFlowchartNode(svg, d, node.no, depth + 1);
   }

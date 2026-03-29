@@ -1,9 +1,10 @@
 // Business Framework renderer — auto-layout by block count + BMC/Lean Canvas grids
 
-import { getDesign, type DesignPreset } from '../shared/design.js';
+import { getDesign, jitterRect, pixelBorder, type DesignPreset } from '../shared/design.js';
 import { fitText, estimateWidth } from '../shared/text.js';
 import {
   createDiagramSvg, drawBackground, drawTitle,
+  drawSketchBackground, drawPixelBackground,
 } from '../shared/render-utils.js';
 
 interface CanvasBlock {
@@ -115,6 +116,16 @@ function renderAuto(data: BusinessFrameworkData, title: string | undefined, d: D
   return renderGrid(data, title, d, 3);
 }
 
+// ========== Preset-aware background ==========
+
+function drawPresetBackground(svg: any, d: DesignPreset, width: number, height: number): void {
+  switch (d.id) {
+    case 'sketch': drawSketchBackground(svg, width, height, d.bg); break;
+    case 'pixel': drawPixelBackground(svg, width, height, d.bg); break;
+    default: drawBackground(svg, d, width, height); break;
+  }
+}
+
 // ========== Shared cell drawing helper ==========
 
 function drawCell(
@@ -122,22 +133,96 @@ function drawCell(
   block: CanvasBlock, colorIdx: number,
 ) {
   const color = blockColor(d, colorIdx);
+  const rx = Math.min(d.borderRadius, 8);
 
-  svg.rect(x, y, w, h, {
-    fill: d.surface,
-    stroke: d.borderWidth > 0 ? d.border : 'none',
-    'stroke-width': d.borderWidth,
-    rx: Math.min(d.borderRadius, 8),
-    ...d.cardAttrs(),
-  });
-
-  // Top color accent
-  svg.rect(x + 4, y, w - 8, 4, { fill: color, rx: 2 });
+  switch (d.id) {
+    case 'sketch': {
+      svg.path(jitterRect(x, y, w, h, colorIdx * 13), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+      // Top color accent (hand-drawn feel)
+      svg.path(jitterRect(x + 4, y + 2, w - 8, 3, colorIdx * 7 + 5), {
+        fill: color, stroke: 'none',
+      });
+      break;
+    }
+    case 'pixel': {
+      const px = 3;
+      svg.rect(Math.round(x), Math.round(y), Math.round(w), Math.round(h), {
+        fill: d.surface, 'shape-rendering': 'crispEdges',
+      });
+      svg.raw(pixelBorder(Math.round(x), Math.round(y), Math.round(w), Math.round(h), d.border, px));
+      svg.rect(Math.round(x + 4), Math.round(y), Math.round(w - 8), 4, {
+        fill: color, 'shape-rendering': 'crispEdges',
+      });
+      break;
+    }
+    case 'bold': {
+      svg.rect(x, y, w, h, {
+        fill: d.surface, stroke: d.text, 'stroke-width': 3,
+        rx, filter: 'url(#bold-offset)',
+      });
+      svg.rect(x + 4, y, w - 8, 5, { fill: color, rx: 2 });
+      break;
+    }
+    case 'neon': {
+      svg.rect(x, y, w, h, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx,
+      });
+      svg.rect(x, y, w, h, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+      svg.rect(x + 4, y, w - 8, 3, { fill: color, opacity: 0.8, rx: 1 });
+      break;
+    }
+    case 'glass': {
+      svg.rect(x + 2, y + 2, w - 4, h - 4, {
+        fill: color, opacity: 0.06, rx, filter: 'url(#shadow)',
+      });
+      svg.rect(x, y, w, h, {
+        fill: d.surface, stroke: d.border, 'stroke-width': 1, rx,
+        ...d.cardAttrs(),
+      });
+      if (w > 30) {
+        svg.rect(x + 8, y + 1, Math.max(w - 16, 2), 1, { fill: color, opacity: 0.4, rx: 0.5 });
+      }
+      svg.rect(x + 2, y + 2, w - 4, h - 4, {
+        fill: color, opacity: 0.06, rx: rx - 1,
+      });
+      svg.rect(x + 4, y, w - 8, 4, { fill: color, rx: 2 });
+      break;
+    }
+    case 'watercolor': {
+      svg.ellipse(x + w / 2, y + h / 2, w / 2 + 4, h / 2 + 3, {
+        fill: color, opacity: 0.08, filter: 'url(#watercolor)',
+      });
+      svg.rect(x, y, w, h, {
+        fill: d.surface, opacity: 0.85, rx, filter: 'url(#watercolor)',
+        stroke: color, 'stroke-width': 0.5,
+      });
+      svg.rect(x + 4, y, w - 8, 4, { fill: color, opacity: 0.7, rx: 2 });
+      break;
+    }
+    default: {
+      // clean / minimal
+      svg.rect(x, y, w, h, {
+        fill: d.surface,
+        stroke: d.borderWidth > 0 ? d.border : 'none',
+        'stroke-width': d.borderWidth,
+        rx,
+        ...d.cardAttrs(),
+      });
+      svg.rect(x + 4, y, w - 8, 4, { fill: color, rx: 2 });
+      break;
+    }
+  }
 
   // Label
+  const labelFill = d.id === 'neon' ? d.text : color;
   const labelFit = fitText(block.label, w - 16, 1, d.captionSize);
   svg.text(x + w / 2, y + 18, labelFit.lines[0] ?? block.label, {
-    'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
+    'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: labelFill,
   });
 
   // Items
@@ -168,7 +253,7 @@ function render2Col(data: BusinessFrameworkData, title: string | undefined, d: D
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Business Framework');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
@@ -194,7 +279,7 @@ function render3Col(data: BusinessFrameworkData, title: string | undefined, d: D
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Business Framework');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
@@ -220,7 +305,7 @@ function render2x2(data: BusinessFrameworkData, title: string | undefined, d: De
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Business Framework');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
@@ -252,7 +337,7 @@ function render5Center(data: BusinessFrameworkData, title: string | undefined, d
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Business Framework');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
@@ -293,7 +378,7 @@ function renderGrid(data: BusinessFrameworkData, title: string | undefined, d: D
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Business Framework');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
@@ -326,32 +411,7 @@ function drawBmcCell(
   if (!block) return;
   const label = block.label ?? defaults[key] ?? key;
   const items = block?.items ?? [];
-  const color = blockColor(d, colorIdx);
-
-  svg.rect(x, y, w, h, {
-    fill: d.surface,
-    stroke: d.borderWidth > 0 ? d.border : 'none',
-    'stroke-width': d.borderWidth,
-    rx: Math.min(d.borderRadius, 8),
-    ...d.cardAttrs(),
-  });
-
-  svg.rect(x + 4, y, w - 8, 4, { fill: color, rx: 2 });
-
-  const labelFit = fitText(label, w - 16, 1, d.captionSize);
-  svg.text(x + w / 2, y + 18, labelFit.lines[0] ?? label, {
-    'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
-  });
-
-  let iy = y + 34;
-  const maxItems = Math.floor((h - 38) / 16);
-  for (let j = 0; j < Math.min(items.length, maxItems); j++) {
-    const itemFit = fitText(items[j]!, w - 20, 1, d.captionSize - 1);
-    svg.text(x + 10, iy, `\u2022 ${itemFit.lines[0] ?? items[j]}`, {
-      'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.text,
-    });
-    iy += 16;
-  }
+  drawCell(svg, d, x, y, w, h, { key, label, items }, colorIdx);
 }
 
 // ========== Grid 9 — generic 5-col top + 2-col bottom (BMC / Lean Canvas / any 7-9 block framework) ==========
@@ -381,7 +441,7 @@ function renderGrid9(data: BusinessFrameworkData, title: string | undefined, d: 
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Framework');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
@@ -441,7 +501,7 @@ function renderSplit6(data: BusinessFrameworkData, title: string | undefined, d:
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Framework (split)');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
@@ -517,7 +577,7 @@ function renderVpc(data: BusinessFrameworkData, title: string | undefined, d: De
     `<clipPath id="vpc-rect"><rect x="${pad}" y="${pad + titleH}" width="${rectW}" height="${rectH}" rx="${Math.min(d.borderRadius, 12)}"/></clipPath>`
   );
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;
@@ -651,7 +711,7 @@ function renderVpcLite(data: BusinessFrameworkData, title: string | undefined, d
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Value Proposition Canvas');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  drawPresetBackground(svg, d, width, height);
   if (title) drawTitle(svg, d, title, width, pad);
 
   const top = pad + titleH;

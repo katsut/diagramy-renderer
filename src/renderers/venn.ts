@@ -6,6 +6,7 @@ import { fitText, estimateWidth } from '../shared/text.js';
 import {
   createDiagramSvg, drawBackground, drawTitle, drawLabelBlock,
   buildColorGradients, drawSketchBackground, drawPixelBackground,
+  drawPresetCard,
 } from '../shared/render-utils.js';
 
 interface VennSet {
@@ -22,17 +23,21 @@ function setColor(d: DesignPreset, i: number): string {
   return d.colors[i % d.colors.length]!;
 }
 
-export function renderVenn(data: VennData, title?: string, design?: DesignPreset): string {
+export function renderVenn(data: VennData, title?: string, design?: DesignPreset, style?: string): string {
   const d = design ?? getDesign();
-  switch (d.id) {
-    case 'sketch': return renderSketch(data, title, d);
-    case 'pixel': return renderPixel(data, title, d);
-    case 'bold': return renderBold(data, title, d);
-    case 'minimal': return renderFlat(data, title, d);
-    case 'glass': return renderGlass(data, title, d);
-    case 'neon': return renderNeon(data, title, d);
-    case 'watercolor': return renderWatercolor(data, title, d);
-    default: return renderClean(data, title, d);
+  switch (style) {
+    case 'distinction': return renderDistinction(data, title, d);
+    default:
+      switch (d.id) {
+        case 'sketch': return renderSketch(data, title, d);
+        case 'pixel': return renderPixel(data, title, d);
+        case 'bold': return renderBold(data, title, d);
+        case 'minimal': return renderFlat(data, title, d);
+        case 'glass': return renderGlass(data, title, d);
+        case 'neon': return renderNeon(data, title, d);
+        case 'watercolor': return renderWatercolor(data, title, d);
+        default: return renderClean(data, title, d);
+      }
   }
 }
 
@@ -556,6 +561,130 @@ function renderPixel(data: VennData, title: string | undefined, d: DesignPreset)
   if (data.intersection) {
     svg.text(Math.round(cx), Math.round(cy) + 4, data.intersection, {
       'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': 700, fill: d.text,
+    });
+  }
+
+  return svg.build();
+}
+
+// ========== DISTINCTION (style variant) ==========
+// Emphasizes differences between sets — sets drawn further apart, "vs" label between them
+
+function renderDistinction(data: VennData, title: string | undefined, d: DesignPreset): string {
+  const count = Math.min(data.sets.length, 3);
+  const pad = 48;
+  const titleH = title ? 48 : 0;
+  const cardW = 200;
+  const cardH = 200;
+  const gapW = 80; // wider gap between sets
+  const totalW = count * cardW + (count - 1) * gapW;
+  const width = pad * 2 + totalW;
+  const height = pad * 2 + titleH + cardH + 40;
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Venn diagram (distinction)',
+    buildColorGradients(d, count, 'vn'));
+  svg.defs(defs);
+
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  const contentTop = pad + titleH;
+
+  for (let i = 0; i < count; i++) {
+    const set = data.sets[i]!;
+    const color = setColor(d, i);
+    const cx = pad + i * (cardW + gapW) + cardW / 2;
+    const cy = contentTop + cardH / 2;
+    const circR = cardW / 2 - 10;
+
+    // Circle for each set (no overlap)
+    if (d.lineJitter) {
+      svg.circle(cx, cy, circR, { fill: 'none', stroke: color, 'stroke-width': 2 });
+    } else if (d.id === 'neon') {
+      svg.circle(cx, cy, circR, { fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1.5 });
+      svg.circle(cx, cy, circR, { fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)' });
+    } else if (d.id === 'bold') {
+      svg.circle(cx, cy, circR, { fill: color, opacity: 0.15, filter: 'url(#bold-offset)' });
+      svg.circle(cx, cy, circR, { fill: 'none', stroke: color, 'stroke-width': 4 });
+    } else if (d.id === 'watercolor') {
+      svg.circle(cx, cy, circR + 4, { fill: color, opacity: 0.1, filter: 'url(#watercolor)' });
+      svg.circle(cx, cy, circR, { fill: color, opacity: 0.12, filter: 'url(#watercolor)' });
+    } else {
+      svg.circle(cx, cy, circR, { fill: color, opacity: 0.1 });
+      svg.circle(cx, cy, circR, { fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.5 });
+    }
+
+    // Set label (centered, bold)
+    const labelFit = fitText(set.label, cardW - 32, 2, d.labelSize + 1);
+    let ty = cy - 20 - ((labelFit.lines.length - 1) * labelFit.fontSize * 0.6);
+    for (const line of labelFit.lines) {
+      svg.text(cx, ty, line, {
+        'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': 700,
+        fill: d.id === 'neon' ? color : d.text,
+        ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
+      });
+      ty += Math.round(labelFit.fontSize * 1.4);
+    }
+
+    // Items below label
+    for (let j = 0; j < Math.min(set.items.length, 4); j++) {
+      const itemFit = fitText(set.items[j]!, cardW - 48, 1, d.captionSize);
+      svg.text(cx, ty + 4, itemFit.lines[0]!, {
+        'text-anchor': 'middle', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+      });
+      ty += Math.round(d.captionSize * 1.4);
+    }
+
+    // "vs" or divider between sets (not after the last one)
+    if (i < count - 1) {
+      const vsX = pad + i * (cardW + gapW) + cardW + gapW / 2;
+      const vsY = contentTop + cardH / 2;
+
+      if (d.id === 'neon') {
+        svg.text(vsX, vsY - 4, 'vs', {
+          'text-anchor': 'middle', 'font-size': d.labelSize + 4, 'font-weight': 700,
+          fill: '#FF00FF', filter: 'url(#neon-glow)',
+        });
+        // Vertical divider lines
+        svg.line(vsX, vsY - cardH / 2 + 20, vsX, vsY - 18, {
+          stroke: '#FF00FF', 'stroke-width': 1, opacity: 0.4, filter: 'url(#neon-glow)',
+        });
+        svg.line(vsX, vsY + 14, vsX, vsY + cardH / 2 - 20, {
+          stroke: '#FF00FF', 'stroke-width': 1, opacity: 0.4, filter: 'url(#neon-glow)',
+        });
+      } else if (d.id === 'bold') {
+        svg.text(vsX, vsY + 6, 'VS', {
+          'text-anchor': 'middle', 'font-size': d.labelSize + 8, 'font-weight': 900, fill: d.text,
+        });
+      } else {
+        // Subtle vertical dashes with "vs" label
+        svg.line(vsX, vsY - cardH / 2 + 20, vsX, vsY - 14, {
+          stroke: d.border, 'stroke-width': 1.5, opacity: 0.3, 'stroke-dasharray': '4,4',
+        });
+        svg.text(vsX, vsY + 4, 'vs', {
+          'text-anchor': 'middle', 'font-size': d.captionSize + 2, 'font-weight': d.fontWeight,
+          fill: d.textSecondary,
+        });
+        svg.line(vsX, vsY + 14, vsX, vsY + cardH / 2 - 20, {
+          stroke: d.border, 'stroke-width': 1.5, opacity: 0.3, 'stroke-dasharray': '4,4',
+        });
+      }
+    }
+  }
+
+  // Intersection label at the bottom if present
+  if (data.intersection) {
+    const intY = contentTop + cardH + 24;
+    const intFit = fitText(data.intersection, totalW - 40, 1, d.captionSize + 1);
+    svg.text(width / 2, intY, intFit.lines[0]!, {
+      'text-anchor': 'middle', 'font-size': intFit.fontSize, 'font-weight': d.fontWeight,
+      fill: d.textSecondary, 'font-style': 'italic',
     });
   }
 

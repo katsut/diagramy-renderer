@@ -606,7 +606,13 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Mind map (horizontal)', gradientDefs);
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -614,10 +620,18 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
   const centerY = contentTop + (height - pad * 2 - titleH) / 2;
 
   // Center node
-  svg.circle(centerX, centerY, 40, {
-    fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth, ...d.cardAttrs(),
-  });
-  svg.circle(centerX, centerY, 36, { fill: d.colors[0]!, opacity: 0.06 });
+  if (d.lineJitter) {
+    svg.circle(centerX, centerY, 40, { fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth });
+    svg.circle(centerX, centerY, 34, { fill: 'none', stroke: d.border, 'stroke-width': 1 });
+  } else if (d.id === 'neon') {
+    svg.circle(centerX, centerY, 40, { fill: 'rgba(0,0,0,0.4)', stroke: d.colors[0]!, 'stroke-width': 2 });
+    svg.circle(centerX, centerY, 40, { fill: 'none', stroke: d.colors[0]!, 'stroke-width': 2.5, opacity: 0.3, filter: 'url(#neon-glow)' });
+  } else {
+    svg.circle(centerX, centerY, 40, {
+      fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth, ...d.cardAttrs(),
+    });
+    svg.circle(centerX, centerY, 36, { fill: d.colors[0]!, opacity: 0.06 });
+  }
   drawLabelBlock(svg, d, data.center, undefined, centerX, centerY - 4, 70);
 
   // Branches
@@ -632,25 +646,65 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
     const by = curY + rowH / 2;
 
     // Line from center to branch
-    svg.path(`M ${centerX + 40} ${centerY} C ${branchX - 20} ${centerY}, ${centerX + 40} ${by}, ${branchX} ${by}`, {
-      fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.4, 'stroke-linecap': 'round',
-    });
+    if (d.lineJitter) {
+      svg.path(jitterLine(centerX + 40, centerY, branchX, by, i * 17), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.line(centerX + 40, centerY, branchX, by, {
+        stroke: color, 'stroke-width': 1.5, opacity: 0.4,
+      });
+      svg.line(centerX + 40, centerY, branchX, by, {
+        stroke: color, 'stroke-width': 1.5, opacity: 0.2, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.path(`M ${centerX + 40} ${centerY} C ${branchX - 20} ${centerY}, ${centerX + 40} ${by}, ${branchX} ${by}`, {
+        fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.4, 'stroke-linecap': 'round',
+      });
+    }
 
     // Branch node
-    drawPresetCard(svg, d, branchX, by - 18, branchW, 36, color);
+    if (d.lineJitter) {
+      svg.path(jitterRect(branchX, by - 18, branchW, 36, i * 11), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(branchX, by - 18, branchW, 36, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(branchX, by - 18, branchW, 36, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      drawPresetCard(svg, d, branchX, by - 18, branchW, 36, color);
+    }
     const fit = fitText(branch.label, branchW - 16, 1, d.labelSize);
     svg.text(branchX + branchW / 2, by + 4, fit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
+      fill: d.id === 'neon' ? color : d.text,
     });
 
     // Children
     const childX = branchX + branchW + colGap;
     for (let j = 0; j < children.length; j++) {
       const cy = curY + j * childRowH + rowH / 2;
-      svg.line(branchX + branchW, by, childX, cy, {
-        stroke: color, 'stroke-width': 1.5, opacity: 0.3,
-      });
-      svg.circle(childX, cy, 4, { fill: color, opacity: 0.7 });
+      if (d.lineJitter) {
+        svg.path(jitterLine(branchX + branchW, by, childX, cy, i * 100 + j * 13), {
+          fill: 'none', stroke: d.border, 'stroke-width': 1,
+        });
+        svg.circle(childX, cy, 3, { fill: 'none', stroke: d.border, 'stroke-width': 1 });
+      } else if (d.id === 'neon') {
+        svg.line(branchX + branchW, by, childX, cy, {
+          stroke: color, 'stroke-width': 1, opacity: 0.3,
+        });
+        svg.circle(childX, cy, 4, { fill: 'none', stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)' });
+      } else {
+        svg.line(branchX + branchW, by, childX, cy, {
+          stroke: color, 'stroke-width': 1.5, opacity: 0.3,
+        });
+        svg.circle(childX, cy, 4, { fill: color, opacity: 0.7 });
+      }
       const cFit = fitText(children[j]!, childW - 16, 1, d.captionSize);
       svg.text(childX + 10, cy + 4, cFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': cFit.fontSize, fill: d.textSecondary,
@@ -699,7 +753,13 @@ function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignP
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Mind map (org chart)',
     buildColorGradients(d, n, 'mg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -707,10 +767,25 @@ function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignP
 
   // Center node (top)
   const centerY = contentTop + 8;
-  drawPresetCard(svg, d, centerX - boxW / 2, centerY, boxW, boxH, d.colors[0]!);
+  if (d.lineJitter) {
+    svg.path(jitterRect(centerX - boxW / 2, centerY, boxW, boxH, 7), {
+      fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+    });
+  } else if (d.id === 'neon') {
+    svg.rect(centerX - boxW / 2, centerY, boxW, boxH, {
+      fill: 'rgba(0,0,0,0.4)', stroke: d.colors[0]!, 'stroke-width': 1, rx: d.borderRadius,
+    });
+    svg.rect(centerX - boxW / 2, centerY, boxW, boxH, {
+      fill: 'none', stroke: d.colors[0]!, 'stroke-width': 1.5, rx: d.borderRadius,
+      opacity: 0.3, filter: 'url(#neon-glow)',
+    });
+  } else {
+    drawPresetCard(svg, d, centerX - boxW / 2, centerY, boxW, boxH, d.colors[0]!);
+  }
   const cfit = fitText(data.center, boxW - 16, 1, d.labelSize);
   svg.text(centerX, centerY + boxH / 2 + 4, cfit.lines[0]!, {
-    'text-anchor': 'middle', 'font-size': cfit.fontSize, 'font-weight': 700, fill: d.text,
+    'text-anchor': 'middle', 'font-size': cfit.fontSize, 'font-weight': 700,
+    fill: d.id === 'neon' ? d.colors[0]! : d.text,
   });
 
   // Branch row
@@ -724,38 +799,82 @@ function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignP
     const bCenterX = bx + boxW / 2;
 
     // Connector from center to branch
-    svg.line(centerX, centerY + boxH, bCenterX, branchY, {
-      stroke: d.border, 'stroke-width': 1.5, opacity: 0.4,
-    });
+    if (d.lineJitter) {
+      svg.path(jitterLine(centerX, centerY + boxH, bCenterX, branchY, i * 17), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.line(centerX, centerY + boxH, bCenterX, branchY, {
+        stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.line(centerX, centerY + boxH, bCenterX, branchY, {
+        stroke: d.border, 'stroke-width': 1.5, opacity: 0.4,
+      });
+    }
 
-    drawPresetCard(svg, d, bx, branchY, boxW, boxH, color);
+    if (d.lineJitter) {
+      svg.path(jitterRect(bx, branchY, boxW, boxH, i * 11), {
+        fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+      });
+    } else if (d.id === 'neon') {
+      svg.rect(bx, branchY, boxW, boxH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(bx, branchY, boxW, boxH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      drawPresetCard(svg, d, bx, branchY, boxW, boxH, color);
+    }
     const fit = fitText(branch.label, boxW - 16, 1, d.labelSize);
     svg.text(bCenterX, branchY + boxH / 2 + 4, fit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
+      fill: d.id === 'neon' ? color : d.text,
     });
 
     // Children below branch
     const children = (branch.children ?? []).slice(0, 4);
     if (children.length > 0) {
-      const childW = boxW * 0.8;
+      const childBoxW = boxW * 0.8;
       const childGap = 8;
-      const childRowW = children.length * childW + (children.length - 1) * childGap;
+      const childRowW = children.length * childBoxW + (children.length - 1) * childGap;
       const childStartX = bCenterX - childRowW / 2;
       const childY = branchY + boxH + rowGap;
 
       for (let j = 0; j < children.length; j++) {
-        const cx = childStartX + j * (childW + childGap);
-        const cCenterX = cx + childW / 2;
+        const cx = childStartX + j * (childBoxW + childGap);
+        const cCenterX = cx + childBoxW / 2;
 
-        svg.line(bCenterX, branchY + boxH, cCenterX, childY, {
-          stroke: color, 'stroke-width': 1, opacity: 0.3,
-        });
-
-        svg.rect(cx, childY, childW, boxH - 4, {
-          fill: d.surface, stroke: color, 'stroke-width': 1,
-          rx: d.borderRadius, ...d.cardAttrs(),
-        });
-        const chFit = fitText(children[j]!, childW - 12, 1, d.captionSize);
+        if (d.lineJitter) {
+          svg.path(jitterLine(bCenterX, branchY + boxH, cCenterX, childY, i * 100 + j * 13), {
+            fill: 'none', stroke: d.border, 'stroke-width': 1,
+          });
+          svg.path(jitterRect(cx, childY, childBoxW, boxH - 4, i * 100 + j * 17), {
+            fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
+          });
+        } else if (d.id === 'neon') {
+          svg.line(bCenterX, branchY + boxH, cCenterX, childY, {
+            stroke: color, 'stroke-width': 1, opacity: 0.3,
+          });
+          svg.rect(cx, childY, childBoxW, boxH - 4, {
+            fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+          });
+          svg.rect(cx, childY, childBoxW, boxH - 4, {
+            fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+            opacity: 0.3, filter: 'url(#neon-glow)',
+          });
+        } else {
+          svg.line(bCenterX, branchY + boxH, cCenterX, childY, {
+            stroke: color, 'stroke-width': 1, opacity: 0.3,
+          });
+          svg.rect(cx, childY, childBoxW, boxH - 4, {
+            fill: d.surface, stroke: color, 'stroke-width': 1,
+            rx: d.borderRadius, ...d.cardAttrs(),
+          });
+        }
+        const chFit = fitText(children[j]!, childBoxW - 12, 1, d.captionSize);
         svg.text(cCenterX, childY + (boxH - 4) / 2 + 4, chFit.lines[0]!, {
           'text-anchor': 'middle', 'font-size': chFit.fontSize, fill: d.textSecondary,
         });
