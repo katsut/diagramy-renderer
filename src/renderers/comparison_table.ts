@@ -90,16 +90,15 @@ function computeLayout(data: ComparisonTableData): ColLayout {
     colWidths[i] = Math.min(colWidths[i]!, maxW);
   }
 
-  // Shrink columns proportionally if total width exceeds 960px
-  const pad = 48;
-  const colPad = 2;
-  const tableInset = 16;
-  const maxTableW = 960 - pad * 2 - tableInset * 2 - colPad * colCount;
+  // Shrink columns proportionally if total width exceeds max
+  // Budget: 960px total - pad*2(96) - tableInset*2(40) - colPad*colCount(16*N) = remaining for columns
+  const maxTableW = 960 - 96 - 40 - 16 * colCount;
   const totalColW = colWidths.reduce((s, w) => s + w, 0);
   if (totalColW > maxTableW) {
     const ratio = maxTableW / totalColW;
+    const shrunkMin = Math.max(50, Math.round(minW * ratio));
     for (let i = 0; i < colWidths.length; i++) {
-      colWidths[i] = Math.max(minW, Math.round(colWidths[i]! * ratio));
+      colWidths[i] = Math.max(shrunkMin, Math.round(colWidths[i]! * ratio));
     }
   }
 
