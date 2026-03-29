@@ -53,15 +53,22 @@ function computeLayout(branchCount: number, hasTitle: boolean, maxChildren: numb
   const titleH = hasTitle ? 44 : 0;
   const centerR = 50;
   const { branchR, childR } = adaptiveRadialRadius(branchCount, maxChildren);
-  const maxChildCount = branchCount <= 4 ? 5 : branchCount <= 6 ? 4 : 3;
+  const maxChildCount = branchCount <= 3 ? 6 : branchCount <= 5 ? 5 : branchCount <= 7 ? 4 : 3;
 
-  const totalR = branchR + childR + 80;
+  // Compute per-branch child spread angles based on neighbor distance
+  const angularGap = branchCount > 0 ? (Math.PI * 2) / branchCount : Math.PI * 2;
+  // Child spread = min(PI*0.6, angularGap * 0.7) — prevents overlap with neighbor branches
+  const childSpread = Math.min(Math.PI * 0.6, angularGap * 0.7);
+
+  // Extra label padding for dense maps
+  const labelPad = branchCount >= 6 ? 40 : 20;
+  const totalR = branchR + childR + 80 + labelPad;
   const width = Math.max(pad * 2 + totalR * 2, 700);
   const height = pad * 2 + titleH + totalR * 2;
   const cx = width / 2;
   const cy = pad + titleH + totalR;
 
-  return { pad, titleH, centerR, branchR, childR, width, height, cx, cy, maxChildCount };
+  return { pad, titleH, centerR, branchR, childR, width, height, cx, cy, maxChildCount, childSpread };
 }
 
 function branchAngle(i: number, total: number): number {
@@ -133,7 +140,7 @@ function drawCleanChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: num
   const count = Math.min(children.length, lay.maxChildCount);
   if (count === 0) return;
 
-  const spread = Math.PI * 0.5;
+  const spread = lay.childSpread;
   const startAngle = angle - spread / 2;
 
   for (let j = 0; j < count; j++) {
@@ -168,6 +175,7 @@ function renderBold(data: MindMapData, title: string | undefined, d: DesignPrese
     const by = lay.cy + Math.sin(angle) * lay.branchR;
     const color = branchColor(d, i);
 
+    svg.beginItem(`branches[${i}]`);
     // Thick curved connection
     drawCleanConnection(svg, d, lay.cx, lay.cy, bx, by, color);
 
@@ -179,10 +187,11 @@ function renderBold(data: MindMapData, title: string | undefined, d: DesignPrese
     svg.text(bx, by + 6, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 18, 'font-weight': 900, fill: color,
     });
-    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 46, 120);
+    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 46, 120, 'middle', `branches[${i}]`);
 
     // Children
     drawCleanChildren(svg, d, bx, by, angle, color, branch, lay, i);
+    svg.endItem();
   }
 
   // Center: bold large node
@@ -190,7 +199,7 @@ function renderBold(data: MindMapData, title: string | undefined, d: DesignPrese
     fill: d.colors[0]!, stroke: d.border, 'stroke-width': 3, filter: 'url(#bold-offset)',
   });
   svg.circle(lay.cx, lay.cy, lay.centerR - 4, { fill: '#FFFFFF' });
-  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.2);
+  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.2, 'middle', 'center');
 
   return svg.build();
 }
@@ -215,6 +224,7 @@ function renderFlat(data: MindMapData, title: string | undefined, d: DesignPrese
     const by = lay.cy + Math.sin(angle) * lay.branchR;
     const color = branchColor(d, i);
 
+    svg.beginItem(`branches[${i}]`);
     // Straight thin connection
     svg.line(lay.cx, lay.cy, bx, by, { stroke: color, 'stroke-width': 2, opacity: 0.3 });
 
@@ -223,12 +233,12 @@ function renderFlat(data: MindMapData, title: string | undefined, d: DesignPrese
     svg.text(bx, by + 5, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: '#FFFFFF',
     });
-    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 38, 120);
+    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 38, 120, 'middle', `branches[${i}]`);
 
     // Flat children
     const children = branch.children ?? [];
     const count = Math.min(children.length, lay.maxChildCount);
-    const spread = Math.PI * 0.5;
+    const spread = lay.childSpread;
     const startAngle = angle - spread / 2;
     for (let j = 0; j < count; j++) {
       const childAngle = count === 1 ? angle : startAngle + (j / (count - 1)) * spread;
@@ -236,13 +246,14 @@ function renderFlat(data: MindMapData, title: string | undefined, d: DesignPrese
       const cy = by + Math.sin(childAngle) * lay.childR;
       svg.line(bx, by, cx, cy, { stroke: color, 'stroke-width': 1, opacity: 0.2 });
       svg.circle(cx, cy, 6, { fill: color, opacity: 0.6 });
-      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 14, 90);
+      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 14, 90, 'middle', `branches[${i}].children[${j}]`);
     }
+    svg.endItem();
   }
 
   // Center: flat primary circle
   svg.circle(lay.cx, lay.cy, lay.centerR, { fill: d.primary });
-  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.4);
+  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.4, 'middle', 'center');
 
   return svg.build();
 }
@@ -268,6 +279,7 @@ function renderGlass(data: MindMapData, title: string | undefined, d: DesignPres
     const by = lay.cy + Math.sin(angle) * lay.branchR;
     const color = branchColor(d, i);
 
+    svg.beginItem(`branches[${i}]`);
     // Curved connection with glow
     drawCleanConnection(svg, d, lay.cx, lay.cy, bx, by, color);
 
@@ -281,10 +293,11 @@ function renderGlass(data: MindMapData, title: string | undefined, d: DesignPres
     // Color accent ring
     svg.circle(bx, by, 20, { fill: color, opacity: 0.15 });
     svg.raw(icon(branchIcon(i), bx, by, 18, color));
-    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120);
+    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120, 'middle', `branches[${i}]`);
 
     // Glass children
     drawCleanChildren(svg, d, bx, by, angle, color, branch, lay, i);
+    svg.endItem();
   }
 
   // Glass center
@@ -294,7 +307,7 @@ function renderGlass(data: MindMapData, title: string | undefined, d: DesignPres
     ...d.cardAttrs(),
   });
   svg.circle(lay.cx, lay.cy, lay.centerR - 8, { fill: d.colors[0]!, opacity: 0.08 });
-  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.4);
+  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.4, 'middle', 'center');
 
   return svg.build();
 }
@@ -320,6 +333,7 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
     const color = branchColor(d, i);
     const lp = radialLabelPlacement(angle, 26);
 
+    svg.beginItem(`branches[${i}]`);
     // Neon connection line
     svg.line(lay.cx, lay.cy, bx, by, { stroke: color, 'stroke-width': 1, opacity: 0.4 });
     svg.line(lay.cx, lay.cy, bx, by, {
@@ -332,12 +346,12 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
       fill: 'none', stroke: color, 'stroke-width': 2, opacity: 0.3, filter: 'url(#neon-glow)',
     });
     svg.raw(icon(branchIcon(i), bx, by, 16, color));
-    drawLabelBlock(svg, d, branch.label, undefined, bx, by + lp.yOffset, 110, lp.anchor);
+    drawLabelBlock(svg, d, branch.label, undefined, bx, by + lp.yOffset, 110, lp.anchor, `branches[${i}]`);
 
     // Neon children
     const children = branch.children ?? [];
     const count = Math.min(children.length, lay.maxChildCount);
-    const spread = Math.PI * 0.5;
+    const spread = lay.childSpread;
     const startAngle = angle - spread / 2;
     for (let j = 0; j < count; j++) {
       const childAngle = count === 1 ? angle : startAngle + (j / (count - 1)) * spread;
@@ -346,8 +360,9 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
       const clp = radialLabelPlacement(childAngle, 5);
       svg.line(bx, by, cx, cy, { stroke: color, 'stroke-width': 1, opacity: 0.2 });
       svg.circle(cx, cy, 4, { fill: 'none', stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)' });
-      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + clp.yOffset, 80, clp.anchor);
+      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + clp.yOffset, 80, clp.anchor, `branches[${i}].children[${j}]`);
     }
+    svg.endItem();
   }
 
   // Neon center
@@ -357,7 +372,7 @@ function renderNeon(data: MindMapData, title: string | undefined, d: DesignPrese
   svg.circle(lay.cx, lay.cy, lay.centerR, {
     fill: 'none', stroke: d.colors[0]!, 'stroke-width': 2.5, opacity: 0.3, filter: 'url(#neon-glow)',
   });
-  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.4);
+  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.4, 'middle', 'center');
 
   return svg.build();
 }
@@ -383,6 +398,7 @@ function renderWatercolor(data: MindMapData, title: string | undefined, d: Desig
     const by = lay.cy + Math.sin(angle) * lay.branchR;
     const color = branchColor(d, i);
 
+    svg.beginItem(`branches[${i}]`);
     // Soft curved connection
     drawCleanConnection(svg, d, lay.cx, lay.cy, bx, by, color);
 
@@ -393,12 +409,12 @@ function renderWatercolor(data: MindMapData, title: string | undefined, d: Desig
     svg.text(bx, by + 6, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 16, 'font-weight': 600, fill: d.text,
     });
-    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120);
+    drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120, 'middle', `branches[${i}]`);
 
     // Watercolor children
     const children = branch.children ?? [];
     const count = Math.min(children.length, lay.maxChildCount);
-    const spread = Math.PI * 0.5;
+    const spread = lay.childSpread;
     const startAngle = angle - spread / 2;
     for (let j = 0; j < count; j++) {
       const childAngle = count === 1 ? angle : startAngle + (j / (count - 1)) * spread;
@@ -406,8 +422,9 @@ function renderWatercolor(data: MindMapData, title: string | undefined, d: Desig
       const cy = by + Math.sin(childAngle) * lay.childR;
       svg.line(bx, by, cx, cy, { stroke: color, 'stroke-width': 1.5, opacity: 0.3 });
       svg.circle(cx, cy, 6, { fill: color, opacity: 0.6, filter: 'url(#watercolor)' });
-      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 14, 90);
+      drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 14, 90, 'middle', `branches[${i}].children[${j}]`);
     }
+    svg.endItem();
   }
 
   // Watercolor center
@@ -417,7 +434,7 @@ function renderWatercolor(data: MindMapData, title: string | undefined, d: Desig
   svg.circle(lay.cx, lay.cy, lay.centerR, {
     fill: d.surface, opacity: 0.85, filter: 'url(#watercolor)',
   });
-  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.4);
+  drawLabelBlock(svg, d, data.center, undefined, lay.cx, lay.cy - 6, lay.centerR * 1.4, 'middle', 'center');
 
   return svg.build();
 }
@@ -440,9 +457,11 @@ function renderSketch(data: MindMapData, title: string | undefined, d: DesignPre
     const bx = lay.cx + Math.cos(angle) * lay.branchR;
     const by = lay.cy + Math.sin(angle) * lay.branchR;
 
+    svg.beginItem(`branches[${i}]`);
     drawSketchLine(svg, d, lay.cx, lay.cy, bx, by, i);
     drawSketchBranch(svg, d, bx, by, branch, i);
     drawSketchChildren(svg, d, bx, by, angle, branch, lay, i);
+    svg.endItem();
   }
 
   drawSketchCenter(svg, d, lay.cx, lay.cy, lay.centerR, data.center);
@@ -467,7 +486,7 @@ function drawSketchBranch(svg: SvgBuilder, d: DesignPreset, bx: number, by: numb
   svg.text(bx, by + 4, `${i + 1}`, {
     'text-anchor': 'middle', 'font-size': 14, 'font-weight': 400, fill: d.text,
   });
-  drawLabelBlock(svg, d, branch.label, undefined, bx, by + 36, 120);
+  drawLabelBlock(svg, d, branch.label, undefined, bx, by + 36, 120, 'middle', `branches[${i}]`);
 }
 
 function drawSketchChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, angle: number, branch: MindMapBranch, lay: ReturnType<typeof computeLayout>, branchIdx: number): void {
@@ -475,7 +494,7 @@ function drawSketchChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: nu
   const count = Math.min(children.length, lay.maxChildCount);
   if (count === 0) return;
 
-  const spread = Math.PI * 0.5;
+  const spread = lay.childSpread;
   const startAngle = angle - spread / 2;
 
   for (let j = 0; j < count; j++) {
@@ -487,7 +506,7 @@ function drawSketchChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: nu
       fill: 'none', stroke: d.border, 'stroke-width': 1,
     });
     svg.circle(cx, cy, 3, { fill: 'none', stroke: d.border, 'stroke-width': 1 });
-    drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 10, 90);
+    drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 10, 90, 'middle', `branches[${branchIdx}].children[${j}]`);
   }
 }
 
@@ -511,9 +530,11 @@ function renderPixel(data: MindMapData, title: string | undefined, d: DesignPres
     const by = lay.cy + Math.sin(angle) * lay.branchR;
     const color = branchColor(d, i);
 
+    svg.beginItem(`branches[${i}]`);
     drawPixelConnection(svg, lay.cx, lay.cy, bx, by, color, px);
     drawPixelBranch(svg, d, bx, by, color, branch, px, i);
     drawPixelChildren(svg, d, bx, by, angle, color, branch, lay, px, i);
+    svg.endItem();
   }
 
   drawPixelCenter(svg, d, lay.cx, lay.cy, data.center, px);
@@ -541,7 +562,7 @@ function drawPixelCenter(svg: SvgBuilder, d: DesignPreset, cx: number, cy: numbe
   svg.rect(x + px, y + px, size - px * 2, size - px * 2, {
     fill: d.surface, opacity: 0.9, 'shape-rendering': 'crispEdges',
   });
-  drawLabelBlock(svg, d, label, undefined, cx, cy - 4, size - 16);
+  drawLabelBlock(svg, d, label, undefined, cx, cy - 4, size - 16, 'middle', 'center');
 }
 
 function drawPixelBranch(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, color: string, branch: MindMapBranch, px: number, i: number): void {
@@ -556,7 +577,7 @@ function drawPixelBranch(svg: SvgBuilder, d: DesignPreset, bx: number, by: numbe
   svg.text(x + px * 3 + 1, y + px * 4, `${i + 1}`, {
     'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: d.bg,
   });
-  drawLabelBlock(svg, d, branch.label, undefined, bx, by + size / 2 + 14, 100);
+  drawLabelBlock(svg, d, branch.label, undefined, bx, by + size / 2 + 14, 100, 'middle', `branches[${i}]`);
 }
 
 function drawPixelChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, angle: number, color: string, branch: MindMapBranch, lay: ReturnType<typeof computeLayout>, px: number, branchIdx: number): void {
@@ -564,7 +585,7 @@ function drawPixelChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: num
   const count = Math.min(children.length, lay.maxChildCount);
   if (count === 0) return;
 
-  const spread = Math.PI * 0.5;
+  const spread = lay.childSpread;
   const startAngle = angle - spread / 2;
 
   for (let j = 0; j < count; j++) {
@@ -576,7 +597,7 @@ function drawPixelChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: num
     svg.rect(cx - px * 2, cy - px * 2, px * 4, px * 4, {
       fill: color, 'shape-rendering': 'crispEdges',
     });
-    drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + px * 4, 80);
+    drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + px * 4, 80, 'middle', `branches[${branchIdx}].children[${j}]`);
   }
 }
 
@@ -634,7 +655,7 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
     });
     svg.circle(centerX, centerY, 36, { fill: d.colors[0]!, opacity: 0.06 });
   }
-  drawLabelBlock(svg, d, data.center, undefined, centerX, centerY - 4, 70);
+  drawLabelBlock(svg, d, data.center, undefined, centerX, centerY - 4, 70, 'middle', 'center');
 
   // Branches
   let curY = contentTop + 16;
@@ -647,6 +668,7 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
     const blockH = rowH + (children.length > 0 ? (children.length - 1) * childRowH : 0);
     const by = curY + rowH / 2;
 
+    svg.beginItem(`branches[${i}]`);
     // Line from center to branch
     if (d.lineJitter) {
       svg.path(jitterLine(centerX + 40, centerY, branchX, by, i * 17), {
@@ -685,6 +707,7 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
     svg.text(branchX + branchW / 2, by + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
       fill: d.id === 'neon' ? color : d.text,
+      'data-field': `branches[${i}].label`,
     });
 
     // Children
@@ -710,9 +733,11 @@ function renderHorizontal(data: MindMapData, title: string | undefined, d: Desig
       const cFit = fitText(children[j]!, childW - 16, 1, d.captionSize);
       svg.text(childX + 10, cy + 4, cFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': cFit.fontSize, fill: d.textSecondary,
+        'data-field': `branches[${i}].children[${j}]`,
       });
     }
 
+    svg.endItem();
     curY += blockH + 8;
   }
 
@@ -788,6 +813,7 @@ function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignP
   svg.text(centerX, centerY + boxH / 2 + 4, cfit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': cfit.fontSize, 'font-weight': 700,
     fill: d.id === 'neon' ? d.colors[0]! : d.text,
+    'data-field': 'center',
   });
 
   // Branch row
@@ -800,6 +826,7 @@ function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignP
     const bx = branchStartX + i * (boxW + colGap);
     const bCenterX = bx + boxW / 2;
 
+    svg.beginItem(`branches[${i}]`);
     // Connector from center to branch
     if (d.lineJitter) {
       svg.path(jitterLine(centerX, centerY + boxH, bCenterX, branchY, i * 17), {
@@ -834,6 +861,7 @@ function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignP
     svg.text(bCenterX, branchY + boxH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
       fill: d.id === 'neon' ? color : d.text,
+      'data-field': `branches[${i}].label`,
     });
 
     // Children below branch
@@ -879,9 +907,11 @@ function renderOrgChart(data: MindMapData, title: string | undefined, d: DesignP
         const chFit = fitText(children[j]!, childBoxW - 12, 1, d.captionSize);
         svg.text(cCenterX, childY + (boxH - 4) / 2 + 4, chFit.lines[0]!, {
           'text-anchor': 'middle', 'font-size': chFit.fontSize, fill: d.textSecondary,
+          'data-field': `branches[${i}].children[${j}]`,
         });
       }
     }
+    svg.endItem();
   }
 
   return svg.build();
