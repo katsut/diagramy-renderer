@@ -55,8 +55,8 @@ function computeLayout(branchCount: number, hasTitle: boolean, maxChildren: numb
   const { branchR, childR } = adaptiveRadialRadius(branchCount, maxChildren);
   const maxChildCount = branchCount <= 4 ? 5 : branchCount <= 6 ? 4 : 3;
 
-  const totalR = branchR + childR + 50;
-  const width = Math.max(pad * 2 + totalR * 2, 600);
+  const totalR = branchR + childR + 80;
+  const width = Math.max(pad * 2 + totalR * 2, 700);
   const height = pad * 2 + titleH + totalR * 2;
   const cx = width / 2;
   const cy = pad + titleH + totalR;
@@ -92,7 +92,7 @@ function renderClean(data: MindMapData, title: string | undefined, d: DesignPres
     svg.beginItem(`branches[${i}]`);
     drawCleanConnection(svg, d, lay.cx, lay.cy, bx, by, color);
     drawCleanBranch(svg, d, bx, by, color, branch, i);
-    drawCleanChildren(svg, d, bx, by, angle, color, branch, lay);
+    drawCleanChildren(svg, d, bx, by, angle, color, branch, lay, i);
     svg.endItem();
   }
 
@@ -120,7 +120,7 @@ function drawCleanCenter(svg: SvgBuilder, d: DesignPreset, cx: number, cy: numbe
     fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth, ...d.cardAttrs(),
   });
   svg.circle(cx, cy, r - 4, { fill: d.colors[0]!, opacity: 0.06 });
-  drawLabelBlock(svg, d, label, undefined, cx, cy - 6, r * 1.4);
+  drawLabelBlock(svg, d, label, undefined, cx, cy - 6, r * 1.4, 'middle', 'center');
 }
 
 function drawCleanBranch(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, color: string, branch: MindMapBranch, i: number): void {
@@ -128,7 +128,7 @@ function drawCleanBranch(svg: SvgBuilder, d: DesignPreset, bx: number, by: numbe
   drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120, 'middle', `branches[${i}]`);
 }
 
-function drawCleanChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, angle: number, color: string, branch: MindMapBranch, lay: ReturnType<typeof computeLayout>): void {
+function drawCleanChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, angle: number, color: string, branch: MindMapBranch, lay: ReturnType<typeof computeLayout>, branchIdx?: number): void {
   const children = branch.children ?? [];
   const count = Math.min(children.length, lay.maxChildCount);
   if (count === 0) return;
@@ -143,7 +143,7 @@ function drawCleanChildren(svg: SvgBuilder, d: DesignPreset, bx: number, by: num
 
     svg.line(bx, by, cx, cy, { stroke: color, 'stroke-width': 1.5, opacity: 0.3 });
     svg.circle(cx, cy, 4, { fill: color, opacity: 0.7 });
-    drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 12, 90);
+    drawLabelBlock(svg, d, children[j]!, undefined, cx, cy + 12, 120, 'middle', branchIdx != null ? `branches[${branchIdx}].children[${j}]` : undefined);
   }
 }
 
@@ -182,7 +182,7 @@ function renderBold(data: MindMapData, title: string | undefined, d: DesignPrese
     drawLabelBlock(svg, d, branch.label, undefined, bx, by + 46, 120);
 
     // Children
-    drawCleanChildren(svg, d, bx, by, angle, color, branch, lay);
+    drawCleanChildren(svg, d, bx, by, angle, color, branch, lay, i);
   }
 
   // Center: bold large node
@@ -284,7 +284,7 @@ function renderGlass(data: MindMapData, title: string | undefined, d: DesignPres
     drawLabelBlock(svg, d, branch.label, undefined, bx, by + 44, 120);
 
     // Glass children
-    drawCleanChildren(svg, d, bx, by, angle, color, branch, lay);
+    drawCleanChildren(svg, d, bx, by, angle, color, branch, lay, i);
   }
 
   // Glass center
@@ -459,7 +459,7 @@ function drawSketchLine(svg: SvgBuilder, d: DesignPreset, x1: number, y1: number
 function drawSketchCenter(svg: SvgBuilder, d: DesignPreset, cx: number, cy: number, r: number, label: string): void {
   svg.circle(cx, cy, r, { fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth });
   svg.circle(cx, cy, r - 8, { fill: 'none', stroke: d.border, 'stroke-width': 1 });
-  drawLabelBlock(svg, d, label, undefined, cx, cy - 6, r * 1.4);
+  drawLabelBlock(svg, d, label, undefined, cx, cy - 6, r * 1.4, 'middle', 'center');
 }
 
 function drawSketchBranch(svg: SvgBuilder, d: DesignPreset, bx: number, by: number, branch: MindMapBranch, i: number): void {

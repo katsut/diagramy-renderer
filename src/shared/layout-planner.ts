@@ -86,13 +86,13 @@ export function computeGridLayout(
 
 // For radial layouts (mind_map): compute radius that prevents overlap
 export function adaptiveRadialRadius(branchCount: number, childCount: number): { branchR: number; childR: number } {
-  // Minimum arc distance between branches should be ~90px for readability
-  const minArcDist = 90;
+  // Minimum arc distance between branches — wider for more children
+  const minArcDist = childCount >= 3 ? 140 : childCount >= 2 ? 120 : 90;
   const circumference = branchCount * minArcDist;
-  const branchR = Math.max(140, Math.round(circumference / (2 * Math.PI)));
+  const branchR = Math.max(160, Math.round(circumference / (2 * Math.PI)));
 
   // Child radius scales with branch count to avoid inter-branch overlap
-  const childR = branchCount <= 4 ? 65 : branchCount <= 6 ? 50 : 40;
+  const childR = branchCount <= 3 ? 80 : branchCount <= 5 ? 70 : 55;
 
   return { branchR, childR };
 }
