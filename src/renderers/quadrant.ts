@@ -541,7 +541,13 @@ function renderColorBlock(data: QuadrantData, title: string | undefined, d: Desi
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Quadrant (color block)');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -559,9 +565,19 @@ function renderColorBlock(data: QuadrantData, title: string | undefined, d: Desi
     const qy = contentTop + pos.row * (cellH + gap);
 
     // Large colored background block
-    svg.rect(qx, qy, cellW, cellH, {
-      fill: color, opacity: 0.12, rx: d.borderRadius,
-    });
+    if (d.id === 'neon') {
+      svg.rect(qx, qy, cellW, cellH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(qx, qy, cellW, cellH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(qx, qy, cellW, cellH, {
+        fill: color, opacity: 0.12, rx: d.borderRadius,
+      });
+    }
 
     // Bold label
     const labelFit = fitText(data.labels[qi]!, cellW - 32, 1, d.labelSize + 2);
@@ -598,7 +614,13 @@ function renderBubble(data: QuadrantData, title: string | undefined, d: DesignPr
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Quadrant (bubble)');
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const originX = pad + axisMargin;
@@ -670,10 +692,20 @@ function renderBubble(data: QuadrantData, title: string | undefined, d: DesignPr
       const bx = baseX + offsetX;
       const by = baseY + offsetY;
 
-      svg.circle(bx, by, bubbleR, { fill: color, opacity: 0.2 });
-      svg.circle(bx, by, bubbleR, {
-        fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.6,
-      });
+      if (d.id === 'neon') {
+        svg.circle(bx, by, bubbleR, { fill: 'rgba(0,0,0,0.4)' });
+        svg.circle(bx, by, bubbleR, {
+          fill: 'none', stroke: color, 'stroke-width': 1.5,
+        });
+        svg.circle(bx, by, bubbleR, {
+          fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)',
+        });
+      } else {
+        svg.circle(bx, by, bubbleR, { fill: color, opacity: 0.2 });
+        svg.circle(bx, by, bubbleR, {
+          fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.6,
+        });
+      }
       const fit = fitText(items[j]!, bubbleR * 1.6, 1, 10);
       svg.text(bx, by + 4, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,

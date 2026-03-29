@@ -558,7 +558,13 @@ function renderVerticalStyle(data: RoadmapData, title: string | undefined, d: De
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Roadmap (vertical)',
     buildColorGradients(d, count, 'rg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -637,7 +643,13 @@ function renderTimelineCards(data: RoadmapData, title: string | undefined, d: De
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Roadmap (timeline cards)',
     buildColorGradients(d, count, 'rg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   // Timeline bar

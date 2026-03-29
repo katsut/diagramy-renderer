@@ -460,7 +460,13 @@ function renderHorizontalStyle(data: BarChartData, title: string | undefined, d:
     buildColorGradients(d, count, 'bg'));
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const baseY = pad + titleH + chartH;
@@ -473,14 +479,26 @@ function renderHorizontalStyle(data: BarChartData, title: string | undefined, d:
 
   for (let i = 0; i < count; i++) {
     const item = data.items[i]!;
+    const color = itemColor(d, i);
     const x = chartLeft + i * (barW + gap);
     const barH = Math.max(4, (item.value / maxVal) * chartH);
 
     // Bar growing upward
-    svg.rect(x, baseY - barH, barW, barH, {
-      fill: `url(#bg${i})`, rx: d.borderRadius > 4 ? 4 : d.borderRadius,
-      ...d.cardAttrs(),
-    });
+    if (d.id === 'neon') {
+      svg.rect(x, baseY - barH, barW, barH, {
+        fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1,
+        rx: d.borderRadius > 4 ? 4 : d.borderRadius,
+      });
+      svg.rect(x, baseY - barH, barW, barH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3,
+        rx: d.borderRadius > 4 ? 4 : d.borderRadius, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(x, baseY - barH, barW, barH, {
+        fill: `url(#bg${i})`, rx: d.borderRadius > 4 ? 4 : d.borderRadius,
+        ...d.cardAttrs(),
+      });
+    }
 
     // Value above bar
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
@@ -517,7 +535,13 @@ function renderLollipop(data: BarChartData, title: string | undefined, d: Design
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Bar chart (lollipop)');
   svg.defs(defs);
 
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const baseY = pad + titleH + chartH;
@@ -536,12 +560,23 @@ function renderLollipop(data: BarChartData, title: string | undefined, d: Design
     const tipY = baseY - stemH;
 
     // Thin stem
-    svg.line(cx, baseY, cx, tipY, {
-      stroke: color, 'stroke-width': 2,
-    });
+    if (d.id === 'neon') {
+      svg.line(cx, baseY, cx, tipY, {
+        stroke: color, 'stroke-width': 1.5, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.line(cx, baseY, cx, tipY, {
+        stroke: color, 'stroke-width': 2,
+      });
+    }
 
     // Circle tip
-    svg.circle(cx, tipY, dotR, { fill: color });
+    if (d.id === 'neon') {
+      svg.circle(cx, tipY, dotR, { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 });
+      svg.circle(cx, tipY, dotR, { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)' });
+    } else {
+      svg.circle(cx, tipY, dotR, { fill: color });
+    }
 
     // Value above dot
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;

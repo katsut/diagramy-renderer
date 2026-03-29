@@ -501,7 +501,13 @@ function renderHorizontal(data: FunnelData, title: string | undefined, d: Design
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Funnel diagram (horizontal)',
     buildColorGradients(d, count, 'fg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH + 20;
@@ -517,10 +523,21 @@ function renderHorizontal(data: FunnelData, title: string | undefined, d: Design
     const gap = 2;
 
     // Trapezoid (horizontal: tall left, short right)
-    svg.polygon(
-      `${x + gap},${cy - lh} ${x + stageW - gap},${cy - rh} ${x + stageW - gap},${cy + rh} ${x + gap},${cy + lh}`,
-      { fill: color, opacity: 0.85 },
-    );
+    if (d.id === 'neon') {
+      svg.polygon(
+        `${x + gap},${cy - lh} ${x + stageW - gap},${cy - rh} ${x + stageW - gap},${cy + rh} ${x + gap},${cy + lh}`,
+        { fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5 },
+      );
+      svg.polygon(
+        `${x + gap},${cy - lh} ${x + stageW - gap},${cy - rh} ${x + stageW - gap},${cy + rh} ${x + gap},${cy + lh}`,
+        { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3, filter: 'url(#neon-glow)' },
+      );
+    } else {
+      svg.polygon(
+        `${x + gap},${cy - lh} ${x + stageW - gap},${cy - rh} ${x + stageW - gap},${cy + rh} ${x + gap},${cy + lh}`,
+        { fill: color, opacity: 0.85 },
+      );
+    }
 
     // Stage number inside
     svg.text(x + stageW / 2, cy + 5, `${i + 1}`, {
@@ -558,7 +575,13 @@ function renderPipeline(data: FunnelData, title: string | undefined, d: DesignPr
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Funnel pipeline',
     buildColorGradients(d, count, 'fg'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const cx = pad + boxW / 2;
@@ -568,17 +591,27 @@ function renderPipeline(data: FunnelData, title: string | undefined, d: DesignPr
     const stage = data.stages[i]!;
     const color = stageColor(d, i);
 
-    // Box shadow
-    svg.rect(pad + 2, curY + 2, boxW, boxH, {
-      fill: '#000', opacity: 0.06, rx: d.borderRadius,
-    });
-    // Box
-    svg.rect(pad, curY, boxW, boxH, {
-      fill: d.surface, stroke: color, 'stroke-width': 2, rx: d.borderRadius,
-      ...d.cardAttrs(),
-    });
-    // Color accent on left
-    svg.rect(pad, curY + 6, 4, boxH - 12, { fill: color, rx: 2 });
+    if (d.id === 'neon') {
+      svg.rect(pad, curY, boxW, boxH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
+      });
+      svg.rect(pad, curY, boxW, boxH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      // Box shadow
+      svg.rect(pad + 2, curY + 2, boxW, boxH, {
+        fill: '#000', opacity: 0.06, rx: d.borderRadius,
+      });
+      // Box
+      svg.rect(pad, curY, boxW, boxH, {
+        fill: d.surface, stroke: color, 'stroke-width': 2, rx: d.borderRadius,
+        ...d.cardAttrs(),
+      });
+      // Color accent on left
+      svg.rect(pad, curY + 6, 4, boxH - 12, { fill: color, rx: 2 });
+    }
 
     // Step number
     svg.circle(pad + 28, curY + boxH / 2, 12, { fill: color });

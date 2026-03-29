@@ -27,6 +27,7 @@ export function renderRanking(data: RankingData, title?: string, design?: Design
   const d = design ?? getDesign();
   if (style === 'vertical') return renderVerticalPodium(data, title, d);
   if (style === 'horizontal') return renderHorizontalBars(data, title, d);
+  if (style === 'roi-bar') return renderRoiBar(data, title, d);
   switch (d.id) {
     case 'sketch': return renderSketch(data, title, d);
     case 'pixel': return renderPixel(data, title, d);
@@ -551,7 +552,13 @@ function renderVerticalPodium(data: RankingData, title: string | undefined, d: D
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Ranking podium',
     buildColorGradients(d, count, 'rk'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const baseY = pad + titleH + maxBarH;
@@ -564,17 +571,28 @@ function renderVerticalPodium(data: RankingData, title: string | undefined, d: D
     const x = pad + i * (barW + barGap);
     const y = baseY - barH;
 
-    svg.rect(x, y, barW, barH, {
-      fill: `url(#rk${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius, ...d.cardAttrs(),
-    });
+    if (d.id === 'neon') {
+      svg.rect(x, y, barW, barH, {
+        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
+        rx: d.borderRadius > 8 ? 6 : d.borderRadius,
+      });
+      svg.rect(x, y, barW, barH, {
+        fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3,
+        rx: d.borderRadius > 8 ? 6 : d.borderRadius, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(x, y, barW, barH, {
+        fill: `url(#rk${i})`, rx: d.borderRadius > 8 ? 6 : d.borderRadius, ...d.cardAttrs(),
+      });
+    }
 
     svg.text(x + barW / 2, y + 20, `${i + 1}`, {
-      'text-anchor': 'middle', 'font-size': 18, 'font-weight': 800, fill: 'white',
+      'text-anchor': 'middle', 'font-size': 18, 'font-weight': 800, fill: d.id === 'neon' ? color : 'white',
     });
 
     if (item.value) {
       svg.text(x + barW / 2, y + 40, item.value, {
-        'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': 600, fill: 'white', opacity: 0.9,
+        'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': 600, fill: d.id === 'neon' ? color : 'white', opacity: 0.9,
       });
     }
 
@@ -610,7 +628,13 @@ function renderHorizontalBars(data: RankingData, title: string | undefined, d: D
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Ranking (horizontal bars)',
     buildColorGradients(d, count, 'rk'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   for (let i = 0; i < count; i++) {
@@ -636,16 +660,135 @@ function renderHorizontalBars(data: RankingData, title: string | undefined, d: D
     const bx = lx + labelW + 12;
     const barH = rowH - 10;
     const barY = y + (rowH - barH) / 2;
-    svg.rect(bx, barY, barW, barH, {
-      fill: `url(#rk${i})`, rx: d.borderRadius > 8 ? 4 : d.borderRadius,
-      ...d.cardAttrs(),
-    });
+    if (d.id === 'neon') {
+      svg.rect(bx, barY, barW, barH, {
+        fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1,
+        rx: d.borderRadius > 8 ? 4 : d.borderRadius,
+      });
+      svg.rect(bx, barY, barW, barH, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3,
+        rx: d.borderRadius > 8 ? 4 : d.borderRadius, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(bx, barY, barW, barH, {
+        fill: `url(#rk${i})`, rx: d.borderRadius > 8 ? 4 : d.borderRadius,
+        ...d.cardAttrs(),
+      });
+    }
 
     // Value at end of bar
     if (item.value) {
       svg.text(bx + barW - 6, y + rowH / 2 + 4, item.value, {
-        'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: 'white',
+        'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: d.id === 'neon' ? color : 'white',
       });
+    }
+  }
+
+  return svg.build();
+}
+
+// ========== ROI BAR ==========
+// Horizontal bar with value + description text beside it, emphasizing ROI/impact
+
+function renderRoiBar(data: RankingData, title: string | undefined, d: DesignPreset): string {
+  const pad = 48;
+  const titleH = title ? 48 : 0;
+  const count = data.items.length;
+  const rowH = 64;
+  const rowGap = 12;
+  const barMaxW = 200;
+  const labelW = 160;
+  const descW = 200;
+  const totalW = labelW + 16 + barMaxW + 16 + descW;
+  const width = pad * 2 + totalW;
+  const height = pad * 2 + titleH + count * (rowH + rowGap);
+
+  const { svg, defs } = createDiagramSvg(d, width, height, title, 'Ranking (ROI bar)',
+    buildColorGradients(d, count, 'rk'));
+  svg.defs(defs);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
+  if (title) drawTitle(svg, d, title, width, pad);
+
+  // Parse values to determine max for proportional bars
+  const numericValues = data.items.map(it => {
+    const v = String(it.value ?? '').replace(/[^0-9.\-]/g, '');
+    return parseFloat(v) || 0;
+  });
+  const maxVal = Math.max(...numericValues, 1);
+
+  for (let i = 0; i < count; i++) {
+    const item = data.items[i]!;
+    const color = rankColor(d, i);
+    const y = pad + titleH + i * (rowH + rowGap);
+    const barRatio = numericValues[i]! / maxVal;
+    const barW = Math.max(barMaxW * barRatio, 20);
+
+    // Row background
+    if (d.id !== 'sketch' && d.id !== 'pixel') {
+      svg.rect(pad, y, totalW, rowH, {
+        fill: d.surface, rx: d.borderRadius, opacity: 0.5, ...d.cardAttrs(),
+      });
+    }
+
+    // Left color accent
+    if (d.id === 'neon') {
+      svg.rect(pad, y, 3, rowH, { fill: color, filter: 'url(#neon-glow)' });
+    } else {
+      svg.rect(pad, y + 8, 4, rowH - 16, { fill: color, rx: 2 });
+    }
+
+    // Rank + Label
+    const lx = pad + 16;
+    svg.text(lx, y + 18, `#${i + 1}`, {
+      'text-anchor': 'start', 'font-size': d.captionSize - 1, 'font-weight': 700, fill: color,
+    });
+    const fit = fitText(item.label, labelW - 20, 1, d.labelSize);
+    svg.text(lx, y + 38, fit.lines[0]!, {
+      'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    });
+
+    // Bar
+    const bx = pad + labelW + 16;
+    const barY = y + (rowH - 28) / 2;
+    if (d.id === 'neon') {
+      svg.rect(bx, barY, barW, 28, {
+        fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1, rx: 4,
+      });
+      svg.rect(bx, barY, barW, 28, {
+        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: 4,
+        opacity: 0.3, filter: 'url(#neon-glow)',
+      });
+    } else {
+      svg.rect(bx, barY, barW, 28, {
+        fill: `url(#rk${i})`, rx: 6, ...d.cardAttrs(),
+      });
+    }
+
+    // Value inside bar
+    if (item.value) {
+      svg.text(bx + barW - 8, y + rowH / 2 + 5, item.value, {
+        'text-anchor': 'end', 'font-size': d.captionSize + 1, 'font-weight': 700,
+        fill: d.id === 'neon' ? color : 'white',
+      });
+    }
+
+    // Description to the right of bar
+    if (item.description) {
+      const dx = bx + barMaxW + 16;
+      const dfit = fitText(item.description, descW, 2, d.captionSize);
+      let dy = y + rowH / 2 - (dfit.lines.length > 1 ? 4 : 0);
+      for (const line of dfit.lines) {
+        svg.text(dx, dy, line, {
+          'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+        });
+        dy += Math.round(dfit.fontSize * 1.4);
+      }
     }
   }
 

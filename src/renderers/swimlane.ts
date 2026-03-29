@@ -595,7 +595,13 @@ function renderVerticalStyle(data: SwimlaneData, title: string | undefined, d: D
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Swimlane diagram (vertical)',
     buildColorGradients(d, lanes.length, 'sl'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
@@ -668,7 +674,13 @@ function renderKanban(data: SwimlaneData, title: string | undefined, d: DesignPr
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Swimlane (kanban)',
     buildColorGradients(d, lanes.length, 'sl'));
   svg.defs(defs);
-  drawBackground(svg, d, width, height);
+  if (d.lineJitter) {
+    drawSketchBackground(svg, width, height, d.bg);
+  } else if (d.shapeRendering === 'crispEdges') {
+    drawPixelBackground(svg, width, height, d.bg);
+  } else {
+    drawBackground(svg, d, width, height);
+  }
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
