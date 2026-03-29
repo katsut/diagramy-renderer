@@ -11,15 +11,6 @@ function hashJitter(val: number, offset: number): number {
   return ((s - Math.floor(s)) - 0.5) * 1.6;  // -0.8 to 0.8
 }
 
-// --- Description builder ---
-
-export function buildDesc(type: string, title: string | undefined, items: string[]): string {
-  const parts = [type];
-  if (title) parts.push(`"${title}"`);
-  if (items.length > 0) parts.push(`(${items.join(', ')})`);
-  return parts.join(' ');
-}
-
 // --- Width helper: ensure title fits ---
 
 export function ensureTitleFits(contentWidth: number, title: string | undefined, d: DesignPreset, pad: number): number {
