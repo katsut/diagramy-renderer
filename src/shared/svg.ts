@@ -13,6 +13,11 @@ export function escapeXml(s: string): string {
 
 export class SvgBuilder {
   private parts: string[] = [];
+  private footerConfig: { textColor: string; opacity: number } | null = null;
+
+  setFooter(textColor: string, opacity: number): void {
+    this.footerConfig = { textColor, opacity };
+  }
 
   constructor(
     public readonly width: number,
@@ -121,6 +126,15 @@ export class SvgBuilder {
       // Find insertion point: after <title>, <desc>, <style> (before first drawing element)
       const insertIdx = this.findDefsInsertIndex();
       this.parts.splice(insertIdx, 0, `<defs>${allDefs}</defs>`);
+    }
+    // Footer branding
+    if (this.footerConfig) {
+      const { textColor, opacity } = this.footerConfig;
+      const fx = this.width - 12;
+      const fy = this.height - 6;
+      this.parts.push(
+        `<text x="${fx}" y="${fy}" text-anchor="end" font-size="9" fill="${textColor}" opacity="${opacity}" font-weight="400">Figney</text>`,
+      );
     }
     this.parts.push('</svg>');
     return this.parts.join('');

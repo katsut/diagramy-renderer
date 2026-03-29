@@ -21,6 +21,53 @@ function ringColor(d: DesignPreset, i: number): string {
   return d.colors[i % d.colors.length]!;
 }
 
+// Distribute ring labels around circle at different angles to avoid overlap
+const LABEL_ANGLES = [0, -60, 60, 180, -120, 120, -30, 150];
+
+function drawRingLabels(
+  svg: ReturnType<typeof createDiagramSvg>['svg'],
+  d: DesignPreset,
+  data: ConcentricCirclesData,
+  cx: number, cy: number,
+  baseR: number, ringStep: number,
+  opts?: { fillOverride?: (i: number) => string },
+): void {
+  const count = data.rings.length;
+  for (let i = 0; i < count; i++) {
+    const ring = data.rings[i]!;
+    const r = baseR + i * ringStep;
+    const color = ringColor(d, i);
+    const fill = opts?.fillOverride?.(i) ?? d.text;
+
+    if (i === 0) {
+      const fit = fitText(ring.label, baseR * 1.6, 2, d.labelSize);
+      let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
+      for (const line of fit.lines) {
+        svg.text(cx, ty, line, {
+          'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill,
+        });
+        ty += Math.round(fit.fontSize * 1.4);
+      }
+    } else {
+      const angleDeg = LABEL_ANGLES[i % LABEL_ANGLES.length]!;
+      const angleRad = angleDeg * Math.PI / 180;
+      const labelR = r + 18;
+      const lx = cx + labelR * Math.cos(angleRad);
+      const ly = cy + labelR * Math.sin(angleRad);
+      const anchor = Math.cos(angleRad) > 0.3 ? 'start' : Math.cos(angleRad) < -0.3 ? 'end' : 'middle';
+      const fit = fitText(ring.label, 140, 1, d.labelSize);
+      svg.line(
+        cx + (r - 2) * Math.cos(angleRad), cy + (r - 2) * Math.sin(angleRad),
+        lx - 4 * Math.cos(angleRad), ly - 4 * Math.sin(angleRad),
+        { stroke: color, 'stroke-width': 1, opacity: 0.3 },
+      );
+      svg.text(lx, ly + 4, fit.lines[0]!, {
+        'text-anchor': anchor, 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill,
+      });
+    }
+  }
+}
+
 export function renderConcentricCircles(data: ConcentricCirclesData, title?: string, design?: DesignPreset): string {
   const d = design ?? getDesign();
   switch (d.id) {
@@ -64,33 +111,7 @@ function renderClean(data: ConcentricCirclesData, title: string | undefined, d: 
     svg.circle(cx, cy, r, { fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.3 });
   }
 
-  // Labels (from center outward)
-  for (let i = 0; i < count; i++) {
-    const ring = data.rings[i]!;
-    const r = 40 + i * 36;
-    const color = ringColor(d, i);
-
-    if (i === 0) {
-      // Center label
-      const fit = fitText(ring.label, 70, 2, d.labelSize);
-      let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
-      for (const line of fit.lines) {
-        svg.text(cx, ty, line, {
-          'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
-        });
-        ty += Math.round(fit.fontSize * 1.4);
-      }
-    } else {
-      // Ring label on right side
-      const labelX = cx + r + 18;
-      svg.text(labelX, cy + 4, ring.label, {
-        'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
-      });
-      svg.line(cx + r - 2, cy, labelX - 4, cy, {
-        stroke: color, 'stroke-width': 1, opacity: 0.3,
-      });
-    }
-  }
+  drawRingLabels(svg, d, data, cx, cy, 40, 36);
 
   return svg.build();
 }
@@ -124,27 +145,7 @@ function renderBold(data: ConcentricCirclesData, title: string | undefined, d: D
     svg.circle(cx, cy, r, { fill: 'none', stroke: color, 'stroke-width': 4 });
   }
 
-  // Labels
-  for (let i = 0; i < count; i++) {
-    const ring = data.rings[i]!;
-    const r = 44 + i * 40;
-
-    if (i === 0) {
-      const fit = fitText(ring.label, 75, 2, d.labelSize + 2);
-      let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
-      for (const line of fit.lines) {
-        svg.text(cx, ty, line, {
-          'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: d.text,
-        });
-        ty += Math.round(fit.fontSize * 1.4);
-      }
-    } else {
-      const labelX = cx + r + 22;
-      svg.text(labelX, cy + 5, ring.label, {
-        'text-anchor': 'start', 'font-size': d.labelSize + 1, 'font-weight': 900, fill: d.text,
-      });
-    }
-  }
+  drawRingLabels(svg, d, data, cx, cy, 44, 40);
 
   return svg.build();
 }
@@ -174,26 +175,7 @@ function renderFlat(data: ConcentricCirclesData, title: string | undefined, d: D
     svg.circle(cx, cy, r, { fill: color, opacity: 0.12 });
   }
 
-  for (let i = 0; i < count; i++) {
-    const ring = data.rings[i]!;
-    const r = 38 + i * 34;
-
-    if (i === 0) {
-      const fit = fitText(ring.label, 65, 2, d.labelSize);
-      let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
-      for (const line of fit.lines) {
-        svg.text(cx, ty, line, {
-          'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
-        });
-        ty += Math.round(fit.fontSize * 1.4);
-      }
-    } else {
-      const labelX = cx + r + 14;
-      svg.text(labelX, cy + 4, ring.label, {
-        'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
-      });
-    }
-  }
+  drawRingLabels(svg, d, data, cx, cy, 38, 34);
 
   return svg.build();
 }
@@ -232,31 +214,7 @@ function renderGlass(data: ConcentricCirclesData, title: string | undefined, d: 
     svg.circle(cx, cy, r, { fill: 'none', stroke: color, 'stroke-width': 1, opacity: 0.3 });
   }
 
-  for (let i = 0; i < count; i++) {
-    const ring = data.rings[i]!;
-    const r = 42 + i * 38;
-
-    if (i === 0) {
-      const fit = fitText(ring.label, 70, 2, d.labelSize);
-      let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
-      for (const line of fit.lines) {
-        svg.text(cx, ty, line, {
-          'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
-          'letter-spacing': '0.3',
-        });
-        ty += Math.round(fit.fontSize * 1.4);
-      }
-    } else {
-      const color = ringColor(d, i);
-      const labelX = cx + r + 18;
-      svg.text(labelX, cy + 4, ring.label, {
-        'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
-      });
-      svg.line(cx + r - 2, cy, labelX - 4, cy, {
-        stroke: color, 'stroke-width': 1, opacity: 0.2,
-      });
-    }
-  }
+  drawRingLabels(svg, d, data, cx, cy, 42, 38);
 
   return svg.build();
 }
@@ -292,27 +250,9 @@ function renderNeon(data: ConcentricCirclesData, title: string | undefined, d: D
     });
   }
 
-  for (let i = 0; i < count; i++) {
-    const ring = data.rings[i]!;
-    const color = ringColor(d, i);
-    const r = 40 + i * 36;
-
-    if (i === 0) {
-      const fit = fitText(ring.label, 65, 2, d.labelSize);
-      let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
-      for (const line of fit.lines) {
-        svg.text(cx, ty, line, {
-          'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: color,
-        });
-        ty += Math.round(fit.fontSize * 1.4);
-      }
-    } else {
-      const labelX = cx + r + 18;
-      svg.text(labelX, cy + 4, ring.label, {
-        'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: color,
-      });
-    }
-  }
+  drawRingLabels(svg, d, data, cx, cy, 40, 36, {
+    fillOverride: (i) => ringColor(d, i),
+  });
 
   return svg.build();
 }
@@ -345,30 +285,7 @@ function renderWatercolor(data: ConcentricCirclesData, title: string | undefined
     svg.circle(cx, cy, r, { fill: color, opacity: 0.12, filter: 'url(#watercolor)' });
   }
 
-  for (let i = 0; i < count; i++) {
-    const ring = data.rings[i]!;
-    const r = 42 + i * 38;
-
-    if (i === 0) {
-      const fit = fitText(ring.label, 70, 2, d.labelSize);
-      let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
-      for (const line of fit.lines) {
-        svg.text(cx, ty, line, {
-          'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
-        });
-        ty += Math.round(fit.fontSize * 1.4);
-      }
-    } else {
-      const color = ringColor(d, i);
-      const labelX = cx + r + 18;
-      svg.text(labelX, cy + 4, ring.label, {
-        'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
-      });
-      svg.line(cx + r - 2, cy, labelX - 4, cy, {
-        stroke: color, 'stroke-width': 1, opacity: 0.2,
-      });
-    }
-  }
+  drawRingLabels(svg, d, data, cx, cy, 42, 38);
 
   return svg.build();
 }
@@ -396,26 +313,7 @@ function renderSketch(data: ConcentricCirclesData, title: string | undefined, d:
     svg.circle(cx, cy, r, { fill: 'none', stroke: d.border, 'stroke-width': 1.5, opacity: 0.4 });
   }
 
-  for (let i = 0; i < count; i++) {
-    const ring = data.rings[i]!;
-    const r = 36 + i * 32;
-
-    if (i === 0) {
-      const fit = fitText(ring.label, 60, 2, d.labelSize);
-      let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
-      for (const line of fit.lines) {
-        svg.text(cx, ty, line, {
-          'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
-        });
-        ty += Math.round(fit.fontSize * 1.4);
-      }
-    } else {
-      const labelX = cx + r + 14;
-      svg.text(labelX, cy + 4, ring.label, {
-        'text-anchor': 'start', 'font-size': d.labelSize, fill: d.text,
-      });
-    }
-  }
+  drawRingLabels(svg, d, data, cx, cy, 36, 32);
 
   return svg.build();
 }
@@ -453,21 +351,7 @@ function renderPixel(data: ConcentricCirclesData, title: string | undefined, d: 
     });
   }
 
-  for (let i = 0; i < count; i++) {
-    const ring = data.rings[i]!;
-    const r = 30 + i * 28;
-
-    if (i === 0) {
-      const fit = fitText(ring.label, 50, 1, d.labelSize);
-      svg.text(Math.round(cx), Math.round(cy) + 4, fit.lines[0]!, {
-        'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
-      });
-    } else {
-      svg.text(Math.round(cx + r + 10), Math.round(cy) + 4, ring.label, {
-        'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': 700, fill: d.text,
-      });
-    }
-  }
+  drawRingLabels(svg, d, data, cx, cy, 30, 28);
 
   return svg.build();
 }
