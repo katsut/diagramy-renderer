@@ -29,6 +29,7 @@ import { renderRanking } from './renderers/ranking.js';
 import { renderKpiCard } from './renderers/kpi_card.js';
 import { renderLayerStack } from './renderers/layer_stack.js';
 import { renderBusinessFramework } from './renderers/business_framework.js';
+import { renderSequenceDiagram } from './renderers/sequence_diagram.js';
 import { DESIGNS, type DesignPreset } from './shared/design.js';
 import { resetIconUsage } from './shared/icons.js';
 
@@ -70,6 +71,7 @@ const RENDERERS: Record<string, (data: any, title?: string, design?: DesignPrese
   kpi_card:           renderKpiCard,
   layer_stack:        renderLayerStack,
   business_framework: renderBusinessFramework,
+  sequence_diagram:   renderSequenceDiagram,
 };
 
 export function render(req: RenderRequest): string {
