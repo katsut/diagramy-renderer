@@ -137,7 +137,7 @@ function renderSketch(data: ProcessData, title: string | undefined, d: DesignPre
 
     drawSketchBox(svg, d, cx, lay.contentTop, lay.stepW, lay.stepH, i);
     drawSketchNumber(svg, d, cx, lay.contentTop + 36, i);
-    drawNodeText(svg, d, node, cx, lay.contentTop + 66, lay.stepW - 36);
+    drawNodeText(svg, d, node, cx, lay.contentTop + 66, lay.stepW - 36, i);
     drawSketchArrow(svg, d, cx, lay, i);
   }
 
@@ -190,7 +190,7 @@ function renderPixel(data: ProcessData, title: string | undefined, d: DesignPres
     const boxX = cx - lay.stepW / 2;
 
     drawPixelBox(svg, d, boxX, lay.contentTop, lay.stepW, lay.stepH, color, px, i);
-    drawNodeText(svg, d, node, cx, lay.contentTop + 42, lay.stepW - 24);
+    drawNodeText(svg, d, node, cx, lay.contentTop + 42, lay.stepW - 24, i);
     drawPixelArrow(svg, color, cx, lay, px, i);
   }
 
@@ -255,7 +255,7 @@ function renderBold(data: ProcessData, title: string | undefined, d: DesignPrese
     svg.text(cx, lay.contentTop + 34, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 24, 'font-weight': 900, fill: '#FFFFFF',
     });
-    drawNodeText(svg, d, node, cx, lay.contentTop + 74, lay.stepW - 36);
+    drawNodeText(svg, d, node, cx, lay.contentTop + 74, lay.stepW - 36, i);
 
     // Thick arrow
     if (i < lay.count - 1) {
@@ -311,7 +311,7 @@ function renderFlat(data: ProcessData, title: string | undefined, d: DesignPrese
       'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700, fill: '#FFFFFF',
     });
     // Text left-aligned
-    drawLabelBlock(svg, d, node.label, node.description, pad + 68, y + (node.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 88, 'start');
+    drawLabelBlock(svg, d, node.label, node.description, pad + 68, y + (node.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 88, 'start', `nodes[${i}]`);
 
     // Thin vertical connector
     if (i < count - 1) {
@@ -368,7 +368,7 @@ function renderGlass(data: ProcessData, title: string | undefined, d: DesignPres
     svg.text(cx + lay.stepW / 2 - 20, lay.contentTop + 18, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 12, 'font-weight': 600, fill: color, opacity: 0.6,
     });
-    drawNodeText(svg, d, node, cx, lay.contentTop + 96, lay.stepW - 32);
+    drawNodeText(svg, d, node, cx, lay.contentTop + 96, lay.stepW - 32, i);
 
     // Glow connection line
     if (i < lay.count - 1) {
@@ -419,7 +419,7 @@ function renderNeon(data: ProcessData, title: string | undefined, d: DesignPrese
     svg.text(cx + lay.stepW / 2 - 18, lay.contentTop + 18, `0${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 10, fill: color, opacity: 0.5, 'letter-spacing': '1',
     });
-    drawNodeText(svg, d, node, cx, lay.contentTop + 92, lay.stepW - 28);
+    drawNodeText(svg, d, node, cx, lay.contentTop + 92, lay.stepW - 28, i);
 
     // Neon glow arrow
     if (i < lay.count - 1) {
@@ -470,7 +470,7 @@ function renderWatercolor(data: ProcessData, title: string | undefined, d: Desig
     svg.text(cx, lay.contentTop + 54, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 16, 'font-weight': 600, fill: d.text,
     });
-    drawNodeText(svg, d, node, cx, lay.contentTop + 86, lay.stepW - 28);
+    drawNodeText(svg, d, node, cx, lay.contentTop + 86, lay.stepW - 28, i);
 
     // Soft organic connector
     if (i < lay.count - 1) {
@@ -658,7 +658,7 @@ function renderVertical(data: ProcessData, title: string | undefined, d: DesignP
     }
 
     // Label + description
-    drawLabelBlock(svg, d, node.label, node.description, pad + 60, y + (node.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 80, 'start');
+    drawLabelBlock(svg, d, node.label, node.description, pad + 60, y + (node.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 80, 'start', `nodes[${i}]`);
 
     // Down arrow between cards
     if (i < count - 1) {
@@ -729,12 +729,13 @@ function renderSerpentine(data: ProcessData, title: string | undefined, d: Desig
     const y = contentTop + row * (stepH + gapY);
     const cx = x + stepW / 2;
 
+    svg.beginItem(`nodes[${i}]`);
+
     // Step card — use jitterRect for sketch preset
     if (d.lineJitter) {
       svg.path(jitterRect(x, y, stepW, stepH, i * 7), {
         fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
       });
-      // Color accent bar at top
       svg.path(jitterLine(x + 4, y + 3, x + stepW - 4, y + 3, i * 7 + 100), {
         stroke: color, 'stroke-width': 2, opacity: 0.6,
       });
@@ -749,7 +750,9 @@ function renderSerpentine(data: ProcessData, title: string | undefined, d: Desig
     });
 
     // Label
-    drawLabelBlock(svg, d, node.label, node.description, cx, y + (node.description ? stepH / 2 - 2 : stepH / 2 + 5), stepW - 24);
+    drawLabelBlock(svg, d, node.label, node.description, cx, y + (node.description ? stepH / 2 - 2 : stepH / 2 + 5), stepW - 24, 'middle', `nodes[${i}]`);
+
+    svg.endItem();
 
     // Arrows — use jitterLine for sketch preset
     if (i < count - 1) {
@@ -877,7 +880,7 @@ function renderStaircase(data: ProcessData, title: string | undefined, d: Design
     });
 
     // Label
-    drawLabelBlock(svg, d, node.label, node.description, x + stepW / 2 + 8, y + (node.description ? stepH / 2 - 2 : stepH / 2 + 5), stepW - 48);
+    drawLabelBlock(svg, d, node.label, node.description, x + stepW / 2 + 8, y + (node.description ? stepH / 2 - 2 : stepH / 2 + 5), stepW - 48, 'middle', `nodes[${i}]`);
 
     // Connector arrow from this step to next (diagonal upward-right)
     if (i < count - 1) {
@@ -979,7 +982,7 @@ function renderNumbered(data: ProcessData, title: string | undefined, d: DesignP
     }
 
     // Label + description below the circle
-    drawNodeText(svg, d, node, cx, circleY + circleR + 20, colW - 24);
+    drawNodeText(svg, d, node, cx, circleY + circleR + 20, colW - 24, i);
   }
 
   return svg.build();
@@ -1059,7 +1062,7 @@ function renderPipeline(data: ProcessData, title: string | undefined, d: DesignP
     });
 
     // Label + description
-    drawLabelBlock(svg, d, node.label, node.description, x + barW / 2, y + (node.description ? barH / 2 + 2 : barH / 2 + 6), barW - 28);
+    drawLabelBlock(svg, d, node.label, node.description, x + barW / 2, y + (node.description ? barH / 2 + 2 : barH / 2 + 6), barW - 28, 'middle', `nodes[${i}]`);
 
     // Triangle gate separator between stages
     if (i < count - 1) {
@@ -1193,7 +1196,7 @@ function renderEscalation(data: ProcessData, title: string | undefined, d: Desig
 
     // Label + description
     drawLabelBlock(svg, d, node.label, node.description,
-      x + stepW / 2, y + (node.description ? stepH / 2 + 6 : stepH / 2 + 10), stepW - 36);
+      x + stepW / 2, y + (node.description ? stepH / 2 + 6 : stepH / 2 + 10), stepW - 36, 'middle', `nodes[${i}]`);
 
     // Connector arrow from this step to next (upward-right curve)
     if (i < count - 1) {
