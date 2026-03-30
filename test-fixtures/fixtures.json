@@ -1,0 +1,122 @@
+{
+  "process": {
+    "title": "ソフトウェア開発フロー",
+    "data": { "nodes": [{ "label": "要件定義", "description": "要件を整理" }, { "label": "設計", "description": "アーキテクチャ設計" }, { "label": "実装", "description": "コーディング" }, { "label": "テスト", "description": "品質検証" }] }
+  },
+  "funnel": {
+    "title": "営業ファネル",
+    "data": { "stages": [{ "label": "リード獲得", "value": "1000" }, { "label": "商談化", "value": "300" }, { "label": "提案", "value": "100" }, { "label": "受注", "value": "30" }] }
+  },
+  "block_list": {
+    "title": "チーム構成",
+    "data": { "items": [{ "label": "フロントエンド", "description": "React / TypeScript" }, { "label": "バックエンド", "description": "Rust / axum" }, { "label": "インフラ", "description": "AWS CDK" }, { "label": "QA", "description": "テスト自動化" }] }
+  },
+  "comparison_table": {
+    "title": "フレームワーク比較",
+    "data": { "headers": ["React", "Vue", "Svelte"], "rows": [{ "label": "言語", "values": ["TypeScript", "TypeScript", "TypeScript"] }, { "label": "学習曲線", "values": ["中", "低", "低"] }, { "label": "エコシステム", "values": ["大規模", "中規模", "小規模"] }] }
+  },
+  "cycle": {
+    "title": "PDCA サイクル",
+    "data": { "steps": [{ "label": "Plan", "description": "計画策定" }, { "label": "Do", "description": "実行" }, { "label": "Check", "description": "評価" }, { "label": "Act", "description": "改善" }] }
+  },
+  "hierarchy": {
+    "title": "組織図",
+    "data": { "root": { "label": "CEO", "children": [{ "label": "CTO", "children": [{ "label": "開発部" }, { "label": "インフラ部" }] }, { "label": "CFO", "children": [{ "label": "経理部" }] }] } }
+  },
+  "mind_map": {
+    "title": "プロジェクト戦略",
+    "data": { "center": "DX推進", "branches": [{ "label": "人材育成", "children": ["研修", "資格支援", "メンター制度"] }, { "label": "技術導入", "children": ["クラウド", "AI", "自動化"] }, { "label": "業務改革", "children": ["ペーパーレス", "ワークフロー"] }] }
+  },
+  "timeline": {
+    "title": "プロジェクトマイルストーン",
+    "data": { "events": [{ "time": "2024 Q1", "event": "要件定義", "details": "ステークホルダーヒアリング" }, { "time": "2024 Q2", "event": "MVP開発", "details": "コア機能実装" }, { "time": "2024 Q3", "event": "βテスト", "details": "限定ユーザー試用" }, { "time": "2024 Q4", "event": "正式リリース", "details": "一般公開" }] }
+  },
+  "quadrant": {
+    "title": "優先度マトリクス",
+    "data": { "x_axis": "緊急度", "y_axis": "重要度", "labels": ["重要&緊急", "重要&非緊急", "非重要&緊急", "非重要&非緊急"], "quadrants": [["即対応タスク", "障害対応"], ["戦略立案", "人材育成"], ["会議出席", "メール対応"], ["SNS閲覧", "雑談"]] }
+  },
+  "matrix_2x2": {
+    "title": "リスク分析",
+    "data": { "axes": { "x": "発生確率", "y": "影響度" }, "items": [{ "name": "データ漏洩", "x": 0.3, "y": 0.9 }, { "name": "サーバー停止", "x": 0.5, "y": 0.8 }, { "name": "依存ライブラリ脆弱性", "x": 0.7, "y": 0.4 }] }
+  },
+  "composite_flow": {
+    "title": "CI/CDパイプライン",
+    "data": { "nodes": [{ "label": "コミット", "type": "start" }, { "label": "ビルド", "description": "TypeScript + Rust" }, { "label": "テスト", "description": "ユニット+統合" }, { "label": "デプロイ", "type": "end" }], "edges": [{ "from": 0, "to": 1 }, { "from": 1, "to": 2 }, { "from": 2, "to": 3 }] }
+  },
+  "bar_chart": {
+    "title": "月間売上",
+    "data": { "items": [{ "label": "1月", "value": 120 }, { "label": "2月", "value": 95 }, { "label": "3月", "value": 150 }, { "label": "4月", "value": 180 }, { "label": "5月", "value": 210 }] }
+  },
+  "pie_chart": {
+    "title": "ブラウザシェア",
+    "data": { "segments": [{ "label": "Chrome", "value": 65 }, { "label": "Safari", "value": 18 }, { "label": "Firefox", "value": 8 }, { "label": "Edge", "value": 5 }, { "label": "Other", "value": 4 }] }
+  },
+  "radar_chart": {
+    "title": "スキル評価",
+    "data": { "axes": ["フロントエンド", "バックエンド", "インフラ", "DB", "セキュリティ", "チームワーク"], "items": [{ "label": "Alice", "values": [90, 70, 60, 75, 80, 85] }, { "label": "Bob", "values": [60, 90, 80, 85, 70, 75] }] }
+  },
+  "stacked_bar": {
+    "title": "四半期別売上構成",
+    "data": { "categories": ["製品A", "製品B", "製品C"], "items": [{ "label": "Q1", "values": [40, 30, 20] }, { "label": "Q2", "values": [50, 35, 25] }, { "label": "Q3", "values": [45, 40, 30] }] }
+  },
+  "roadmap": {
+    "title": "製品ロードマップ",
+    "data": { "phases": [{ "label": "Phase 1 — 基盤構築", "items": ["認証", "API設計", "DB構築"] }, { "label": "Phase 2 — 機能開発", "items": ["ダッシュボード", "レポート", "通知"] }, { "label": "Phase 3 — 拡張", "items": ["API公開", "モバイル対応"] }] }
+  },
+  "network_graph": {
+    "title": "マイクロサービス構成",
+    "data": { "nodes": [{ "label": "API Gateway" }, { "label": "Auth Service" }, { "label": "User Service" }, { "label": "Order Service" }, { "label": "DB" }], "edges": [{ "from": 0, "to": 1 }, { "from": 0, "to": 2 }, { "from": 0, "to": 3 }, { "from": 2, "to": 4 }, { "from": 3, "to": 4 }] }
+  },
+  "sankey": {
+    "title": "予算配分フロー",
+    "data": { "nodes": [{ "id": "budget", "label": "総予算" }, { "id": "dev", "label": "開発" }, { "id": "mkt", "label": "マーケティング" }, { "id": "admin", "label": "管理" }, { "id": "front", "label": "フロント" }, { "id": "back", "label": "バックエンド" }], "flows": [{ "from": "budget", "to": "dev", "value": 50 }, { "from": "budget", "to": "mkt", "value": 30 }, { "from": "budget", "to": "admin", "value": 20 }, { "from": "dev", "to": "front", "value": 25 }, { "from": "dev", "to": "back", "value": 25 }] }
+  },
+  "treemap": {
+    "title": "ディスク使用量",
+    "data": { "items": [{ "label": "node_modules", "value": 500 }, { "label": "target", "value": 300 }, { "label": "src", "value": 50 }, { "label": "docs", "value": 20 }, { "label": "static", "value": 15 }] }
+  },
+  "swimlane": {
+    "title": "注文処理フロー",
+    "data": { "lanes": [{ "actor": "顧客", "steps": [{ "label": "注文送信" }, { "label": "確認メール受領" }] }, { "actor": "システム", "steps": [{ "label": "在庫確認" }, { "label": "決済処理" }, { "label": "確認メール送信" }] }, { "actor": "倉庫", "steps": [{ "label": "ピッキング" }, { "label": "出荷" }] }] }
+  },
+  "decision_tree": {
+    "title": "トラブルシューティング",
+    "data": { "root": { "label": "エラー発生？", "yes": { "label": "ログ確認", "yes": { "label": "バグ修正" }, "no": { "label": "ログ追加" } }, "no": { "label": "パフォーマンス問題？", "yes": { "label": "プロファイリング" }, "no": { "label": "正常" } } } }
+  },
+  "gantt": {
+    "title": "スプリント計画",
+    "data": { "tasks": [{ "label": "設計", "start": 0, "end": 3 }, { "label": "フロント実装", "start": 2, "end": 6 }, { "label": "バック実装", "start": 2, "end": 5 }, { "label": "テスト", "start": 5, "end": 8 }, { "label": "デプロイ", "start": 8, "end": 9 }] }
+  },
+  "concentric_circles": {
+    "title": "技術スタック",
+    "data": { "rings": [{ "label": "コア", "items": ["Rust", "TypeScript"] }, { "label": "フレームワーク", "items": ["axum", "Express"] }, { "label": "インフラ", "items": ["AWS", "Docker", "GitHub Actions"] }] }
+  },
+  "pyramid": {
+    "title": "マズローの欲求階層",
+    "data": { "layers": [{ "label": "自己実現", "description": "創造性・問題解決" }, { "label": "承認欲求", "description": "達成・尊敬" }, { "label": "社会的欲求", "description": "所属・愛情" }, { "label": "安全欲求", "description": "安全・安定" }, { "label": "生理的欲求", "description": "食事・睡眠" }] }
+  },
+  "venn": {
+    "title": "スキルの重なり",
+    "data": { "sets": [{ "label": "デザイン", "items": ["UI設計", "カラー理論"] }, { "label": "エンジニアリング", "items": ["コーディング", "DB設計"] }], "intersection": "UXエンジニアリング" }
+  },
+  "ranking": {
+    "title": "プログラミング言語人気",
+    "data": { "items": [{ "label": "Python", "value": "28.1%", "description": "AI/ML向け" }, { "label": "JavaScript", "value": "25.3%", "description": "Web開発" }, { "label": "TypeScript", "value": "12.7%", "description": "型安全" }, { "label": "Rust", "value": "5.2%", "description": "システム" }] }
+  },
+  "kpi_card": {
+    "title": "月次KPI",
+    "data": { "cards": [{ "label": "売上", "value": "¥12.5M", "trend": "+15%", "description": "前月比" }, { "label": "顧客数", "value": "1,230", "trend": "+8%", "description": "アクティブ" }, { "label": "解約率", "value": "2.1%", "trend": "-0.3%", "description": "目標: 2%以下" }] }
+  },
+  "layer_stack": {
+    "title": "システムアーキテクチャ",
+    "data": { "layers": [{ "label": "フロントエンド", "description": "ユーザーインターフェース", "components": ["React", "Next.js"] }, { "label": "API層", "description": "ビジネスロジック", "components": ["axum", "REST API"] }, { "label": "データ層", "description": "永続化", "components": ["PostgreSQL", "Redis"] }] }
+  },
+  "business_framework": {
+    "title": "SWOT分析",
+    "data": { "layout": "2x2", "blocks": [{ "label": "強み", "color": "blue", "items": ["技術力", "チーム結束力"] }, { "label": "弱み", "color": "red", "items": ["認知度", "資金力"] }, { "label": "機会", "color": "green", "items": ["市場成長", "DX需要"] }, { "label": "脅威", "color": "orange", "items": ["競合参入", "規制変更"] }] }
+  },
+  "sequence_diagram": {
+    "title": "ログインフロー",
+    "data": { "actors": ["Client", "Server", "DB"], "messages": [{ "from": 0, "to": 1, "label": "POST /login" }, { "from": 1, "to": 2, "label": "SELECT user" }, { "from": 2, "to": 1, "label": "user row" }, { "from": 1, "to": 0, "label": "JWT token" }] }
+  }
+}
