@@ -50,6 +50,7 @@ interface LayoutNode {
   y: number;
   w: number;
   children: LayoutNode[];
+  dataPath: string; // e.g. "root", "root.children[0]", "root.children[0].children[1]"
 }
 
 const NODE_H = 36;
@@ -60,22 +61,22 @@ function nodeWidth(label: string, fontSize: number): number {
   return Math.min(220, Math.max(100, estimateWidth(label, fontSize) + 28));
 }
 
-function layoutTree(node: HierarchyNode, depth: number, xOff: { v: number }): LayoutNode {
+function layoutTree(node: HierarchyNode, depth: number, xOff: { v: number }, dataPath = 'root'): LayoutNode {
   const fs = depth === 0 ? 15 : 13;
   const w = nodeWidth(node.label, fs);
 
   if (!node.children || node.children.length === 0) {
     const x = xOff.v;
     xOff.v += w + H_GAP;
-    return { label: node.label, x, y: depth * (NODE_H + V_GAP), w, children: [] };
+    return { label: node.label, x, y: depth * (NODE_H + V_GAP), w, children: [], dataPath };
   }
 
-  const children = node.children.map(c => layoutTree(c, depth + 1, xOff));
+  const children = node.children.map((c, i) => layoutTree(c, depth + 1, xOff, `${dataPath}.children[${i}]`));
   const firstCx = children[0]!.x + children[0]!.w / 2;
   const lastCx = children[children.length - 1]!.x + children[children.length - 1]!.w / 2;
   const x = (firstCx + lastCx) / 2 - w / 2;
 
-  return { label: node.label, x, y: depth * (NODE_H + V_GAP), w, children };
+  return { label: node.label, x, y: depth * (NODE_H + V_GAP), w, children, dataPath };
 }
 
 function treeWidth(node: LayoutNode): number {
@@ -149,6 +150,7 @@ function drawCleanNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth
   const fit = fitText(node.label, node.w - 16, 1, fs);
   svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': isRoot ? 700 : d.fontWeight, fill: textFill,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const parentCx = node.x + node.w / 2;
@@ -191,6 +193,7 @@ function drawSketchNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, dept
   const fit = fitText(node.label, node.w - 16, 1, depth === 0 ? 15 : 13);
   svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const parentCx = node.x + node.w / 2;
@@ -237,6 +240,7 @@ function drawPixelNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth
   const fit = fitText(node.label, node.w - 16, 1, depth === 0 ? 15 : 13);
   svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const parentCx = node.x + node.w / 2;
@@ -286,6 +290,7 @@ function drawBoldNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth:
     const fit = fitText(node.label, node.w - 16, 1, fs);
     svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
+      'data-field': `${node.dataPath}.label`,
     });
   } else {
     // White child node with thick border + offset shadow
@@ -296,6 +301,7 @@ function drawBoldNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth:
     const fit = fitText(node.label, node.w - 16, 1, fs);
     svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+      'data-field': `${node.dataPath}.label`,
     });
   }
 
@@ -335,11 +341,11 @@ function renderFlat(data: HierarchyData, title: string | undefined, d: DesignPre
   if (title) drawTitle(svg, d, title, width, pad);
 
   const yRef = { v: pad + titleH };
-  drawFlatNode(svg, d, data.root, 0, pad, cardW, rowH, gap, yRef);
+  drawFlatNode(svg, d, data.root, 0, pad, cardW, rowH, gap, yRef, 'root');
   return svg.build();
 }
 
-function drawFlatNode(svg: SvgBuilder, d: DesignPreset, node: HierarchyNode, depth: number, pad: number, cardW: number, rowH: number, gap: number, yRef: { v: number }): void {
+function drawFlatNode(svg: SvgBuilder, d: DesignPreset, node: HierarchyNode, depth: number, pad: number, cardW: number, rowH: number, gap: number, yRef: { v: number }, dataPath: string): void {
   const color = stepColor(d, depth);
   const indent = depth * 28;
   const x = pad + indent;
@@ -356,11 +362,12 @@ function drawFlatNode(svg: SvgBuilder, d: DesignPreset, node: HierarchyNode, dep
   const fit = fitText(node.label, w - 28, 1, fs);
   svg.text(x + 18, y + rowH / 2 + 4, fit.lines[0]!, {
     'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': depth === 0 ? 700 : d.fontWeight, fill: d.text,
+    'data-field': `${dataPath}.label`,
   });
 
   if (node.children) {
-    for (const child of node.children) {
-      drawFlatNode(svg, d, child, depth + 1, pad, cardW, rowH, gap, yRef);
+    for (let ci = 0; ci < node.children.length; ci++) {
+      drawFlatNode(svg, d, node.children[ci]!, depth + 1, pad, cardW, rowH, gap, yRef, `${dataPath}.children[${ci}]`);
     }
   }
 }
@@ -410,6 +417,7 @@ function drawGlassNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth
   const fit = fitText(node.label, node.w - 16, 1, fs);
   svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': isRoot ? 700 : d.fontWeight, fill: d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const parentCx = node.x + node.w / 2;
@@ -471,6 +479,7 @@ function drawNeonNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth:
   const fit = fitText(node.label, node.w - 16, 1, fs);
   svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': isRoot ? 700 : d.fontWeight, fill: color,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const parentCx = node.x + node.w / 2;
@@ -530,6 +539,7 @@ function drawWatercolorNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, 
   const fit = fitText(node.label, node.w - 16, 1, fs);
   svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': isRoot ? 700 : d.fontWeight, fill: d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const parentCx = node.x + node.w / 2;
@@ -558,6 +568,7 @@ interface HLayoutNode {
   y: number;
   w: number;
   children: HLayoutNode[];
+  dataPath: string;
 }
 
 const H_NODE_W = 130;
@@ -568,22 +579,22 @@ function hNodeHeight(label: string, fontSize: number): number {
   return NODE_H;
 }
 
-function layoutHorizontalTree(node: HierarchyNode, depth: number, yOff: { v: number }): HLayoutNode {
+function layoutHorizontalTree(node: HierarchyNode, depth: number, yOff: { v: number }, dataPath = 'root'): HLayoutNode {
   const fs = depth === 0 ? 15 : 13;
   const w = nodeWidth(node.label, fs);
 
   if (!node.children || node.children.length === 0) {
     const y = yOff.v;
     yOff.v += NODE_H + H_V_GAP_H;
-    return { label: node.label, x: depth * (H_NODE_W + H_H_GAP), y, w, children: [] };
+    return { label: node.label, x: depth * (H_NODE_W + H_H_GAP), y, w, children: [], dataPath };
   }
 
-  const children = node.children.map(c => layoutHorizontalTree(c, depth + 1, yOff));
+  const children = node.children.map((c, i) => layoutHorizontalTree(c, depth + 1, yOff, `${dataPath}.children[${i}]`));
   const firstCy = children[0]!.y + NODE_H / 2;
   const lastCy = children[children.length - 1]!.y + NODE_H / 2;
   const y = (firstCy + lastCy) / 2 - NODE_H / 2;
 
-  return { label: node.label, x: depth * (H_NODE_W + H_H_GAP), y, w, children };
+  return { label: node.label, x: depth * (H_NODE_W + H_H_GAP), y, w, children, dataPath };
 }
 
 function hTreeMaxX(node: HLayoutNode): number {
@@ -674,6 +685,7 @@ function drawHorizontalNode(svg: SvgBuilder, d: DesignPreset, node: HLayoutNode,
   const fit = fitText(node.label, node.w - 16, 1, fs);
   svg.text(node.x + node.w / 2, node.y + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': isRoot ? 700 : d.fontWeight, fill: textFill,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const parentRight = node.x + node.w;
@@ -879,24 +891,25 @@ interface BracketNode {
   y: number;
   w: number;
   children: BracketNode[];
+  dataPath: string;
 }
 
-function layoutBracket(node: HierarchyNode, depth: number, yOff: { v: number }, colW: number, rowH: number): BracketNode {
+function layoutBracket(node: HierarchyNode, depth: number, yOff: { v: number }, colW: number, rowH: number, dataPath = 'root'): BracketNode {
   const fs = depth === 0 ? 15 : 13;
   const w = nodeWidth(node.label, fs);
 
   if (!node.children || node.children.length === 0) {
     const y = yOff.v;
     yOff.v += rowH;
-    return { label: node.label, x: depth * colW, y, w, children: [] };
+    return { label: node.label, x: depth * colW, y, w, children: [], dataPath };
   }
 
-  const children = node.children.map(c => layoutBracket(c, depth + 1, yOff, colW, rowH));
+  const children = node.children.map((c, i) => layoutBracket(c, depth + 1, yOff, colW, rowH, `${dataPath}.children[${i}]`));
   const firstY = children[0]!.y;
   const lastY = children[children.length - 1]!.y;
   const y = (firstY + lastY) / 2;
 
-  return { label: node.label, x: depth * colW, y, w, children };
+  return { label: node.label, x: depth * colW, y, w, children, dataPath };
 }
 
 function renderBracket(data: HierarchyData, title: string | undefined, d: DesignPreset): string {
@@ -962,6 +975,7 @@ function drawBracketNode(svg: SvgBuilder, d: DesignPreset, node: BracketNode, de
   svg.text(nx + node.w / 2, ny + NODE_H / 2 + 5, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize,
     'font-weight': isRoot ? 700 : d.fontWeight, fill: textFill,
+    'data-field': `${node.dataPath}.label`,
   });
 
   // Draw right-angle connectors to children
