@@ -227,6 +227,7 @@ function renderBold(data: Matrix2x2Data, title: string | undefined, d: DesignPre
     const color = itemColor(d, i);
     const { px, py } = plotCoords(item, plotLeft, plotTop, plotW, plotH);
 
+    svg.beginItem(`items[${i}]`);
     svg.circle(px, py, 16, { fill: color, filter: 'url(#bold-offset)' });
     svg.text(px, py + 5, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 12, 'font-weight': 900, fill: '#FFFFFF',
@@ -234,7 +235,9 @@ function renderBold(data: Matrix2x2Data, title: string | undefined, d: DesignPre
     const fit = fitText(item.name, 85, 1, 11);
     svg.text(px, py + 26, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
   }
 
   drawCleanLegend(svg, d, data.items, plotLeft, plotTop + plotH + axisLabelSpace + 14, plotW);
@@ -283,11 +286,14 @@ function renderFlat(data: Matrix2x2Data, title: string | undefined, d: DesignPre
     const color = itemColor(d, i);
     const { px, py } = plotCoords(item, plotLeft, plotTop, plotW, plotH);
 
+    svg.beginItem(`items[${i}]`);
     svg.circle(px, py, 12, { fill: color, opacity: 0.85 });
     const fit = fitText(item.name, 80, 1, 10);
     svg.text(px, py + 22, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
   }
 
   drawCleanLegend(svg, d, data.items, plotLeft, plotTop + plotH + axisLabelSpace + 12, plotW);
@@ -348,6 +354,7 @@ function renderGlass(data: Matrix2x2Data, title: string | undefined, d: DesignPr
     const color = itemColor(d, i);
     const { px, py } = plotCoords(item, plotLeft, plotTop, plotW, plotH);
 
+    svg.beginItem(`items[${i}]`);
     // Glow ring
     svg.circle(px, py, 20, { fill: color, opacity: 0.08, filter: 'url(#shadow)' });
     svg.circle(px, py, 12, {
@@ -357,7 +364,9 @@ function renderGlass(data: Matrix2x2Data, title: string | undefined, d: DesignPr
     svg.text(px, py + 22, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
       'letter-spacing': '0.3',
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
   }
 
   drawCleanLegend(svg, d, data.items, plotLeft, plotTop + plotH + axisLabelSpace + 12, plotW);
@@ -417,6 +426,7 @@ function renderNeon(data: Matrix2x2Data, title: string | undefined, d: DesignPre
     const color = itemColor(d, i);
     const { px, py } = plotCoords(item, plotLeft, plotTop, plotW, plotH);
 
+    svg.beginItem(`items[${i}]`);
     // Neon glow dot
     svg.circle(px, py, 12, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
@@ -430,7 +440,9 @@ function renderNeon(data: Matrix2x2Data, title: string | undefined, d: DesignPre
     const fit = fitText(item.name, 80, 1, 10);
     svg.text(px, py + 22, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
   }
 
   drawCleanLegend(svg, d, data.items, plotLeft, plotTop + plotH + axisLabelSpace + 12, plotW);
@@ -485,13 +497,16 @@ function renderWatercolor(data: Matrix2x2Data, title: string | undefined, d: Des
     const color = itemColor(d, i);
     const { px, py } = plotCoords(item, plotLeft, plotTop, plotW, plotH);
 
+    svg.beginItem(`items[${i}]`);
     // Watercolor blob
     svg.circle(px, py, 20, { fill: color, opacity: 0.1, filter: 'url(#watercolor)' });
     svg.circle(px, py, 12, { fill: color, opacity: 0.7, filter: 'url(#watercolor)' });
     const fit = fitText(item.name, 80, 1, 10);
     svg.text(px, py + 22, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
   }
 
   drawCleanLegend(svg, d, data.items, plotLeft, plotTop + plotH + axisLabelSpace + 12, plotW);
@@ -544,6 +559,7 @@ function renderSketch(data: Matrix2x2Data, title: string | undefined, d: DesignP
     const item = data.items[i]!;
     const { px, py } = plotCoords(item, plotLeft, plotTop, plotW, plotH);
 
+    svg.beginItem(`items[${i}]`);
     svg.circle(px, py, 10, {
       fill: 'none', stroke: d.border, 'stroke-width': 1.5, filter: 'url(#rough)',
     });
@@ -555,7 +571,9 @@ function renderSketch(data: Matrix2x2Data, title: string | undefined, d: DesignP
     const fit = fitText(item.name, 80, 1, 11);
     svg.text(px + 14, py + 4, fit.lines[0]!, {
       'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -630,6 +648,7 @@ function renderPixel(data: Matrix2x2Data, title: string | undefined, d: DesignPr
     const sy = Math.round(posY / px) * px;
     const size = px * 3;
 
+    svg.beginItem(`items[${i}]`);
     // Pixel square with border
     svg.rect(sx - size, sy - size, size * 2, size * 2, {
       fill: color, 'shape-rendering': 'crispEdges',
@@ -645,7 +664,9 @@ function renderPixel(data: Matrix2x2Data, title: string | undefined, d: DesignPr
     const fit = fitText(item.name, 70, 1, 10);
     svg.text(sx + size + 4, sy + 4, fit.lines[0]!, {
       'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();

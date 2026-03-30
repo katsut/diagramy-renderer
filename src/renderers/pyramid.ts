@@ -98,6 +98,7 @@ function renderClean(data: PyramidData, title: string | undefined, d: DesignPres
       for (const line of dfit.lines) {
         svg.text(descX, dy, line, {
           'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+          'data-field': `layers[${i}].description`,
         });
         dy += Math.round(dfit.fontSize * 1.3);
       }
@@ -172,6 +173,8 @@ function renderBold(data: PyramidData, title: string | undefined, d: DesignPrese
     const geo = layerGeometry(layerH, i, count);
     const y = startY + geo.y;
 
+    svg.beginItem(`layers[${i}]`);
+
     // Trapezoid with offset shadow
     svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: color, filter: 'url(#bold-offset)',
@@ -184,7 +187,10 @@ function renderBold(data: PyramidData, title: string | undefined, d: DesignPrese
     const fit = fitText(layer.label, baseW * 0.5, 1, d.labelSize + 2);
     svg.text(pyramidX + baseW / 2, y + geo.h / 2 + 6, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
+      'data-field': `layers[${i}].label`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -219,13 +225,18 @@ function renderFlat(data: PyramidData, title: string | undefined, d: DesignPrese
     const w = 80 + (maxW - 80) * ratio;
     const x = pad + (maxW - w) / 2;
 
+    svg.beginItem(`layers[${i}]`);
+
     // Flat rectangle — no shadow, no border
     svg.rect(x, y, w, layerH, { fill: color, opacity: 0.85, rx: d.borderRadius });
 
     const fit = fitText(layer.label, w - 16, 1, d.labelSize);
     svg.text(pad + maxW / 2, y + layerH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+      'data-field': `layers[${i}].label`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -262,6 +273,8 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
     const geo = layerGeometry(layerH, i, count);
     const y = startY + geo.y;
 
+    svg.beginItem(`layers[${i}]`);
+
     // Glow behind trapezoid
     svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: color, opacity: 0.06, filter: 'url(#shadow)',
@@ -282,6 +295,7 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
     svg.text(pyramidX + baseW / 2, y + geo.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
       'letter-spacing': '0.3',
+      'data-field': `layers[${i}].label`,
     });
 
     if (layer.description) {
@@ -294,10 +308,13 @@ function renderGlass(data: PyramidData, title: string | undefined, d: DesignPres
       for (const line of dfit.lines) {
         svg.text(descX, dy, line, {
           'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+          'data-field': `layers[${i}].description`,
         });
         dy += Math.round(dfit.fontSize * 1.3);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -332,6 +349,8 @@ function renderNeon(data: PyramidData, title: string | undefined, d: DesignPrese
     const geo = layerGeometry(layerH, i, count);
     const y = startY + geo.y;
 
+    svg.beginItem(`layers[${i}]`);
+
     // Dark fill with neon border
     svg.path(trapezoidPath(pyramidX, baseW, topW, startY, layerH, i, count), {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1,
@@ -344,7 +363,10 @@ function renderNeon(data: PyramidData, title: string | undefined, d: DesignPrese
     const fit = fitText(layer.label, baseW * 0.5, 1, d.labelSize);
     svg.text(pyramidX + baseW / 2, y + geo.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `layers[${i}].label`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -383,6 +405,8 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
     const ratio = i / Math.max(count - 1, 1);
     const w = topW + (baseW - topW) * ratio;
 
+    svg.beginItem(`layers[${i}]`);
+
     // Watercolor wash behind
     svg.ellipse(pyramidX + baseW / 2, y + layerH / 2, w / 2 + 10, layerH / 2 + 6, {
       fill: color, opacity: 0.12, filter: 'url(#watercolor)',
@@ -395,6 +419,7 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
     const fit = fitText(layer.label, w - 20, 1, d.labelSize);
     svg.text(pyramidX + baseW / 2, y + geo.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+      'data-field': `layers[${i}].label`,
     });
 
     if (layer.description) {
@@ -404,10 +429,13 @@ function renderWatercolor(data: PyramidData, title: string | undefined, d: Desig
       for (const line of dfit.lines) {
         svg.text(descX, dy, line, {
           'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+          'data-field': `layers[${i}].description`,
         });
         dy += Math.round(dfit.fontSize * 1.3);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -446,6 +474,8 @@ function renderSketch(data: PyramidData, title: string | undefined, d: DesignPre
     const nextW = i < count - 1 ? topW + (baseW - topW) * nextRatio : w;
     const nextX = pyramidX + (baseW - nextW) / 2;
 
+    svg.beginItem(`layers[${i}]`);
+
     svg.path(`M ${x} ${y} L ${x + w} ${y} L ${nextX + nextW} ${y + layerH} L ${nextX} ${y + layerH} Z`, {
       fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
     });
@@ -453,7 +483,10 @@ function renderSketch(data: PyramidData, title: string | undefined, d: DesignPre
     const fit = fitText(layer.label, w - 20, 1, d.labelSize);
     svg.text(pyramidX + baseW / 2, y + layerH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `layers[${i}].label`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -490,6 +523,8 @@ function renderPixel(data: PyramidData, title: string | undefined, d: DesignPres
     const w = Math.round(topW + (baseW - topW) * ratio);
     const x = Math.round(pyramidX + (baseW - w) / 2);
 
+    svg.beginItem(`layers[${i}]`);
+
     // Pixel style: use rectangles
     svg.rect(x, y, w, layerH, {
       fill: color, opacity: 0.8, 'shape-rendering': 'crispEdges',
@@ -498,7 +533,10 @@ function renderPixel(data: PyramidData, title: string | undefined, d: DesignPres
     const fit = fitText(layer.label, w - 14, 1, d.labelSize);
     svg.text(Math.round(pyramidX + baseW / 2), y + layerH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.bg,
+      'data-field': `layers[${i}].label`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -542,6 +580,8 @@ function renderHorizontalBars(data: PyramidData, title: string | undefined, d: D
     const ratio = count <= 1 ? 1 : i / (count - 1);
     const barW = minBarW + (maxBarW - minBarW) * ratio;
 
+    svg.beginItem(`layers[${i}]`);
+
     if (d.id === 'neon') {
       // Neon: dark fill + neon outline stroke + glow
       svg.rect(barX, y, barW, barH, {
@@ -563,6 +603,7 @@ function renderHorizontalBars(data: PyramidData, title: string | undefined, d: D
     svg.text(pad + labelW, y + barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': 700,
       fill: d.id === 'neon' ? color : d.text,
+      'data-field': `layers[${i}].label`,
     });
 
     // Description inside bar
@@ -571,8 +612,11 @@ function renderHorizontalBars(data: PyramidData, title: string | undefined, d: D
       svg.text(barX + 10, y + barH / 2 + 4, dfit.lines[0]!, {
         'text-anchor': 'start', 'font-size': dfit.fontSize,
         fill: d.id === 'neon' ? color : 'white', opacity: 0.9,
+        'data-field': `layers[${i}].description`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -616,6 +660,8 @@ function renderBlocks(data: PyramidData, title: string | undefined, d: DesignPre
     const w = minW + (maxW - minW) * ratio;
     const x = cx - w / 2;
 
+    svg.beginItem(`layers[${i}]`);
+
     if (d.id === 'neon') {
       svg.rect(x, y, w, blockH, {
         fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
@@ -635,14 +681,18 @@ function renderBlocks(data: PyramidData, title: string | undefined, d: DesignPre
     svg.text(cx, y + blockH / 2 - (layer.description ? 4 : 0) + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
       fill: d.id === 'neon' ? color : '#FFFFFF',
+      'data-field': `layers[${i}].label`,
     });
     if (layer.description) {
       const dfit = fitText(layer.description, w - 24, 1, d.captionSize);
       svg.text(cx, y + blockH / 2 + 16, dfit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': dfit.fontSize,
         fill: d.id === 'neon' ? d.textSecondary : 'rgba(255,255,255,0.7)',
+        'data-field': `layers[${i}].description`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();

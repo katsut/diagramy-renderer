@@ -187,13 +187,16 @@ function renderBold(data: SankeyData, title: string | undefined, d: DesignPreset
     const x = pad + n.col * (colW + 80);
     const y = baseY + n.y;
     const color = flowColor(d, i);
+    svg.beginItem(`nodes[${i}]`);
     svg.rect(x, y, colW, n.h, {
       fill: color, rx: 4, stroke: '#111', 'stroke-width': 3, filter: 'url(#bold-offset)',
     });
     const fit = fitText(n.label, colW - 12, 1, d.labelSize + 1);
     svg.text(x + colW / 2, y + n.h / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -240,13 +243,16 @@ function renderFlat(data: SankeyData, title: string | undefined, d: DesignPreset
     const x = pad + n.col * (colW + 80);
     const y = baseY + n.y;
     const color = flowColor(d, i);
+    svg.beginItem(`nodes[${i}]`);
     svg.rect(x, y, colW, n.h, { fill: d.surface, rx: d.borderRadius > 8 ? 6 : d.borderRadius });
     // Left color strip
     svg.rect(x, y + 4, 4, n.h - 8, { fill: color, rx: 2 });
     const fit = fitText(n.label, colW - 16, 1, d.labelSize);
     svg.text(x + colW / 2 + 2, y + n.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -294,6 +300,7 @@ function renderGlass(data: SankeyData, title: string | undefined, d: DesignPrese
     const x = pad + n.col * (colW + 80);
     const y = baseY + n.y;
     const color = flowColor(d, i);
+    svg.beginItem(`nodes[${i}]`);
     // Glow behind
     svg.rect(x + 4, y + 4, colW - 8, n.h - 8, {
       fill: color, opacity: 0.08, rx: d.borderRadius, filter: 'url(#shadow)',
@@ -309,7 +316,9 @@ function renderGlass(data: SankeyData, title: string | undefined, d: DesignPrese
     svg.text(x + colW / 2, y + n.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
       fill: d.text, 'letter-spacing': '0.3',
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -357,6 +366,7 @@ function renderNeon(data: SankeyData, title: string | undefined, d: DesignPreset
     const x = pad + n.col * (colW + 80);
     const y = baseY + n.y;
     const color = flowColor(d, i);
+    svg.beginItem(`nodes[${i}]`);
     // Dark bar with neon border
     svg.rect(x, y, colW, n.h, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1,
@@ -371,7 +381,9 @@ function renderNeon(data: SankeyData, title: string | undefined, d: DesignPreset
     const fit = fitText(n.label, colW - 12, 1, d.labelSize);
     svg.text(x + colW / 2, y + n.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -419,6 +431,7 @@ function renderWatercolor(data: SankeyData, title: string | undefined, d: Design
     const x = pad + n.col * (colW + 80);
     const y = baseY + n.y;
     const color = flowColor(d, i);
+    svg.beginItem(`nodes[${i}]`);
     // Watercolor wash behind
     svg.ellipse(x + colW / 2, y + n.h / 2, colW / 2 + 8, n.h / 2 + 6, {
       fill: color, opacity: 0.12, filter: 'url(#watercolor)',
@@ -431,7 +444,9 @@ function renderWatercolor(data: SankeyData, title: string | undefined, d: Design
     const fit = fitText(n.label, colW - 12, 1, d.labelSize);
     svg.text(x + colW / 2, y + n.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -475,13 +490,16 @@ function renderSketch(data: SankeyData, title: string | undefined, d: DesignPres
     const n = nodes[i]!;
     const x = pad + n.col * (colW + 80);
     const y = baseY + n.y;
+    svg.beginItem(`nodes[${i}]`);
     svg.path(jitterRect(x, y, colW, n.h, i * 13), {
       fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
     });
     const fit = fitText(n.label, colW - 12, 1, d.labelSize);
     svg.text(x + colW / 2, y + n.h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -527,6 +545,7 @@ function renderPixel(data: SankeyData, title: string | undefined, d: DesignPrese
     const y = Math.round(baseY + n.y);
     const h = Math.round(n.h);
     const color = flowColor(d, i);
+    svg.beginItem(`nodes[${i}]`);
     svg.raw(pixelBorder(x, y, colW, h, color, px));
     svg.rect(x + px, y + px, colW - px * 2, h - px * 2, {
       fill: d.surface, 'shape-rendering': 'crispEdges',
@@ -534,7 +553,9 @@ function renderPixel(data: SankeyData, title: string | undefined, d: DesignPrese
     const fit = fitText(n.label, colW - 12, 1, d.labelSize);
     svg.text(x + colW / 2, y + h / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();

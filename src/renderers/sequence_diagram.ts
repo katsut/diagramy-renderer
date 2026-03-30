@@ -242,6 +242,7 @@ function renderSketch(data: SequenceDiagramData, title: string | undefined, d: D
   for (let i = 0; i < data.actors.length; i++) {
     const cx = actorXs[i]!;
     const bx = cx - actorW / 2;
+    svg.beginItem(`actors[${i}]`);
     svg.path(jitterRect(bx, actorY, actorW, actorH, i * 19), {
       fill: d.surface,
       stroke: actorColor(d, i),
@@ -254,7 +255,9 @@ function renderSketch(data: SequenceDiagramData, title: string | undefined, d: D
       'font-size': fit.fontSize,
       'font-weight': d.fontWeight,
       fill: d.text,
+      'data-field': `actors[${i}]`,
     });
+    svg.endItem();
   }
 
   drawMessages(svg, d, data, lay,
@@ -284,6 +287,7 @@ function renderPixel(data: SequenceDiagramData, title: string | undefined, d: De
   for (let i = 0; i < data.actors.length; i++) {
     const cx = actorXs[i]!;
     const x = cx - actorW / 2;
+    svg.beginItem(`actors[${i}]`);
     svg.raw(pixelBorder(x, actorY, actorW, actorH, actorColor(d, i), 3));
     svg.rect(x + 3, actorY + 3, actorW - 6, actorH - 6, {
       fill: d.surface, 'shape-rendering': 'crispEdges',
@@ -291,7 +295,9 @@ function renderPixel(data: SequenceDiagramData, title: string | undefined, d: De
     const fit = fitText(data.actors[i]!, actorW - 12, actorH, d.labelSize);
     svg.text(cx, actorY + actorH / 2 + fit.fontSize * 0.35, fit.lines[0] ?? '', {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: '#fff',
+      'data-field': `actors[${i}]`,
     });
+    svg.endItem();
   }
 
   drawMessages(svg, d, data, lay,

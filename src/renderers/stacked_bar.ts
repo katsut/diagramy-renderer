@@ -133,9 +133,12 @@ function renderBold(data: StackedBarData, title: string | undefined, d: DesignPr
     const item = data.items[i]!;
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
 
+    svg.beginItem(`items[${i}]`);
+
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize + 1);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': 900, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     let xOff = 0;
@@ -154,6 +157,8 @@ function renderBold(data: StackedBarData, title: string | undefined, d: DesignPr
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   drawLegend(svg, d, data.categories, lay.chartX, lay.legendY, lay.chartW);
@@ -175,9 +180,12 @@ function renderFlat(data: StackedBarData, title: string | undefined, d: DesignPr
     const item = data.items[i]!;
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
 
+    svg.beginItem(`items[${i}]`);
+
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Background track
@@ -195,6 +203,8 @@ function renderFlat(data: StackedBarData, title: string | undefined, d: DesignPr
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   drawLegend(svg, d, data.categories, lay.chartX, lay.legendY, lay.chartW);
@@ -217,10 +227,13 @@ function renderGlass(data: StackedBarData, title: string | undefined, d: DesignP
     const item = data.items[i]!;
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
 
+    svg.beginItem(`items[${i}]`);
+
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
       fill: d.text, 'letter-spacing': '0.3',
+      'data-field': `items[${i}].label`,
     });
 
     // Glass track
@@ -242,6 +255,8 @@ function renderGlass(data: StackedBarData, title: string | undefined, d: DesignP
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   drawLegend(svg, d, data.categories, lay.chartX, lay.legendY, lay.chartW);
@@ -263,9 +278,12 @@ function renderNeon(data: StackedBarData, title: string | undefined, d: DesignPr
     const item = data.items[i]!;
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
 
+    svg.beginItem(`items[${i}]`);
+
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     let xOff = 0;
@@ -285,6 +303,8 @@ function renderNeon(data: StackedBarData, title: string | undefined, d: DesignPr
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   drawNeonLegend(svg, d, data.categories, lay.chartX, lay.legendY, lay.chartW);
@@ -307,9 +327,12 @@ function renderWatercolor(data: StackedBarData, title: string | undefined, d: De
     const item = data.items[i]!;
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
 
+    svg.beginItem(`items[${i}]`);
+
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     let xOff = 0;
@@ -322,6 +345,8 @@ function renderWatercolor(data: StackedBarData, title: string | undefined, d: De
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   drawLegend(svg, d, data.categories, lay.chartX, lay.legendY, lay.chartW);
@@ -342,10 +367,13 @@ function renderSketch(data: StackedBarData, title: string | undefined, d: Design
     const item = data.items[i]!;
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
 
+    svg.beginItem(`items[${i}]`);
+
     // Row label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Outer hand-drawn rect for whole bar
@@ -377,6 +405,8 @@ function renderSketch(data: StackedBarData, title: string | undefined, d: Design
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   // Legend
@@ -400,10 +430,13 @@ function renderPixel(data: StackedBarData, title: string | undefined, d: DesignP
     const item = data.items[i]!;
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
 
+    svg.beginItem(`items[${i}]`);
+
     // Row label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Stacked pixel segments
@@ -419,6 +452,8 @@ function renderPixel(data: StackedBarData, title: string | undefined, d: DesignP
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   // Legend
@@ -526,6 +561,8 @@ function renderHorizontalStyle(data: StackedBarData, title: string | undefined, 
     const x = chartLeft + i * (barW + gap);
     let yOff = 0;
 
+    svg.beginItem(`items[${i}]`);
+
     // Stack segments upward from baseline
     for (let c = 0; c < item.values.length; c++) {
       const segH = Math.max(0, (item.values[c]! / maxTotal) * chartH);
@@ -552,7 +589,10 @@ function renderHorizontalStyle(data: StackedBarData, title: string | undefined, 
     const fit = fitText(item.label, barW + gap, 1, d.captionSize);
     svg.text(x + barW / 2, baseY + 18, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+
+    svg.endItem();
   }
 
   // Legend
@@ -598,10 +638,13 @@ function renderPercentage(data: StackedBarData, title: string | undefined, d: De
     const y = contentTop + i * (barH + barGap);
     const total = item.values.reduce((s, v) => s + v, 0) || 1;
 
+    svg.beginItem(`items[${i}]`);
+
     // Row label
     const fit = fitText(item.label, labelW, 1, d.labelSize);
     svg.text(chartX - 8, y + barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Full-width background bar
@@ -645,6 +688,8 @@ function renderPercentage(data: StackedBarData, title: string | undefined, d: De
       }
       xOff += segW;
     }
+
+    svg.endItem();
   }
 
   // Legend

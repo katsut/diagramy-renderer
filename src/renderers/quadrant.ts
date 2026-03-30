@@ -42,15 +42,17 @@ function maxItems(data: QuadrantData): number {
 
 function quadrantItemLines(
   svg: SvgBuilder, items: string[], x: number, startY: number, maxW: number,
-  fontSize: number, fill: string, bulletFill: string,
+  fontSize: number, fill: string, bulletFill: string, dataPathPrefix?: string,
 ): void {
   const lh = Math.round(fontSize * 1.6);
   let y = startY;
-  for (const item of items) {
+  for (let j = 0; j < items.length; j++) {
+    const item = items[j]!;
     const fit = fitText(item, maxW - 16, 1, fontSize);
     svg.circle(x + 4, y - 3, 2.5, { fill: bulletFill, opacity: 0.6 });
     svg.text(x + 14, y, fit.lines[0]!, {
       'font-size': fit.fontSize, fill,
+      ...(dataPathPrefix ? { 'data-field': `${dataPathPrefix}[${j}]` } : {}),
     });
     y += lh;
   }
@@ -105,7 +107,7 @@ function renderClean(data: QuadrantData, title: string | undefined, d: DesignPre
     });
 
     // Items
-    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 50, cellW - 16, 12, d.text, color);
+    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 50, cellW - 16, 12, d.text, color, `quadrants[${qi}]`);
 
     svg.endItem();
   }
@@ -147,6 +149,8 @@ function renderBold(data: QuadrantData, title: string | undefined, d: DesignPres
     const qx = pad + pos.col * (cellW + gap);
     const qy = contentTop + pos.row * (cellH + gap);
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Colored card with offset shadow
     svg.rect(qx, qy, cellW, cellH, {
       fill: color, rx: d.borderRadius, filter: 'url(#bold-offset)',
@@ -160,10 +164,13 @@ function renderBold(data: QuadrantData, title: string | undefined, d: DesignPres
     const labelFit = fitText(data.labels[qi]!, cellW - 28, 1, d.labelSize + 2);
     svg.text(qx + 16, qy + 28, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
+      'data-field': `labels[${qi}]`,
     });
 
     // Items in white area
-    quadrantItemLines(svg, data.quadrants[qi]!, qx + 12, qy + 58, cellW - 20, 13, d.text, color);
+    quadrantItemLines(svg, data.quadrants[qi]!, qx + 12, qy + 58, cellW - 20, 13, d.text, color, `quadrants[${qi}]`);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -203,6 +210,8 @@ function renderFlat(data: QuadrantData, title: string | undefined, d: DesignPres
     const qx = pad + pos.col * (cellW + gap);
     const qy = contentTop + pos.row * (cellH + gap);
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Flat cell — no shadow, no border
     svg.rect(qx, qy, cellW, cellH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
@@ -212,10 +221,13 @@ function renderFlat(data: QuadrantData, title: string | undefined, d: DesignPres
     const labelFit = fitText(data.labels[qi]!, cellW - 28, 1, d.labelSize);
     svg.text(qx + 16, qy + 28, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `labels[${qi}]`,
     });
 
     // Items
-    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 48, cellW - 20, 12, d.text, color);
+    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 48, cellW - 20, 12, d.text, color, `quadrants[${qi}]`);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -255,6 +267,8 @@ function renderGlass(data: QuadrantData, title: string | undefined, d: DesignPre
     const qx = pad + pos.col * (cellW + gap);
     const qy = contentTop + pos.row * (cellH + gap);
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Glow behind
     svg.rect(qx + 4, qy + 4, cellW - 8, cellH - 8, {
       fill: color, opacity: 0.06, rx: d.borderRadius, filter: 'url(#shadow)',
@@ -272,10 +286,13 @@ function renderGlass(data: QuadrantData, title: string | undefined, d: DesignPre
     svg.text(qx + 16, qy + 28, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
       'letter-spacing': '0.3',
+      'data-field': `labels[${qi}]`,
     });
 
     // Items
-    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 52, cellW - 20, 12, d.text, color);
+    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 52, cellW - 20, 12, d.text, color, `quadrants[${qi}]`);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -315,6 +332,8 @@ function renderNeon(data: QuadrantData, title: string | undefined, d: DesignPres
     const qx = pad + pos.col * (cellW + gap);
     const qy = contentTop + pos.row * (cellH + gap);
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Dark cell with neon border
     svg.rect(qx, qy, cellW, cellH, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
@@ -332,10 +351,13 @@ function renderNeon(data: QuadrantData, title: string | undefined, d: DesignPres
     const labelFit = fitText(data.labels[qi]!, cellW - 24, 1, d.labelSize);
     svg.text(qx + 16, qy + 28, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `labels[${qi}]`,
     });
 
     // Items
-    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 50, cellW - 20, 12, d.text, color);
+    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 50, cellW - 20, 12, d.text, color, `quadrants[${qi}]`);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -377,6 +399,8 @@ function renderWatercolor(data: QuadrantData, title: string | undefined, d: Desi
     const ccx = qx + cellW / 2;
     const ccy = qy + cellH / 2;
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Watercolor wash blob behind cell
     svg.ellipse(ccx, ccy, cellW / 2 + 10, cellH / 2 + 8, {
       fill: color, opacity: 0.1, filter: 'url(#watercolor)',
@@ -390,10 +414,13 @@ function renderWatercolor(data: QuadrantData, title: string | undefined, d: Desi
     const labelFit = fitText(data.labels[qi]!, cellW - 24, 1, d.labelSize);
     svg.text(qx + 16, qy + 28, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `labels[${qi}]`,
     });
 
     // Items
-    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 50, cellW - 20, 12, d.text, color);
+    quadrantItemLines(svg, data.quadrants[qi]!, qx + 8, qy + 50, cellW - 20, 12, d.text, color, `quadrants[${qi}]`);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -441,23 +468,30 @@ function renderSketch(data: QuadrantData, title: string | undefined, d: DesignPr
     const qx = pad + pos.col * (cellW + 24) + 12;
     const qy = contentTop + pos.row * (cellH + 24) + 8;
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Label
     const labelFit = fitText(data.labels[qi]!, cellW - 24, 1, d.labelSize);
     svg.text(qx + 8, qy + 20, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
       'text-decoration': 'underline',
+      'data-field': `labels[${qi}]`,
     });
 
     // Items as simple text lines
     const lh = 20;
     let iy = qy + 42;
-    for (const item of data.quadrants[qi]!) {
+    for (let j = 0; j < data.quadrants[qi]!.length; j++) {
+      const item = data.quadrants[qi]![j]!;
       const fit = fitText(item, cellW - 32, 1, 12);
       svg.text(qx + 18, iy, `- ${fit.lines[0]!}`, {
         'font-size': fit.fontSize, fill: d.text,
+        'data-field': `quadrants[${qi}][${j}]`,
       });
       iy += lh;
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -498,6 +532,8 @@ function renderPixel(data: QuadrantData, title: string | undefined, d: DesignPre
     const qx = pad + pos.col * (cellW + gap);
     const qy = contentTop + pos.row * (cellH + gap);
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Pixel border
     svg.raw(pixelBorder(qx, qy, cellW, cellH, color, px));
     svg.rect(qx + px, qy + px, cellW - px * 2, cellH - px * 2, {
@@ -511,19 +547,24 @@ function renderPixel(data: QuadrantData, title: string | undefined, d: DesignPre
     });
     svg.text(qx + 12, qy + px * 5 + 2, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `labels[${qi}]`,
     });
 
     // Items
     const lh = 18;
     let iy = qy + px * 7 + 18;
-    for (const item of data.quadrants[qi]!) {
+    for (let j = 0; j < data.quadrants[qi]!.length; j++) {
+      const item = data.quadrants[qi]![j]!;
       const fit = fitText(item, cellW - 28, 1, 11);
       svg.rect(qx + 10, iy - 5, px, px, { fill: color, 'shape-rendering': 'crispEdges' });
       svg.text(qx + 18, iy, fit.lines[0]!, {
         'font-size': fit.fontSize, fill: d.text,
+        'data-field': `quadrants[${qi}][${j}]`,
       });
       iy += lh;
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -569,6 +610,8 @@ function renderColorBlock(data: QuadrantData, title: string | undefined, d: Desi
     const qx = pad + pos.col * (cellW + gap);
     const qy = contentTop + pos.row * (cellH + gap);
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Large colored background block
     if (d.id === 'neon') {
       svg.rect(qx, qy, cellW, cellH, {
@@ -588,19 +631,24 @@ function renderColorBlock(data: QuadrantData, title: string | undefined, d: Desi
     const labelFit = fitText(data.labels[qi]!, cellW - 32, 1, d.labelSize + 2);
     svg.text(qx + 20, qy + 32, labelFit.lines[0]!, {
       'font-size': labelFit.fontSize, 'font-weight': 700, fill: color,
+      'data-field': `labels[${qi}]`,
     });
 
     // Bullet items
     const lh = Math.round(13 * 1.6);
     let iy = qy + 56;
-    for (const item of data.quadrants[qi]!) {
+    for (let j = 0; j < data.quadrants[qi]!.length; j++) {
+      const item = data.quadrants[qi]![j]!;
       const fit = fitText(item, cellW - 48, 1, 13);
       svg.circle(qx + 24, iy - 3, 3, { fill: color, opacity: 0.5 });
       svg.text(qx + 36, iy, fit.lines[0]!, {
         'font-size': fit.fontSize, fill: d.text,
+        'data-field': `quadrants[${qi}][${j}]`,
       });
       iy += lh;
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -679,10 +727,13 @@ function renderBubble(data: QuadrantData, title: string | undefined, d: DesignPr
     const color = itemColor(d, qi);
     const lp = labelPositions[qi]!;
 
+    svg.beginItem(`quadrants[${qi}]`);
+
     // Quadrant label
     const labelFit = fitText(data.labels[qi]!, halfLen - 16, 1, d.captionSize);
     svg.text(lp.lx, lp.ly, labelFit.lines[0]!, {
       'text-anchor': 'start', 'font-size': labelFit.fontSize, fill: color, opacity: 0.6,
+      'data-field': `labels[${qi}]`,
     });
 
     // Bubble positions: spread items within quadrant
@@ -714,8 +765,11 @@ function renderBubble(data: QuadrantData, title: string | undefined, d: DesignPr
       const fit = fitText(items[j]!, bubbleR * 1.6, 1, 10);
       svg.text(bx, by + 4, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+        'data-field': `quadrants[${qi}][${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();

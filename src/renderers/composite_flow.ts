@@ -279,6 +279,7 @@ function renderBold(data: CompositeFlowData, title: string | undefined, d: Desig
     const color = nodeColor(d, i);
     const ny = contentTop + i * (nodeH + vGap);
 
+    svg.beginItem(`nodes[${i}]`);
     svg.rect(nodeLeft, ny, nodeW, nodeH, {
       fill: color, rx: 8, stroke: '#111', 'stroke-width': 3, filter: 'url(#bold-offset)',
     });
@@ -290,7 +291,9 @@ function renderBold(data: CompositeFlowData, title: string | undefined, d: Desig
     const fit = fitText(node.label, nodeW - 56, 1, d.labelSize);
     svg.text(cx + 12, ny + nodeH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: '#FFFFFF',
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -325,6 +328,7 @@ function renderFlat(data: CompositeFlowData, title: string | undefined, d: Desig
     const color = nodeColor(d, i);
     const ny = contentTop + i * (nodeH + vGap);
 
+    svg.beginItem(`nodes[${i}]`);
     // Flat card
     svg.rect(nodeLeft, ny, nodeW, nodeH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
@@ -335,7 +339,8 @@ function renderFlat(data: CompositeFlowData, title: string | undefined, d: Desig
       'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: '#FFFFFF',
     });
     drawLabelBlock(svg, d, node.label, node.description, nodeLeft + 56,
-      ny + (node.description ? nodeH / 2 - 4 : nodeH / 2 + 5), nodeW - 80, 'start');
+      ny + (node.description ? nodeH / 2 - 4 : nodeH / 2 + 5), nodeW - 80, 'start', `nodes[${i}]`);
+    svg.endItem();
 
     // Connector
     if (i < count - 1) {
@@ -415,6 +420,7 @@ function renderGlass(data: CompositeFlowData, title: string | undefined, d: Desi
     const color = nodeColor(d, i);
     const ny = contentTop + i * (nodeH + vGap);
 
+    svg.beginItem(`nodes[${i}]`);
     // Glow behind
     svg.rect(nodeLeft + 4, ny + 4, nodeW - 8, nodeH - 8, {
       fill: color, opacity: 0.08, rx: d.borderRadius, filter: 'url(#shadow)',
@@ -427,7 +433,8 @@ function renderGlass(data: CompositeFlowData, title: string | undefined, d: Desi
     svg.rect(nodeLeft + 20, ny + 1, nodeW - 40, 1, { fill: color, opacity: 0.4, rx: 0.5 });
 
     drawLabelBlock(svg, d, node.label, node.description, cx,
-      ny + (node.description ? nodeH / 2 - 6 : nodeH / 2 + 2), nodeW - 24);
+      ny + (node.description ? nodeH / 2 - 6 : nodeH / 2 + 2), nodeW - 24, 'middle', `nodes[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -499,6 +506,7 @@ function renderNeon(data: CompositeFlowData, title: string | undefined, d: Desig
     const color = nodeColor(d, i);
     const ny = contentTop + i * (nodeH + vGap);
 
+    svg.beginItem(`nodes[${i}]`);
     // Dark card with neon border
     svg.rect(nodeLeft, ny, nodeW, nodeH, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
@@ -514,7 +522,8 @@ function renderNeon(data: CompositeFlowData, title: string | undefined, d: Desig
     });
 
     drawLabelBlock(svg, d, node.label, node.description, cx,
-      ny + (node.description ? nodeH / 2 - 6 : nodeH / 2 + 2), nodeW - 28);
+      ny + (node.description ? nodeH / 2 - 6 : nodeH / 2 + 2), nodeW - 28, 'middle', `nodes[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -588,6 +597,8 @@ function renderWatercolor(data: CompositeFlowData, title: string | undefined, d:
     const ny = contentTop + i * (nodeH + vGap);
 
     const isTerminal = node.node_type === 'start' || node.node_type === 'end';
+
+    svg.beginItem(`nodes[${i}]`);
     // Watercolor wash blob
     svg.ellipse(cx, ny + nodeH / 2, nodeW / 2 + 10, nodeH / 2 + 8, {
       fill: color, opacity: 0.15, filter: 'url(#watercolor)',
@@ -608,11 +619,13 @@ function renderWatercolor(data: CompositeFlowData, title: string | undefined, d:
       const fit = fitText(node.label, nodeW - 28, 1, d.labelSize);
       svg.text(cx, ny + nodeH / 2 + 5, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+        'data-field': `nodes[${i}].label`,
       });
     } else {
       drawLabelBlock(svg, d, node.label, node.description, cx,
-        ny + (node.description ? nodeH / 2 - 6 : nodeH / 2 + 2), nodeW - 28);
+        ny + (node.description ? nodeH / 2 - 6 : nodeH / 2 + 2), nodeW - 28, 'middle', `nodes[${i}]`);
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -646,13 +659,17 @@ function renderSketch(data: CompositeFlowData, title: string | undefined, d: Des
   for (let i = 0; i < count; i++) {
     const node = data.nodes[i]!;
     const ny = contentTop + i * (nodeH + vGap);
+
+    svg.beginItem(`nodes[${i}]`);
     svg.path(jitterRect(nodeLeft, ny, nodeW, nodeH, i * 7), {
       fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
     });
     const fit = fitText(node.label, nodeW - 16, 1, d.labelSize);
     svg.text(cx, ny + nodeH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
 
     if (i < count - 1) {
       const ay1 = ny + nodeH + 4;
@@ -698,6 +715,7 @@ function renderPixel(data: CompositeFlowData, title: string | undefined, d: Desi
     const color = nodeColor(d, i);
     const ny = contentTop + i * (nodeH + vGap);
 
+    svg.beginItem(`nodes[${i}]`);
     svg.raw(pixelBorder(nodeLeft, ny, nodeW, nodeH, color, px));
     svg.rect(nodeLeft + px, ny + px, nodeW - px * 2, nodeH - px * 2, {
       fill: d.surface, 'shape-rendering': 'crispEdges',
@@ -705,7 +723,9 @@ function renderPixel(data: CompositeFlowData, title: string | undefined, d: Desi
     const fit = fitText(node.label, nodeW - 16, 1, d.labelSize);
     svg.text(cx, ny + nodeH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
 
     if (i < count - 1) {
       const ay = ny + nodeH + vGap / 2;

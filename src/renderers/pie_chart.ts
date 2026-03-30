@@ -115,12 +115,14 @@ function renderClean(data: PieChartData, title: string | undefined, d: DesignPre
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const ly = chartCy - r + i * 24;
+    svg.beginItem(`segments[${i}]`);
     svg.rect(legendX, ly, 14, 14, { fill: segColor(d, i), rx: 3 });
     const fit = fitText(seg.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 20, ly + 11, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
       'data-field': `segments[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -155,6 +157,7 @@ function renderBold(data: PieChartData, title: string | undefined, d: DesignPres
     const color = segColor(d, i);
     const sweep = (seg.value / total) * 360;
 
+    svg.beginItem(`segments[${i}]`);
     if (sweep > 0.5) {
       // Segment with thick border + offset shadow
       svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
@@ -173,6 +176,7 @@ function renderBold(data: PieChartData, title: string | undefined, d: DesignPres
         'text-anchor': 'middle', 'font-size': 18, 'font-weight': 900, fill: '#FFFFFF',
       });
     }
+    svg.endItem();
 
     angle += sweep;
   }
@@ -181,11 +185,14 @@ function renderBold(data: PieChartData, title: string | undefined, d: DesignPres
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const ly = chartCy - r + i * 30;
+    svg.beginItem(`segments[${i}]`);
     svg.rect(legendX, ly, 18, 18, { fill: segColor(d, i), rx: 4, stroke: d.border, 'stroke-width': 2 });
     const fit = fitText(seg.label, legendW - 28, 1, d.labelSize);
     svg.text(legendX + 26, ly + 14, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': 800, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -220,12 +227,14 @@ function renderFlat(data: PieChartData, title: string | undefined, d: DesignPres
     const color = segColor(d, i);
     const sweep = (seg.value / total) * 360;
 
+    svg.beginItem(`segments[${i}]`);
     if (sweep > 0.5) {
       // Flat segment (no border, no shadow)
       svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
         fill: color, stroke: d.bg, 'stroke-width': 1,
       });
     }
+    svg.endItem();
 
     angle += sweep;
   }
@@ -241,15 +250,18 @@ function renderFlat(data: PieChartData, title: string | undefined, d: DesignPres
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const ly = chartCy - r + i * 22;
+    svg.beginItem(`segments[${i}]`);
     svg.circle(legendX + 6, ly + 7, 5, { fill: segColor(d, i) });
     const pct = Math.round(seg.value / total * 100);
     const fit = fitText(seg.label, legendW - 50, 1, d.labelSize);
     svg.text(legendX + 16, ly + 11, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
     svg.text(legendX + legendW - 4, ly + 11, `${pct}%`, {
       'text-anchor': 'end', 'font-size': d.captionSize, fill: d.textSecondary,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -287,6 +299,7 @@ function renderGlass(data: PieChartData, title: string | undefined, d: DesignPre
     const color = segColor(d, i);
     const sweep = (seg.value / total) * 360;
 
+    svg.beginItem(`segments[${i}]`);
     if (sweep > 0.5) {
       svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
         fill: `url(#ps${i})`, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1,
@@ -305,6 +318,7 @@ function renderGlass(data: PieChartData, title: string | undefined, d: DesignPre
         fill: '#FFFFFF', opacity: 0.9,
       });
     }
+    svg.endItem();
 
     angle += sweep;
   }
@@ -313,13 +327,16 @@ function renderGlass(data: PieChartData, title: string | undefined, d: DesignPre
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const ly = chartCy - r + i * 26;
+    svg.beginItem(`segments[${i}]`);
     svg.rect(legendX, ly, 14, 14, {
       fill: segColor(d, i), rx: 4, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1,
     });
     const fit = fitText(seg.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 22, ly + 12, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -353,6 +370,7 @@ function renderNeon(data: PieChartData, title: string | undefined, d: DesignPres
     const color = segColor(d, i);
     const sweep = (seg.value / total) * 360;
 
+    svg.beginItem(`segments[${i}]`);
     if (sweep > 0.5) {
       // Filled segment with faint neon color
       svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
@@ -375,6 +393,7 @@ function renderNeon(data: PieChartData, title: string | undefined, d: DesignPres
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: color, opacity: 0.9,
       });
     }
+    svg.endItem();
 
     angle += sweep;
   }
@@ -384,11 +403,14 @@ function renderNeon(data: PieChartData, title: string | undefined, d: DesignPres
     const seg = data.segments[i]!;
     const color = segColor(d, i);
     const ly = chartCy - r + i * 24;
+    svg.beginItem(`segments[${i}]`);
     svg.rect(legendX, ly, 12, 12, { fill: 'none', stroke: color, 'stroke-width': 1.5, rx: 2 });
     const fit = fitText(seg.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 18, ly + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -426,6 +448,7 @@ function renderWatercolor(data: PieChartData, title: string | undefined, d: Desi
     const color = segColor(d, i);
     const sweep = (seg.value / total) * 360;
 
+    svg.beginItem(`segments[${i}]`);
     if (sweep > 0.5) {
       svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
         fill: color, opacity: 0.7, stroke: d.bg, 'stroke-width': 2,
@@ -443,6 +466,7 @@ function renderWatercolor(data: PieChartData, title: string | undefined, d: Desi
         'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': 600, fill: d.text,
       });
     }
+    svg.endItem();
 
     angle += sweep;
   }
@@ -451,11 +475,14 @@ function renderWatercolor(data: PieChartData, title: string | undefined, d: Desi
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const ly = chartCy - r + i * 24;
+    svg.beginItem(`segments[${i}]`);
     svg.circle(legendX + 7, ly + 7, 6, { fill: segColor(d, i), opacity: 0.7, filter: 'url(#watercolor)' });
     const fit = fitText(seg.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 20, ly + 11, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -492,6 +519,7 @@ function renderSketch(data: PieChartData, title: string | undefined, d: DesignPr
     const seg = data.segments[i]!;
     const sweep = (seg.value / total) * 360;
 
+    svg.beginItem(`segments[${i}]`);
     if (sweep > 0.5 && sweep < 359.5) {
       // Divider line from center to edge
       const edgePt = polarToCartesian(chartCx, chartCy, r, angle);
@@ -510,6 +538,7 @@ function renderSketch(data: PieChartData, title: string | undefined, d: DesignPr
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.text,
       });
     }
+    svg.endItem();
 
     angle += sweep;
   }
@@ -518,6 +547,7 @@ function renderSketch(data: PieChartData, title: string | undefined, d: DesignPr
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const ly = chartCy - r + i * 22;
+    svg.beginItem(`segments[${i}]`);
     svg.circle(legendX + 5, ly + 6, 4, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
     svg.text(legendX + 5, ly + 6, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 7, fill: d.text,
@@ -525,7 +555,9 @@ function renderSketch(data: PieChartData, title: string | undefined, d: DesignPr
     const fit = fitText(seg.label, legendW - 20, 1, d.labelSize);
     svg.text(legendX + 16, ly + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -580,11 +612,14 @@ function renderPixel(data: PieChartData, title: string | undefined, d: DesignPre
   for (let i = 0; i < data.segments.length; i++) {
     const seg = data.segments[i]!;
     const ly = chartCy - r + i * 22;
+    svg.beginItem(`segments[${i}]`);
     svg.rect(legendX, ly, px * 4, px * 4, { fill: segColor(d, i), 'shape-rendering': 'crispEdges' });
     const fit = fitText(seg.label, legendW - 20, 1, d.labelSize);
     svg.text(legendX + px * 5 + 4, ly + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -666,14 +701,17 @@ function renderWaffle(data: PieChartData, title: string | undefined, d: DesignPr
     const seg = data.segments[i]!;
     const pct = Math.round((seg.value / total) * 100);
     const ly = gridTop + i * 28;
+    svg.beginItem(`segments[${i}]`);
     svg.rect(legendX, ly, 16, 16, { fill: segColor(d, i), rx: 3 });
     const fit = fitText(seg.label, legendW - 60, 1, d.labelSize);
     svg.text(legendX + 24, ly + 12, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
     svg.text(legendX + legendW - 4, ly + 12, `${pct}%`, {
       'text-anchor': 'end', 'font-size': d.captionSize, fill: d.textSecondary,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -715,6 +753,7 @@ function renderDonut(data: PieChartData, title: string | undefined, d: DesignPre
     const color = segColor(d, i);
     const sweep = (seg.value / total) * 360;
 
+    svg.beginItem(`segments[${i}]`);
     if (sweep > 0.5) {
       if (d.id === 'neon') {
         svg.path(arcPath(chartCx, chartCy, r, angle, angle + sweep), {
@@ -731,6 +770,7 @@ function renderDonut(data: PieChartData, title: string | undefined, d: DesignPre
         });
       }
     }
+    svg.endItem();
 
     angle += sweep;
   }
@@ -751,14 +791,17 @@ function renderDonut(data: PieChartData, title: string | undefined, d: DesignPre
     const seg = data.segments[i]!;
     const pct = Math.round(seg.value / total * 100);
     const ly = chartCy - r + i * 24;
+    svg.beginItem(`segments[${i}]`);
     svg.rect(legendX, ly, 14, 14, { fill: segColor(d, i), rx: 3 });
     const fit = fitText(seg.label, legendW - 50, 1, d.labelSize);
     svg.text(legendX + 20, ly + 11, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `segments[${i}].label`,
     });
     svg.text(legendX + legendW - 4, ly + 11, `${pct}%`, {
       'text-anchor': 'end', 'font-size': d.captionSize, fill: d.textSecondary,
     });
+    svg.endItem();
   }
 
   return svg.build();

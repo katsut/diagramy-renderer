@@ -141,6 +141,7 @@ function renderBold(data: BlockListData, title: string | undefined, d: DesignPre
     const x = cx - colW / 2;
     const cy = contentTop + row * (cardH + gap);
 
+    svg.beginItem(`items[${i}]`);
     // Colored card with offset shadow
     svg.rect(x, cy, colW, cardH, {
       fill: color, rx: d.borderRadius, filter: 'url(#bold-offset)',
@@ -153,7 +154,8 @@ function renderBold(data: BlockListData, title: string | undefined, d: DesignPre
     svg.text(cx, cy + 28, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 20, 'font-weight': 900, fill: '#FFFFFF',
     });
-    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 70, colW - 32);
+    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 70, colW - 32, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -184,6 +186,7 @@ function renderFlat(data: BlockListData, title: string | undefined, d: DesignPre
     const color = itemColor(d, i);
     const y = contentTop + i * (cardH + gap);
 
+    svg.beginItem(`items[${i}]`);
     // Flat card — no shadow, no border
     svg.rect(pad, y, cardW, cardH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
@@ -194,7 +197,8 @@ function renderFlat(data: BlockListData, title: string | undefined, d: DesignPre
       'text-anchor': 'middle', 'font-size': 12, 'font-weight': 700, fill: '#FFFFFF',
     });
     // Text left-aligned
-    drawLabelBlock(svg, d, item.label, item.description, pad + 60, y + (item.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 80, 'start');
+    drawLabelBlock(svg, d, item.label, item.description, pad + 60, y + (item.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 80, 'start', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -231,6 +235,7 @@ function renderGlass(data: BlockListData, title: string | undefined, d: DesignPr
     const x = cx - colW / 2;
     const cy = contentTop + row * (cardH + gap);
 
+    svg.beginItem(`items[${i}]`);
     // Glow behind card
     svg.rect(x + 4, cy + 4, colW - 8, cardH - 8, {
       fill: color, opacity: 0.08, rx: d.borderRadius, filter: 'url(#shadow)',
@@ -246,7 +251,8 @@ function renderGlass(data: BlockListData, title: string | undefined, d: DesignPr
     svg.circle(cx, cy + 56, 28, { fill: color, opacity: 0.1 });
     svg.circle(cx, cy + 56, 20, { fill: color, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1 });
     svg.raw(icon(itemIcon(item.label, item.description), cx, cy + 56, 18, '#FFFFFF'));
-    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 100, colW - 32);
+    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 100, colW - 32, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -282,6 +288,7 @@ function renderNeon(data: BlockListData, title: string | undefined, d: DesignPre
     const x = cx - colW / 2;
     const cy = contentTop + row * (cardH + gap);
 
+    svg.beginItem(`items[${i}]`);
     // Dark card with neon border
     svg.rect(x, cy, colW, cardH, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
@@ -298,7 +305,8 @@ function renderNeon(data: BlockListData, title: string | undefined, d: DesignPre
     svg.text(cx + colW / 2 - 18, cy + 18, `0${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 10, fill: color, opacity: 0.5, 'letter-spacing': '1',
     });
-    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 92, colW - 28);
+    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 92, colW - 28, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -335,6 +343,7 @@ function renderWatercolor(data: BlockListData, title: string | undefined, d: Des
     const x = cx - colW / 2;
     const cy = contentTop + row * (cardH + gap);
 
+    svg.beginItem(`items[${i}]`);
     // Watercolor wash blob behind card
     svg.ellipse(cx, cy + cardH / 2, colW / 2 + 10, cardH / 2 + 8, {
       fill: color, opacity: 0.12, filter: 'url(#watercolor)',
@@ -348,7 +357,8 @@ function renderWatercolor(data: BlockListData, title: string | undefined, d: Des
     svg.text(cx, cy + 56, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 16, 'font-weight': 600, fill: d.text,
     });
-    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 90, colW - 28);
+    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 90, colW - 28, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -383,6 +393,7 @@ function renderSketch(data: BlockListData, title: string | undefined, d: DesignP
     const boxX = cx - colW / 2 + 4;
     const boxY = cy + 4;
 
+    svg.beginItem(`items[${i}]`);
     svg.path(jitterRect(boxX, boxY, colW - 8, cardH - 8, i * 5), {
       fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
     });
@@ -392,7 +403,8 @@ function renderSketch(data: BlockListData, title: string | undefined, d: DesignP
       'text-anchor': 'middle', 'font-size': 13, 'font-weight': 400, fill: d.text,
     });
 
-    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 64, colW - 24);
+    drawLabelBlock(svg, d, item.label, item.description, cx, cy + 64, colW - 24, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -427,6 +439,7 @@ function renderPixel(data: BlockListData, title: string | undefined, d: DesignPr
     const bx = pad + col * (colW + gap);
     const cy = contentTop + row * (cardH + gap);
 
+    svg.beginItem(`items[${i}]`);
     svg.raw(pixelBorder(bx, cy, colW, cardH, color, px));
     svg.rect(bx + px, cy + px, colW - px * 2, cardH - px * 2, {
       fill: d.surface, 'shape-rendering': 'crispEdges',
@@ -438,7 +451,8 @@ function renderPixel(data: BlockListData, title: string | undefined, d: DesignPr
       'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: d.bg,
     });
 
-    drawLabelBlock(svg, d, item.label, item.description, bx + colW / 2, cy + 38, colW - 20);
+    drawLabelBlock(svg, d, item.label, item.description, bx + colW / 2, cy + 38, colW - 20, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -539,7 +553,9 @@ function renderGrid(data: BlockListData, title: string | undefined, d: DesignPre
     const cx = tableX + col * cellW + cellW / 2;
     const cy = contentTop + row * cellH;
 
-    drawLabelBlock(svg, d, item.label, item.description, cx, cy + cellH / 2 - 8, cellW - 28);
+    svg.beginItem(`items[${i}]`);
+    drawLabelBlock(svg, d, item.label, item.description, cx, cy + cellH / 2 - 8, cellW - 28, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -607,12 +623,14 @@ function renderPillars(data: BlockListData, title: string | undefined, d: Design
       drawPresetCard(svg, d, px, py, pillarW, pillarH, color);
     }
 
+    svg.beginItem(`items[${i}]`);
     // Icon circle at top of pillar
     const iconY = py + 36;
     drawIconNode(svg, d, cx, iconY, iconR - 4, color, `bg${i}`, itemIcon(item.label, item.description), 16);
 
     // Label in middle
-    drawLabelBlock(svg, d, item.label, item.description, cx, py + 80, pillarW - 24);
+    drawLabelBlock(svg, d, item.label, item.description, cx, py + 80, pillarW - 24, 'middle', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -666,6 +684,7 @@ function renderNumbered(data: BlockListData, title: string | undefined, d: Desig
     const color = itemColor(d, i);
     const y = contentTop + i * (itemH + gap);
 
+    svg.beginItem(`items[${i}]`);
     if (d.lineJitter) {
       // Hand-drawn wobbly circle badge
       const rx = 16 + (i % 3 - 1) * 1.5;
@@ -700,7 +719,8 @@ function renderNumbered(data: BlockListData, title: string | undefined, d: Desig
     }
 
     // Label + description to the right
-    drawLabelBlock(svg, d, item.label, item.description, textLeft, y + 18, cardW - textLeft + pad - 20, 'start');
+    drawLabelBlock(svg, d, item.label, item.description, textLeft, y + 18, cardW - textLeft + pad - 20, 'start', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -760,13 +780,15 @@ function renderCards(data: BlockListData, title: string | undefined, d: DesignPr
       drawPresetCard(svg, d, x, y, cardW, cardH, color);
     }
 
+    svg.beginItem(`items[${i}]`);
     // Large icon circle
     const iconCx = x + 40;
     const iconCy = y + cardH / 2;
     drawIconNode(svg, d, iconCx, iconCy, 18, color, `bg${i}`, itemIcon(item.label, item.description), 16);
 
     // Label + description to the right of icon
-    drawLabelBlock(svg, d, item.label, item.description, x + 76, y + cardH / 2 - 6, cardW - 96, 'start');
+    drawLabelBlock(svg, d, item.label, item.description, x + 76, y + cardH / 2 - 6, cardW - 96, 'start', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -812,6 +834,7 @@ function renderIcons(data: BlockListData, title: string | undefined, d: DesignPr
     const cx = pad + col * (cellW + gapX) + cellW / 2;
     const y = contentTop + row * (cellH + gapY);
 
+    svg.beginItem(`items[${i}]`);
     // Large icon
     drawIconNode(svg, d, cx, y + 38, 24, color, `bg${i}`, itemIcon(item.label, item.description), 20);
 
@@ -822,9 +845,11 @@ function renderIcons(data: BlockListData, title: string | undefined, d: DesignPr
     for (const line of fit.lines) {
       svg.text(cx, textY, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `items[${i}].label`,
       });
       textY += lh;
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -896,8 +921,10 @@ function renderStripe(data: BlockListData, title: string | undefined, d: DesignP
     // Icon
     svg.raw(icon(itemIcon(item.label, item.description), pad + 28, y + barH / 2, 16, d.lineJitter ? d.border : color));
 
+    svg.beginItem(`items[${i}]`);
     // Label + description
-    drawLabelBlock(svg, d, item.label, item.description, pad + 52, y + (item.description ? barH / 2 - 4 : barH / 2 + 5), barW - 72, 'start');
+    drawLabelBlock(svg, d, item.label, item.description, pad + 52, y + (item.description ? barH / 2 - 4 : barH / 2 + 5), barW - 72, 'start', `items[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -971,12 +998,14 @@ function renderZigzag(data: BlockListData, title: string | undefined, d: DesignP
     }
     svg.raw(icon(itemIcon(item.label, item.description), centerX, y + 24, 14, d.lineJitter ? d.border : (d.id === 'neon' ? color : '#FFFFFF')));
 
+    svg.beginItem(`items[${i}]`);
     // Label + description on alternating sides
     if (isLeft) {
-      drawLabelBlock(svg, d, item.label, item.description, centerX - 36, y + 20, sideW, 'end');
+      drawLabelBlock(svg, d, item.label, item.description, centerX - 36, y + 20, sideW, 'end', `items[${i}]`);
     } else {
-      drawLabelBlock(svg, d, item.label, item.description, centerX + 36, y + 20, sideW, 'start');
+      drawLabelBlock(svg, d, item.label, item.description, centerX + 36, y + 20, sideW, 'start', `items[${i}]`);
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -1016,6 +1045,7 @@ function renderSimple(data: BlockListData, title: string | undefined, d: DesignP
     const item = data.items[i]!;
     const color = itemColor(d, i);
 
+    svg.beginItem(`items[${i}]`);
     // Bullet dot
     if (d.shapeRendering === 'crispEdges') {
       svg.rect(pad + 3, y - 3, 6, 6, { fill: color, 'shape-rendering': 'crispEdges' });
@@ -1029,6 +1059,7 @@ function renderSimple(data: BlockListData, title: string | undefined, d: DesignP
     const lfit = fitText(item.label, maxW - 24, 1, d.labelSize);
     svg.text(pad + 18, y + 4, lfit.lines[0]!, {
       'text-anchor': 'start', 'font-size': lfit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
     y += rowH;
 
@@ -1037,9 +1068,11 @@ function renderSimple(data: BlockListData, title: string | undefined, d: DesignP
       const dfit = fitText(item.description, maxW - 32, 1, d.captionSize);
       svg.text(pad + 18, y - 6, dfit.lines[0]!, {
         'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+        'data-field': `items[${i}].description`,
       });
       y += descRowH;
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -1085,10 +1118,13 @@ function renderInline(data: BlockListData, title: string | undefined, d: DesignP
     const item = data.items[i]!;
     const color = itemColor(d, i);
 
+    svg.beginItem(`items[${i}]`);
     // Label
     svg.text(x, y, item.label, {
       'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+    svg.endItem();
     x += labelWidths[i]! + 4;
 
     // Separator (except last)
@@ -1179,6 +1215,7 @@ function renderTimeline(data: BlockListData, title: string | undefined, d: Desig
       const color = itemColor(d, i);
       const cx = rowStartX + j * spacing;
 
+      svg.beginItem(`items[${i}]`);
       // Dot
       if (d.lineJitter) {
         const rx = dotR + (i % 3 - 1) * 1.5;
@@ -1203,6 +1240,7 @@ function renderTimeline(data: BlockListData, title: string | undefined, d: Desig
       for (const line of fit.lines) {
         svg.text(cx, ly, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+          'data-field': `items[${i}].label`,
         });
         ly += lh;
       }
@@ -1215,10 +1253,12 @@ function renderTimeline(data: BlockListData, title: string | undefined, d: Desig
         for (const line of dfit.lines) {
           svg.text(cx, dy, line, {
             'text-anchor': 'middle', 'font-size': dfit.fontSize, fill: d.textSecondary,
+            'data-field': `items[${i}].description`,
           });
           dy += dlh;
         }
       }
+      svg.endItem();
     }
   }
 
@@ -1318,6 +1358,7 @@ function renderWarning(data: BlockListData, title: string | undefined, d: Design
       });
     }
 
+    svg.beginItem(`items[${i}]`);
     // Warning icon
     const iconY = y + cardH / 2;
     svg.raw(icon(inferIcon('warning'), pad + 28, iconY, 18, warnIcon));
@@ -1332,6 +1373,7 @@ function renderWarning(data: BlockListData, title: string | undefined, d: Design
     for (const line of labelFit.lines) {
       svg.text(pad + 48, textY, line, {
         'text-anchor': 'start', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `items[${i}].label`,
       });
       textY += lh;
     }
@@ -1344,10 +1386,12 @@ function renderWarning(data: BlockListData, title: string | undefined, d: Design
       for (const line of descFit.lines) {
         svg.text(pad + 48, textY, line, {
           'text-anchor': 'start', 'font-size': descFit.fontSize, fill: d.textSecondary,
+          'data-field': `items[${i}].description`,
         });
         textY += dlh;
       }
     }
+    svg.endItem();
 
     y += cardH + gap;
   }
@@ -1488,17 +1532,20 @@ function renderCatalog(data: BlockListData, title: string | undefined, d: Design
         });
       }
 
+      svg.beginItem(`items[${gItem.index}]`);
       // Label
       const labelTop = group.name ? cy + 26 : cy + cardH / 2 + 4;
       const fit = fitText(gItem.label, cardW - 16, group.name ? 1 : 2, fontSize);
       svg.text(cx + 8, labelTop, fit.lines[0]!, {
         'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `items[${gItem.index}].label`,
       });
       if (fit.lines.length > 1) {
         svg.text(cx + 8, labelTop + Math.round(fit.fontSize * 1.3), fit.lines[1]!, {
           'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
         });
       }
+      svg.endItem();
     }
 
     const rows = Math.ceil(group.items.length / cols);

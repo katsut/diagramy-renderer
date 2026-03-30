@@ -95,6 +95,7 @@ function renderClean(data: RadarChartData, title: string | undefined, d: DesignP
     const fit = fitText(data.axes[i]!.label, 80, 1, d.captionSize);
     svg.text(labelPt.x, labelPt.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `axes[${i}].label`,
     });
   }
 
@@ -124,6 +125,7 @@ function renderClean(data: RadarChartData, title: string | undefined, d: DesignP
     const fit = fitText(item.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 20, ly + 11, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
   }
 
@@ -171,6 +173,7 @@ function renderBold(data: RadarChartData, title: string | undefined, d: DesignPr
     const fit = fitText(data.axes[i]!.label, 80, 1, d.labelSize);
     svg.text(labelPt.x, labelPt.y + 5, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 800, fill: d.text,
+      'data-field': `axes[${i}].label`,
     });
   }
 
@@ -179,6 +182,8 @@ function renderBold(data: RadarChartData, title: string | undefined, d: DesignPr
     const item = data.items[i]!;
     const color = itemColor(d, i);
     const pts = polygonPoints(chartCx, chartCy, r, item.values, maxVals);
+
+    svg.beginItem(`items[${i}]`);
     svg.polygon(pts, {
       fill: color, opacity: 0.2, stroke: color, 'stroke-width': 3,
       filter: 'url(#bold-offset)',
@@ -190,6 +195,7 @@ function renderBold(data: RadarChartData, title: string | undefined, d: DesignPr
       const pt = axisPoint(chartCx, chartCy, r * Math.min(ratio, 1), ai, n);
       svg.circle(pt.x, pt.y, 6, { fill: color, stroke: d.border, 'stroke-width': 3 });
     });
+    svg.endItem();
   }
 
   // Legend
@@ -200,6 +206,7 @@ function renderBold(data: RadarChartData, title: string | undefined, d: DesignPr
     const fit = fitText(item.label, legendW - 28, 1, d.labelSize);
     svg.text(legendX + 26, ly + 14, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': 800, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
   }
 
@@ -243,6 +250,7 @@ function renderFlat(data: RadarChartData, title: string | undefined, d: DesignPr
     const fit = fitText(data.axes[i]!.label, 80, 1, d.captionSize);
     svg.text(labelPt.x, labelPt.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `axes[${i}].label`,
     });
   }
 
@@ -251,6 +259,8 @@ function renderFlat(data: RadarChartData, title: string | undefined, d: DesignPr
     const item = data.items[i]!;
     const color = itemColor(d, i);
     const pts = polygonPoints(chartCx, chartCy, r, item.values, maxVals);
+
+    svg.beginItem(`items[${i}]`);
     svg.polygon(pts, { fill: color, opacity: 0.2, stroke: color, 'stroke-width': 1.5 });
 
     // Small data dots
@@ -259,6 +269,7 @@ function renderFlat(data: RadarChartData, title: string | undefined, d: DesignPr
       const pt = axisPoint(chartCx, chartCy, r * Math.min(ratio, 1), ai, n);
       svg.circle(pt.x, pt.y, 3, { fill: color });
     });
+    svg.endItem();
   }
 
   // Legend with color dots
@@ -269,6 +280,7 @@ function renderFlat(data: RadarChartData, title: string | undefined, d: DesignPr
     const fit = fitText(item.label, legendW - 20, 1, d.labelSize);
     svg.text(legendX + 16, ly + 11, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
   }
 
@@ -316,6 +328,7 @@ function renderGlass(data: RadarChartData, title: string | undefined, d: DesignP
     const fit = fitText(data.axes[i]!.label, 80, 1, d.captionSize);
     svg.text(labelPt.x, labelPt.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `axes[${i}].label`,
     });
   }
 
@@ -325,6 +338,7 @@ function renderGlass(data: RadarChartData, title: string | undefined, d: DesignP
     const color = itemColor(d, i);
     const pts = polygonPoints(chartCx, chartCy, r, item.values, maxVals);
 
+    svg.beginItem(`items[${i}]`);
     // Glow polygon
     svg.polygon(pts, {
       fill: color, opacity: 0.08, stroke: color, 'stroke-width': 2,
@@ -341,6 +355,7 @@ function renderGlass(data: RadarChartData, title: string | undefined, d: DesignP
       const pt = axisPoint(chartCx, chartCy, r * Math.min(ratio, 1), ai, n);
       svg.circle(pt.x, pt.y, 5, { fill: color, stroke: 'rgba(255,255,255,0.2)', 'stroke-width': 1 });
     });
+    svg.endItem();
   }
 
   // Legend
@@ -353,6 +368,7 @@ function renderGlass(data: RadarChartData, title: string | undefined, d: DesignP
     const fit = fitText(item.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 22, ly + 12, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
   }
 
@@ -400,6 +416,7 @@ function renderNeon(data: RadarChartData, title: string | undefined, d: DesignPr
     const fit = fitText(data.axes[i]!.label, 80, 1, d.captionSize);
     svg.text(labelPt.x, labelPt.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `axes[${i}].label`,
     });
   }
 
@@ -409,6 +426,7 @@ function renderNeon(data: RadarChartData, title: string | undefined, d: DesignPr
     const color = itemColor(d, i);
     const pts = polygonPoints(chartCx, chartCy, r, item.values, maxVals);
 
+    svg.beginItem(`items[${i}]`);
     // Dark fill
     svg.polygon(pts, { fill: color, opacity: 0.05, stroke: color, 'stroke-width': 1.5 });
     // Neon glow outline
@@ -422,6 +440,7 @@ function renderNeon(data: RadarChartData, title: string | undefined, d: DesignPr
       const pt = axisPoint(chartCx, chartCy, r * Math.min(ratio, 1), ai, n);
       svg.circle(pt.x, pt.y, 4, { fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)' });
     });
+    svg.endItem();
   }
 
   // Legend
@@ -433,6 +452,7 @@ function renderNeon(data: RadarChartData, title: string | undefined, d: DesignPr
     const fit = fitText(item.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 18, ly + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
   }
 
@@ -476,6 +496,7 @@ function renderWatercolor(data: RadarChartData, title: string | undefined, d: De
     const fit = fitText(data.axes[i]!.label, 80, 1, d.captionSize);
     svg.text(labelPt.x, labelPt.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `axes[${i}].label`,
     });
   }
 
@@ -485,6 +506,7 @@ function renderWatercolor(data: RadarChartData, title: string | undefined, d: De
     const color = itemColor(d, i);
     const pts = polygonPoints(chartCx, chartCy, r, item.values, maxVals);
 
+    svg.beginItem(`items[${i}]`);
     // Watercolor wash blob behind polygon
     svg.circle(chartCx, chartCy, r * 0.7, { fill: color, opacity: 0.06, filter: 'url(#watercolor)' });
     // Watercolor polygon
@@ -499,6 +521,7 @@ function renderWatercolor(data: RadarChartData, title: string | undefined, d: De
       const pt = axisPoint(chartCx, chartCy, r * Math.min(ratio, 1), ai, n);
       svg.circle(pt.x, pt.y, 5, { fill: color, opacity: 0.7, filter: 'url(#watercolor)' });
     });
+    svg.endItem();
   }
 
   // Legend with watercolor swatches
@@ -509,6 +532,7 @@ function renderWatercolor(data: RadarChartData, title: string | undefined, d: De
     const fit = fitText(item.label, legendW - 24, 1, d.labelSize);
     svg.text(legendX + 20, ly + 11, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
   }
 
@@ -547,6 +571,7 @@ function renderSketch(data: RadarChartData, title: string | undefined, d: Design
     const fit = fitText(data.axes[i]!.label, 80, 1, d.captionSize);
     svg.text(labelPt.x, labelPt.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `axes[${i}].label`,
     });
   }
 
@@ -567,6 +592,7 @@ function renderSketch(data: RadarChartData, title: string | undefined, d: Design
       return axisPoint(chartCx, chartCy, r * Math.min(ratio, 1), ai, n);
     });
 
+    svg.beginItem(`items[${di}]`);
     for (let i = 0; i < pts.length; i++) {
       const p1 = pts[i]!;
       const p2 = pts[(i + 1) % pts.length]!;
@@ -579,6 +605,7 @@ function renderSketch(data: RadarChartData, title: string | undefined, d: Design
     for (const pt of pts) {
       svg.circle(pt.x, pt.y, 3, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
     }
+    svg.endItem();
   }
 
   // Legend
@@ -589,6 +616,7 @@ function renderSketch(data: RadarChartData, title: string | undefined, d: Design
     const fit = fitText(item.label, legendW - 20, 1, d.labelSize);
     svg.text(legendX + 16, ly + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
   }
 
@@ -632,6 +660,7 @@ function renderPixel(data: RadarChartData, title: string | undefined, d: DesignP
     const fit = fitText(data.axes[i]!.label, 70, 1, d.captionSize);
     svg.text(labelPt.x, labelPt.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `axes[${i}].label`,
     });
   }
 
@@ -644,6 +673,7 @@ function renderPixel(data: RadarChartData, title: string | undefined, d: DesignP
       return axisPoint(chartCx, chartCy, r * Math.min(ratio, 1), ai, n);
     });
 
+    svg.beginItem(`items[${di}]`);
     // Draw polygon edges with pixel dots
     for (let i = 0; i < pts.length; i++) {
       const p1 = pts[i]!;
@@ -662,6 +692,7 @@ function renderPixel(data: RadarChartData, title: string | undefined, d: DesignP
     for (const pt of pts) {
       svg.rect(pt.x - px, pt.y - px, px * 2, px * 2, { fill: color, 'shape-rendering': 'crispEdges' });
     }
+    svg.endItem();
   }
 
   // Legend
@@ -672,6 +703,7 @@ function renderPixel(data: RadarChartData, title: string | undefined, d: DesignP
     const fit = fitText(item.label, legendW - 20, 1, d.labelSize);
     svg.text(legendX + px * 5 + 4, ly + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
   }
 

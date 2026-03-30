@@ -135,9 +135,11 @@ function renderSketch(data: ProcessData, title: string | undefined, d: DesignPre
     const node = data.nodes[i]!;
     const cx = lay.cx(i);
 
+    svg.beginItem(`nodes[${i}]`);
     drawSketchBox(svg, d, cx, lay.contentTop, lay.stepW, lay.stepH, i);
     drawSketchNumber(svg, d, cx, lay.contentTop + 36, i);
     drawNodeText(svg, d, node, cx, lay.contentTop + 66, lay.stepW - 36, i);
+    svg.endItem();
     drawSketchArrow(svg, d, cx, lay, i);
   }
 
@@ -189,8 +191,10 @@ function renderPixel(data: ProcessData, title: string | undefined, d: DesignPres
     const cx = lay.cx(i);
     const boxX = cx - lay.stepW / 2;
 
+    svg.beginItem(`nodes[${i}]`);
     drawPixelBox(svg, d, boxX, lay.contentTop, lay.stepW, lay.stepH, color, px, i);
     drawNodeText(svg, d, node, cx, lay.contentTop + 42, lay.stepW - 24, i);
+    svg.endItem();
     drawPixelArrow(svg, color, cx, lay, px, i);
   }
 
@@ -243,6 +247,7 @@ function renderBold(data: ProcessData, title: string | undefined, d: DesignPrese
     const cx = lay.cx(i);
     const x = cx - lay.stepW / 2;
 
+    svg.beginItem(`nodes[${i}]`);
     // Colored card with offset shadow
     svg.rect(x, lay.contentTop, lay.stepW, lay.stepH, {
       fill: color, rx: d.borderRadius, filter: 'url(#bold-offset)',
@@ -256,6 +261,7 @@ function renderBold(data: ProcessData, title: string | undefined, d: DesignPrese
       'text-anchor': 'middle', 'font-size': 24, 'font-weight': 900, fill: '#FFFFFF',
     });
     drawNodeText(svg, d, node, cx, lay.contentTop + 74, lay.stepW - 36, i);
+    svg.endItem();
 
     // Thick arrow
     if (i < lay.count - 1) {
@@ -301,6 +307,7 @@ function renderFlat(data: ProcessData, title: string | undefined, d: DesignPrese
     const color = stepColor(d, i);
     const y = contentTop + i * (cardH + gap + connH);
 
+    svg.beginItem(`nodes[${i}]`);
     // Flat card — no shadow
     svg.rect(pad, y, cardW, cardH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
@@ -312,6 +319,7 @@ function renderFlat(data: ProcessData, title: string | undefined, d: DesignPrese
     });
     // Text left-aligned
     drawLabelBlock(svg, d, node.label, node.description, pad + 68, y + (node.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 88, 'start', `nodes[${i}]`);
+    svg.endItem();
 
     // Thin vertical connector
     if (i < count - 1) {
@@ -349,6 +357,7 @@ function renderGlass(data: ProcessData, title: string | undefined, d: DesignPres
     const cx = lay.cx(i);
     const x = cx - lay.stepW / 2;
 
+    svg.beginItem(`nodes[${i}]`);
     // Glow behind card
     svg.rect(x + 4, lay.contentTop + 4, lay.stepW - 8, lay.stepH - 8, {
       fill: color, opacity: 0.08, rx: d.borderRadius, filter: 'url(#shadow)',
@@ -369,6 +378,7 @@ function renderGlass(data: ProcessData, title: string | undefined, d: DesignPres
       'text-anchor': 'middle', 'font-size': 12, 'font-weight': 600, fill: color, opacity: 0.6,
     });
     drawNodeText(svg, d, node, cx, lay.contentTop + 96, lay.stepW - 32, i);
+    svg.endItem();
 
     // Glow connection line
     if (i < lay.count - 1) {
@@ -403,6 +413,7 @@ function renderNeon(data: ProcessData, title: string | undefined, d: DesignPrese
     const cx = lay.cx(i);
     const x = cx - lay.stepW / 2;
 
+    svg.beginItem(`nodes[${i}]`);
     // Dark card with neon border
     svg.rect(x, lay.contentTop, lay.stepW, lay.stepH, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
@@ -420,6 +431,7 @@ function renderNeon(data: ProcessData, title: string | undefined, d: DesignPrese
       'text-anchor': 'middle', 'font-size': 10, fill: color, opacity: 0.5, 'letter-spacing': '1',
     });
     drawNodeText(svg, d, node, cx, lay.contentTop + 92, lay.stepW - 28, i);
+    svg.endItem();
 
     // Neon glow arrow
     if (i < lay.count - 1) {
@@ -457,6 +469,7 @@ function renderWatercolor(data: ProcessData, title: string | undefined, d: Desig
     const cx = lay.cx(i);
     const x = cx - lay.stepW / 2;
 
+    svg.beginItem(`nodes[${i}]`);
     // Watercolor wash blob behind card
     svg.ellipse(cx, lay.contentTop + lay.stepH / 2, lay.stepW / 2 + 12, lay.stepH / 2 + 10, {
       fill: color, opacity: 0.12, filter: 'url(#watercolor)',
@@ -471,6 +484,7 @@ function renderWatercolor(data: ProcessData, title: string | undefined, d: Desig
       'text-anchor': 'middle', 'font-size': 16, 'font-weight': 600, fill: d.text,
     });
     drawNodeText(svg, d, node, cx, lay.contentTop + 86, lay.stepW - 28, i);
+    svg.endItem();
 
     // Soft organic connector
     if (i < lay.count - 1) {
@@ -529,6 +543,8 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
     const leftNotch = `${x},${y} ${x + ln},${y + chevH / 2} ${x},${y + chevH} `;
     const points = `${leftNotch}${x + chevW - notch},${y + chevH} ${x + chevW},${y + chevH / 2} ${x + chevW - notch},${y}`;
 
+    svg.beginItem(`nodes[${i}]`);
+
     if (d.lineJitter) {
       // Sketch: hand-drawn chevron outline, no fill
       svg.polygon(points, { fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth });
@@ -556,6 +572,7 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
     for (const line of labelFit.lines) {
       svg.text(textCx, ly, line, {
         'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: textFill,
+        'data-field': `nodes[${i}].label`,
       });
       ly += lh;
     }
@@ -563,6 +580,7 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
       for (const line of descFit.lines) {
         svg.text(textCx, ly, line, {
           'text-anchor': 'middle', 'font-size': descFit.fontSize, fill: descFill, opacity: d.lineJitter ? 0.7 : 1,
+          'data-field': `nodes[${i}].description`,
         });
         ly += Math.round(descFit.fontSize * 1.3);
       }
@@ -572,6 +590,8 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
     svg.text(x + chevW - notch - 8, y + 14, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 9, 'font-weight': 600, fill: d.id === 'neon' ? color : (d.lineJitter ? d.text : '#FFFFFF'), opacity: 0.5,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -609,6 +629,8 @@ function renderVertical(data: ProcessData, title: string | undefined, d: DesignP
     const node = data.nodes[i]!;
     const color = stepColor(d, i);
     const y = contentTop + i * (cardH + arrowH);
+
+    svg.beginItem(`nodes[${i}]`);
 
     // Card with preset-aware styling
     if (d.lineJitter) {
@@ -659,6 +681,7 @@ function renderVertical(data: ProcessData, title: string | undefined, d: DesignP
 
     // Label + description
     drawLabelBlock(svg, d, node.label, node.description, pad + 60, y + (node.description ? cardH / 2 - 4 : cardH / 2 + 5), cardW - 80, 'start', `nodes[${i}]`);
+    svg.endItem();
 
     // Down arrow between cards
     if (i < count - 1) {
@@ -841,6 +864,8 @@ function renderStaircase(data: ProcessData, title: string | undefined, d: Design
     const x = pad + i * offsetX;
     const y = contentTop + totalH - stepH - i * offsetY;
 
+    svg.beginItem(`nodes[${i}]`);
+
     // Step block — preset-aware
     if (d.lineJitter) {
       svg.path(jitterRect(x, y, stepW, stepH, i * 7), {
@@ -881,6 +906,7 @@ function renderStaircase(data: ProcessData, title: string | undefined, d: Design
 
     // Label
     drawLabelBlock(svg, d, node.label, node.description, x + stepW / 2 + 8, y + (node.description ? stepH / 2 - 2 : stepH / 2 + 5), stepW - 48, 'middle', `nodes[${i}]`);
+    svg.endItem();
 
     // Connector arrow from this step to next (diagonal upward-right)
     if (i < count - 1) {
@@ -947,6 +973,8 @@ function renderNumbered(data: ProcessData, title: string | undefined, d: DesignP
     const color = stepColor(d, i);
     const cx = pad + i * (colW + gap) + colW / 2;
 
+    svg.beginItem(`nodes[${i}]`);
+
     // Large numbered circle (60px diameter)
     const circleR = 30;
     const circleY = contentTop + circleR + 8;
@@ -983,6 +1011,7 @@ function renderNumbered(data: ProcessData, title: string | undefined, d: DesignP
 
     // Label + description below the circle
     drawNodeText(svg, d, node, cx, circleY + circleR + 20, colW - 24, i);
+    svg.endItem();
   }
 
   return svg.build();
@@ -1021,6 +1050,8 @@ function renderPipeline(data: ProcessData, title: string | undefined, d: DesignP
     const color = stepColor(d, i);
     const x = pad + i * (barW + gateW);
     const y = contentTop;
+
+    svg.beginItem(`nodes[${i}]`);
 
     // Bar rectangle — preset-aware
     if (d.lineJitter) {
@@ -1063,6 +1094,7 @@ function renderPipeline(data: ProcessData, title: string | undefined, d: DesignP
 
     // Label + description
     drawLabelBlock(svg, d, node.label, node.description, x + barW / 2, y + (node.description ? barH / 2 + 2 : barH / 2 + 6), barW - 28, 'middle', `nodes[${i}]`);
+    svg.endItem();
 
     // Triangle gate separator between stages
     if (i < count - 1) {
@@ -1138,6 +1170,8 @@ function renderEscalation(data: ProcessData, title: string | undefined, d: Desig
     const x = pad + i * (stepW + riseX);
     const y = contentTop + totalH - stepH - i * riseY;
 
+    svg.beginItem(`nodes[${i}]`);
+
     // Step block
     if (d.lineJitter) {
       svg.path(jitterRect(x, y, stepW, stepH, i * 7), {
@@ -1197,6 +1231,7 @@ function renderEscalation(data: ProcessData, title: string | undefined, d: Desig
     // Label + description
     drawLabelBlock(svg, d, node.label, node.description,
       x + stepW / 2, y + (node.description ? stepH / 2 + 6 : stepH / 2 + 10), stepW - 36, 'middle', `nodes[${i}]`);
+    svg.endItem();
 
     // Connector arrow from this step to next (upward-right curve)
     if (i < count - 1) {

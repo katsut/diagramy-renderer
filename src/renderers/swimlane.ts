@@ -143,6 +143,8 @@ function renderSketch(data: SwimlaneData, title: string | undefined, d: DesignPr
     const lane = data.lanes[li]!;
     const y = pad + titleH + li * (laneH + laneGap);
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Lane border
     svg.path(jitterRect(pad, y, contentW, laneH, li * 31), {
       fill: 'none', stroke: d.border, 'stroke-width': 1, opacity: 0.2,
@@ -155,6 +157,7 @@ function renderSketch(data: SwimlaneData, title: string | undefined, d: DesignPr
     const aFit = fitText(lane.actor, actorW - 16, 1, d.labelSize);
     svg.text(pad + actorW / 2, y + laneH / 2 + 4, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, fill: d.text,
+      'data-field': `lanes[${li}].label`,
     });
 
     for (let si = 0; si < lane.steps.length; si++) {
@@ -167,8 +170,11 @@ function renderSketch(data: SwimlaneData, title: string | undefined, d: DesignPr
       const fit = fitText(step.label, stepW - 12, 1, d.captionSize + 1);
       svg.text(sx + stepW / 2, sy + 22, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -200,6 +206,8 @@ function renderPixel(data: SwimlaneData, title: string | undefined, d: DesignPre
     const color = laneColor(d, li);
     const y = pad + titleH + li * (laneH + laneGap);
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Actor box
     svg.raw(pixelBorder(pad, y, actorW, laneH, color, px));
     svg.rect(pad + px, y + px, actorW - px * 2, laneH - px * 2, {
@@ -208,6 +216,7 @@ function renderPixel(data: SwimlaneData, title: string | undefined, d: DesignPre
     const aFit = fitText(lane.actor, actorW - 14, 1, d.labelSize);
     svg.text(pad + actorW / 2, y + laneH / 2 + 4, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: d.text,
+      'data-field': `lanes[${li}].label`,
     });
 
     for (let si = 0; si < lane.steps.length; si++) {
@@ -221,8 +230,11 @@ function renderPixel(data: SwimlaneData, title: string | undefined, d: DesignPre
       const fit = fitText(step.label, stepW - 12, 1, d.captionSize);
       svg.text(sx + stepW / 2, sy + 22, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -255,6 +267,8 @@ function renderBold(data: SwimlaneData, title: string | undefined, d: DesignPres
     const color = laneColor(d, li);
     const y = pad + titleH + li * (laneH + laneGap);
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Bold actor badge with offset shadow
     svg.rect(pad, y, actorW, laneH, {
       fill: color, rx: d.borderRadius, filter: 'url(#bold-offset)',
@@ -263,6 +277,7 @@ function renderBold(data: SwimlaneData, title: string | undefined, d: DesignPres
     const aFit = fitText(lane.actor, actorW - 20, 2, d.labelSize + 1);
     svg.text(pad + actorW / 2, y + laneH / 2 + 5, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
+      'data-field': `lanes[${li}].label`,
     });
 
     // Steps with thick border
@@ -282,6 +297,7 @@ function renderBold(data: SwimlaneData, title: string | undefined, d: DesignPres
       const fit = fitText(step.label, stepW - 16, 1, d.captionSize + 1);
       svg.text(sx + stepW / 2, sy + 36, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
 
       // Arrow
@@ -292,6 +308,8 @@ function renderBold(data: SwimlaneData, title: string | undefined, d: DesignPres
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -323,6 +341,8 @@ function renderFlat(data: SwimlaneData, title: string | undefined, d: DesignPres
     const color = laneColor(d, li);
     const y = pad + titleH + li * (laneH + laneGap);
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Full row background
     svg.rect(pad, y, contentW, laneH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
@@ -336,6 +356,7 @@ function renderFlat(data: SwimlaneData, title: string | undefined, d: DesignPres
     const aFit = fitText(lane.actor, actorW - 52, 1, d.labelSize);
     svg.text(pad + 44, y + laneH / 2 + 4, aFit.lines[0]!, {
       'text-anchor': 'start', 'font-size': aFit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `lanes[${li}].label`,
     });
 
     // Flat steps (no shadow, no border)
@@ -347,6 +368,7 @@ function renderFlat(data: SwimlaneData, title: string | undefined, d: DesignPres
       const fit = fitText(step.label, stepW - 12, 1, d.captionSize + 1);
       svg.text(sx + stepW / 2, sy + 22, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
 
       if (si < lane.steps.length - 1) {
@@ -356,6 +378,8 @@ function renderFlat(data: SwimlaneData, title: string | undefined, d: DesignPres
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -388,6 +412,8 @@ function renderGlass(data: SwimlaneData, title: string | undefined, d: DesignPre
     const color = laneColor(d, li);
     const y = pad + titleH + li * (laneH + laneGap);
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Frosted glass lane background
     svg.rect(pad, y, contentW, laneH, {
       fill: d.surface, stroke: d.border, 'stroke-width': 1, rx: d.borderRadius,
@@ -404,6 +430,7 @@ function renderGlass(data: SwimlaneData, title: string | undefined, d: DesignPre
     const aFit = fitText(lane.actor, actorW - 20, 1, d.labelSize);
     svg.text(pad + actorW / 2, y + laneH / 2 + 5, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: '#FFFFFF',
+      'data-field': `lanes[${li}].label`,
     });
 
     // Glass steps
@@ -419,6 +446,7 @@ function renderGlass(data: SwimlaneData, title: string | undefined, d: DesignPre
       const fit = fitText(step.label, stepW - 16, 1, d.captionSize + 1);
       svg.text(sx + stepW / 2, sy + 26, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
 
       if (si < lane.steps.length - 1) {
@@ -428,6 +456,8 @@ function renderGlass(data: SwimlaneData, title: string | undefined, d: DesignPre
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -459,6 +489,8 @@ function renderNeon(data: SwimlaneData, title: string | undefined, d: DesignPres
     const color = laneColor(d, li);
     const y = pad + titleH + li * (laneH + laneGap);
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Neon lane border
     svg.rect(pad, y, contentW, laneH, {
       fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
@@ -475,6 +507,7 @@ function renderNeon(data: SwimlaneData, title: string | undefined, d: DesignPres
     const aFit = fitText(lane.actor, actorW - 24, 1, d.labelSize);
     svg.text(pad + actorW / 2, y + laneH / 2 + 4, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: color,
+      'data-field': `lanes[${li}].label`,
     });
 
     // Neon step boxes
@@ -492,6 +525,7 @@ function renderNeon(data: SwimlaneData, title: string | undefined, d: DesignPres
       const fit = fitText(step.label, stepW - 12, 1, d.captionSize + 1);
       svg.text(sx + stepW / 2, sy + 24, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
 
       if (si < lane.steps.length - 1) {
@@ -502,6 +536,8 @@ function renderNeon(data: SwimlaneData, title: string | undefined, d: DesignPres
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -534,6 +570,8 @@ function renderWatercolor(data: SwimlaneData, title: string | undefined, d: Desi
     const color = laneColor(d, li);
     const y = pad + titleH + li * (laneH + laneGap);
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Watercolor wash behind lane
     svg.ellipse(pad + contentW / 2, y + laneH / 2, contentW / 2 + 10, laneH / 2 + 4, {
       fill: color, opacity: 0.06, filter: 'url(#watercolor)',
@@ -551,6 +589,7 @@ function renderWatercolor(data: SwimlaneData, title: string | undefined, d: Desi
     const aFit = fitText(lane.actor, actorW - 20, 1, d.labelSize);
     svg.text(pad + actorW / 2, y + laneH / 2 + 5, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 600, fill: d.text,
+      'data-field': `lanes[${li}].label`,
     });
 
     // Watercolor steps
@@ -567,6 +606,7 @@ function renderWatercolor(data: SwimlaneData, title: string | undefined, d: Desi
       const fit = fitText(step.label, stepW - 12, 1, d.captionSize + 1);
       svg.text(sx + stepW / 2, sy + 24, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
 
       if (si < lane.steps.length - 1) {
@@ -576,6 +616,8 @@ function renderWatercolor(data: SwimlaneData, title: string | undefined, d: Desi
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -618,6 +660,8 @@ function renderVerticalStyle(data: SwimlaneData, title: string | undefined, d: D
     const x = pad + li * (colW + colGap);
     const cx = x + colW / 2;
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Column header
     svg.rect(x, contentTop, colW, headerH, {
       fill: `url(#sl${li})`, rx: d.borderRadius > 8 ? 8 : d.borderRadius,
@@ -626,6 +670,7 @@ function renderVerticalStyle(data: SwimlaneData, title: string | undefined, d: D
     const aFit = fitText(lane.actor, colW - 16, 1, d.labelSize);
     svg.text(cx, contentTop + headerH / 2 + 5, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: 'white',
+      'data-field': `lanes[${li}].label`,
     });
 
     // Column background stripe
@@ -641,6 +686,7 @@ function renderVerticalStyle(data: SwimlaneData, title: string | undefined, d: D
       const fit = fitText(step.label, colW - 32, 1, d.captionSize + 1);
       svg.text(cx, sy + stepH / 2 + 4, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
 
       // Down arrow between steps
@@ -654,6 +700,8 @@ function renderVerticalStyle(data: SwimlaneData, title: string | undefined, d: D
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -697,6 +745,8 @@ function renderKanban(data: SwimlaneData, title: string | undefined, d: DesignPr
     const x = pad + li * (colW + colGap);
     const cx = x + colW / 2;
 
+    svg.beginItem(`lanes[${li}]`);
+
     // Column background
     svg.rect(x, contentTop, colW, headerH + bodyH, {
       fill: d.surface, rx: d.borderRadius, opacity: 0.5,
@@ -712,6 +762,7 @@ function renderKanban(data: SwimlaneData, title: string | undefined, d: DesignPr
     const aFit = fitText(lane.actor, colW - 40, 1, d.labelSize);
     svg.text(cx, contentTop + headerH / 2 + 5, aFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: 'white',
+      'data-field': `lanes[${li}].label`,
     });
     // Count badge
     svg.text(x + colW - 14, contentTop + headerH / 2 + 4, `${lane.steps.length}`, {
@@ -728,14 +779,18 @@ function renderKanban(data: SwimlaneData, title: string | undefined, d: DesignPr
       const fit = fitText(step.label, colW - 44, 1, d.captionSize + 1);
       svg.text(x + 30, sy + 18, fit.lines[0]!, {
         'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `lanes[${li}].steps[${si}].label`,
       });
       if (step.description) {
         const dfit = fitText(step.description, colW - 36, 1, d.captionSize);
         svg.text(x + 20, sy + 36, dfit.lines[0]!, {
           'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+          'data-field': `lanes[${li}].steps[${si}].description`,
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();

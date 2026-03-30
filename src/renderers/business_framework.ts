@@ -235,6 +235,7 @@ function drawCell(
     const itemFit = fitText(block.items[j]!, w - 20, 1, itemFontSize);
     svg.text(x + 10, iy, `\u2022 ${itemFit.lines[0] ?? block.items[j]}`, {
       'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.text,
+      'data-field': `blocks[${colorIdx}].items[${j}]`,
     });
     iy += 16;
   }
@@ -538,16 +539,19 @@ const VPC_DEFAULTS: Record<string, string> = {
 function drawVpcSector(
   svg: any, d: DesignPreset, bm: Map<string, CanvasBlock>,
   cx: number, cy: number, key: string, colorIdx: number,
-  maxW: number,
+  maxW: number, blockIndex: number,
 ) {
   const block = bm.get(key);
   const label = block?.label ?? VPC_DEFAULTS[key] ?? key;
   const items = block?.items ?? [];
   const color = blockColor(d, colorIdx);
 
+  svg.beginItem(`blocks[${blockIndex}]`);
+
   const labelFit = fitText(label, maxW - 12, 1, d.captionSize);
   svg.text(cx, cy, labelFit.lines[0] ?? label, {
     'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: color,
+    'data-field': `blocks[${blockIndex}].label`,
   });
 
   let iy = cy + 16;
@@ -556,9 +560,12 @@ function drawVpcSector(
     const itemFit = fitText(items[j]!, maxW - 20, 1, d.captionSize - 2);
     svg.text(cx, iy, `\u2022 ${itemFit.lines[0] ?? items[j]}`, {
       'text-anchor': 'middle', 'font-size': itemFit.fontSize, fill: d.text,
+      'data-field': `blocks[${blockIndex}].items[${j}]`,
     });
     iy += 14;
   }
+
+  svg.endItem();
 }
 
 function renderVpc(data: BusinessFrameworkData, title: string | undefined, d: DesignPreset): string {
@@ -607,9 +614,10 @@ function renderVpc(data: BusinessFrameworkData, title: string | undefined, d: De
 
   // Section labels: Gain Creators (top), Products/Services (mid), Pain Relievers (bottom)
   const rectCx = rx + rectW / 2;
-  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 0.35, 'gain_creators', 3, rectW);
-  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 1.35, 'products', 4, rectW);
-  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 2.35, 'pain_relievers', 5, rectW);
+  const idxOf = (k: string) => data.blocks.findIndex(b => b.key === k);
+  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 0.35, 'gain_creators', 3, rectW, idxOf('gain_creators'));
+  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 1.35, 'products', 4, rectW, idxOf('products'));
+  drawVpcSector(svg, d, bm, rectCx, ry + sectionH * 2.35, 'pain_relievers', 5, rectW, idxOf('pain_relievers'));
 
   // --- Right: Customer Segment (circle with Y-shaped dividers) ---
   const ccx = pad + rectW + arrowGap + circleR;
@@ -643,11 +651,11 @@ function renderVpc(data: BusinessFrameworkData, title: string | undefined, d: De
   });
 
   // Gains (top sector)
-  drawVpcSector(svg, d, bm, ccx, ccy - circleR * 0.55, 'gains', 0, circleR * 1.2);
+  drawVpcSector(svg, d, bm, ccx, ccy - circleR * 0.55, 'gains', 0, circleR * 1.2, idxOf('gains'));
   // Customer Jobs (bottom-right sector)
-  drawVpcSector(svg, d, bm, ccx + circleR * 0.35, ccy + circleR * 0.35, 'customer_jobs', 1, circleR * 0.9);
+  drawVpcSector(svg, d, bm, ccx + circleR * 0.35, ccy + circleR * 0.35, 'customer_jobs', 1, circleR * 0.9, idxOf('customer_jobs'));
   // Pains (bottom-left sector)
-  drawVpcSector(svg, d, bm, ccx - circleR * 0.35, ccy + circleR * 0.35, 'pains', 2, circleR * 0.9);
+  drawVpcSector(svg, d, bm, ccx - circleR * 0.35, ccy + circleR * 0.35, 'pains', 2, circleR * 0.9, idxOf('pains'));
 
   // --- Center arrow (Fit) ---
   const arrowX1 = pad + rectW + 8;

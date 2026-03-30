@@ -111,6 +111,7 @@ function renderClean(data: VennData, title: string | undefined, d: DesignPreset)
     for (let j = 0; j < Math.min(set.items.length, 3); j++) {
       svg.text(labelX, ty + 2, set.items[j]!, {
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
+        'data-field': `sets[${i}].items[${j}]`,
       });
       ty += Math.round(d.captionSize * 1.3);
     }
@@ -124,6 +125,7 @@ function renderClean(data: VennData, title: string | undefined, d: DesignPreset)
     for (const line of fit.lines) {
       svg.text(cx, ty, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': 'intersection',
       });
       ty += Math.round(fit.fontSize * 1.4);
     }
@@ -173,10 +175,13 @@ function renderBold(data: VennData, title: string | undefined, d: DesignPreset):
     const labelX = pos.x + (dx / dist) * 44;
     const labelY = pos.y + (dy / dist) * 44;
 
+    svg.beginItem(`sets[${i}]`);
     const fit = fitText(set.label, circR * 1.2, 1, d.labelSize + 2);
     svg.text(labelX, labelY, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: d.text,
+      'data-field': `sets[${i}].label`,
     });
+    svg.endItem();
   }
 
   if (data.intersection) {
@@ -185,6 +190,7 @@ function renderBold(data: VennData, title: string | undefined, d: DesignPreset):
     for (const line of fit.lines) {
       svg.text(cx, ty, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: d.text,
+        'data-field': 'intersection',
       });
       ty += Math.round(fit.fontSize * 1.4);
     }
@@ -232,14 +238,18 @@ function renderFlat(data: VennData, title: string | undefined, d: DesignPreset):
     const labelX = pos.x + (dx / dist) * 38;
     const labelY = pos.y + (dy / dist) * 38;
 
+    svg.beginItem(`sets[${i}]`);
     svg.text(labelX, labelY, set.label, {
       'text-anchor': 'middle', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `sets[${i}].label`,
     });
+    svg.endItem();
   }
 
   if (data.intersection) {
     svg.text(cx, cy + 4, data.intersection, {
       'text-anchor': 'middle', 'font-size': d.captionSize + 1, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': 'intersection',
     });
   }
 
@@ -296,12 +306,14 @@ function renderGlass(data: VennData, title: string | undefined, d: DesignPreset)
     const labelX = pos.x + (dx / dist) * 42;
     const labelY = pos.y + (dy / dist) * 42;
 
+    svg.beginItem(`sets[${i}]`);
     const fit = fitText(set.label, circR * 1.2, 2, d.labelSize);
     let ty = labelY - ((fit.lines.length - 1) * fit.fontSize * 0.7);
     for (const line of fit.lines) {
       svg.text(labelX, ty, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
         'letter-spacing': '0.3',
+        'data-field': `sets[${i}].label`,
       });
       ty += Math.round(fit.fontSize * 1.4);
     }
@@ -309,9 +321,11 @@ function renderGlass(data: VennData, title: string | undefined, d: DesignPreset)
     for (let j = 0; j < Math.min(set.items.length, 3); j++) {
       svg.text(labelX, ty + 2, set.items[j]!, {
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
+        'data-field': `sets[${i}].items[${j}]`,
       });
       ty += Math.round(d.captionSize * 1.3);
     }
+    svg.endItem();
   }
 
   if (data.intersection) {
@@ -320,6 +334,7 @@ function renderGlass(data: VennData, title: string | undefined, d: DesignPreset)
     for (const line of fit.lines) {
       svg.text(cx, ty, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': 'intersection',
       });
       ty += Math.round(fit.fontSize * 1.4);
     }
@@ -373,14 +388,18 @@ function renderNeon(data: VennData, title: string | undefined, d: DesignPreset):
     const labelX = pos.x + (dx / dist) * 40;
     const labelY = pos.y + (dy / dist) * 40;
 
+    svg.beginItem(`sets[${i}]`);
     svg.text(labelX, labelY, set.label, {
       'text-anchor': 'middle', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `sets[${i}].label`,
     });
+    svg.endItem();
   }
 
   if (data.intersection) {
     svg.text(cx, cy + 4, data.intersection, {
       'text-anchor': 'middle', 'font-size': d.captionSize + 1, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': 'intersection',
     });
   }
 
@@ -428,11 +447,13 @@ function renderWatercolor(data: VennData, title: string | undefined, d: DesignPr
     const labelX = pos.x + (dx / dist) * 40;
     const labelY = pos.y + (dy / dist) * 40;
 
+    svg.beginItem(`sets[${i}]`);
     const fit = fitText(set.label, circR * 1.2, 2, d.labelSize);
     let ty = labelY - ((fit.lines.length - 1) * fit.fontSize * 0.7);
     for (const line of fit.lines) {
       svg.text(labelX, ty, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+        'data-field': `sets[${i}].label`,
       });
       ty += Math.round(fit.fontSize * 1.4);
     }
@@ -440,9 +461,11 @@ function renderWatercolor(data: VennData, title: string | undefined, d: DesignPr
     for (let j = 0; j < Math.min(set.items.length, 3); j++) {
       svg.text(labelX, ty + 2, set.items[j]!, {
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
+        'data-field': `sets[${i}].items[${j}]`,
       });
       ty += Math.round(d.captionSize * 1.3);
     }
+    svg.endItem();
   }
 
   if (data.intersection) {
@@ -451,6 +474,7 @@ function renderWatercolor(data: VennData, title: string | undefined, d: DesignPr
     for (const line of fit.lines) {
       svg.text(cx, ty, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': 'intersection',
       });
       ty += Math.round(fit.fontSize * 1.4);
     }
@@ -494,14 +518,18 @@ function renderSketch(data: VennData, title: string | undefined, d: DesignPreset
     const labelX = pos.x + (dx / dist) * 36;
     const labelY = pos.y + (dy / dist) * 36;
 
+    svg.beginItem(`sets[${i}]`);
     svg.text(labelX, labelY, set.label, {
       'text-anchor': 'middle', 'font-size': d.labelSize, fill: d.text,
+      'data-field': `sets[${i}].label`,
     });
+    svg.endItem();
   }
 
   if (data.intersection) {
     svg.text(cx, cy + 4, data.intersection, {
       'text-anchor': 'middle', 'font-size': d.captionSize + 1, fill: d.text,
+      'data-field': 'intersection',
     });
   }
 
@@ -553,14 +581,18 @@ function renderPixel(data: VennData, title: string | undefined, d: DesignPreset)
     const labelX = Math.round(pos.x + (dx / dist) * 30);
     const labelY = Math.round(pos.y + (dy / dist) * 30);
 
+    svg.beginItem(`sets[${i}]`);
     svg.text(labelX, labelY, set.label, {
       'text-anchor': 'middle', 'font-size': d.labelSize, 'font-weight': 700, fill: d.text,
+      'data-field': `sets[${i}].label`,
     });
+    svg.endItem();
   }
 
   if (data.intersection) {
     svg.text(Math.round(cx), Math.round(cy) + 4, data.intersection, {
       'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': 700, fill: d.text,
+      'data-field': 'intersection',
     });
   }
 
@@ -603,6 +635,8 @@ function renderDistinction(data: VennData, title: string | undefined, d: DesignP
     const cy = contentTop + cardH / 2;
     const circR = cardW / 2 - 10;
 
+    svg.beginItem(`sets[${i}]`);
+
     // Circle for each set (no overlap)
     if (d.lineJitter) {
       svg.circle(cx, cy, circR, { fill: 'none', stroke: color, 'stroke-width': 2 });
@@ -628,6 +662,7 @@ function renderDistinction(data: VennData, title: string | undefined, d: DesignP
         'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': 700,
         fill: d.id === 'neon' ? color : d.text,
         ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
+        'data-field': `sets[${i}].label`,
       });
       ty += Math.round(labelFit.fontSize * 1.4);
     }
@@ -637,9 +672,12 @@ function renderDistinction(data: VennData, title: string | undefined, d: DesignP
       const itemFit = fitText(set.items[j]!, cardW - 48, 1, d.captionSize);
       svg.text(cx, ty + 4, itemFit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `sets[${i}].items[${j}]`,
       });
       ty += Math.round(d.captionSize * 1.4);
     }
+
+    svg.endItem();
 
     // "vs" or divider between sets (not after the last one)
     if (i < count - 1) {
@@ -685,6 +723,7 @@ function renderDistinction(data: VennData, title: string | undefined, d: DesignP
     svg.text(width / 2, intY, intFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': intFit.fontSize, 'font-weight': d.fontWeight,
       fill: d.textSecondary, 'font-style': 'italic',
+      'data-field': 'intersection',
     });
   }
 

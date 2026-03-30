@@ -129,11 +129,13 @@ function renderSketch(data: TreemapData, title: string | undefined, d: DesignPre
   const rects = squarify(data.items, pad, pad + titleH, chartW, chartH, 0);
   const gap = 4;
 
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
     const rx = r.x + gap;
     const ry = r.y + gap;
     const rw = Math.max(r.w - gap * 2, 1);
     const rh = Math.max(r.h - gap * 2, 1);
+    svg.beginItem(`items[${i}]`);
     svg.path(jitterRect(rx, ry, rw, rh, r.colorIdx * 17), {
       fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
     });
@@ -143,10 +145,12 @@ function renderSketch(data: TreemapData, title: string | undefined, d: DesignPre
       for (const line of fit.lines) {
         svg.text(rx + rw / 2, ty, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+          'data-field': `items[${i}].label`,
         });
         ty += Math.round(fit.fontSize * 1.4);
       }
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -171,12 +175,14 @@ function renderPixel(data: TreemapData, title: string | undefined, d: DesignPres
   const rects = squarify(data.items, pad, pad + titleH, chartW, chartH, 0);
   const gap = 2;
 
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
     const color = itemColor(d, r.colorIdx);
     const rx = Math.round(r.x + gap);
     const ry = Math.round(r.y + gap);
     const rw = Math.round(Math.max(r.w - gap * 2, px * 3));
     const rh = Math.round(Math.max(r.h - gap * 2, px * 3));
+    svg.beginItem(`items[${i}]`);
     svg.rect(rx, ry, rw, rh, {
       fill: color, opacity: 0.8, 'shape-rendering': 'crispEdges',
     });
@@ -184,8 +190,10 @@ function renderPixel(data: TreemapData, title: string | undefined, d: DesignPres
       const fit = fitText(r.label, rw - 10, 1, d.labelSize);
       svg.text(rx + rw / 2, ry + rh / 2 + 4, fit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.bg,
+        'data-field': `items[${i}].label`,
       });
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -211,12 +219,15 @@ function renderBold(data: TreemapData, title: string | undefined, d: DesignPrese
   const rects = squarify(data.items, pad, pad + titleH, chartW, chartH, 0);
   const gap = 4;
 
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
     const color = itemColor(d, r.colorIdx);
     const rx = r.x + gap;
     const ry = r.y + gap;
     const rw = Math.max(r.w - gap * 2, 1);
     const rh = Math.max(r.h - gap * 2, 1);
+
+    svg.beginItem(`items[${i}]`);
 
     // Colored rect with offset shadow and thick border
     svg.rect(rx, ry, rw, rh, {
@@ -235,10 +246,13 @@ function renderBold(data: TreemapData, title: string | undefined, d: DesignPrese
       for (const line of fit.lines) {
         svg.text(rx + rw / 2, ty, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 800, fill: '#FFFFFF',
+          'data-field': `items[${i}].label`,
         });
         ty += Math.round(fit.fontSize * 1.4);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -263,12 +277,15 @@ function renderFlat(data: TreemapData, title: string | undefined, d: DesignPrese
   const rects = squarify(data.items, pad, pad + titleH, chartW, chartH, 0);
   const gap = 2;
 
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
     const color = itemColor(d, r.colorIdx);
     const rx = r.x + gap;
     const ry = r.y + gap;
     const rw = Math.max(r.w - gap * 2, 1);
     const rh = Math.max(r.h - gap * 2, 1);
+
+    svg.beginItem(`items[${i}]`);
 
     // Flat fill — no shadow, no border
     svg.rect(rx, ry, rw, rh, {
@@ -281,10 +298,13 @@ function renderFlat(data: TreemapData, title: string | undefined, d: DesignPrese
       for (const line of fit.lines) {
         svg.text(rx + rw / 2, ty, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+          'data-field': `items[${i}].label`,
         });
         ty += Math.round(fit.fontSize * 1.4);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -310,12 +330,15 @@ function renderGlass(data: TreemapData, title: string | undefined, d: DesignPres
   const rects = squarify(data.items, pad, pad + titleH, chartW, chartH, 0);
   const gap = 4;
 
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
     const color = itemColor(d, r.colorIdx);
     const rx = r.x + gap;
     const ry = r.y + gap;
     const rw = Math.max(r.w - gap * 2, 1);
     const rh = Math.max(r.h - gap * 2, 1);
+
+    svg.beginItem(`items[${i}]`);
 
     // Glow behind
     svg.rect(rx + 2, ry + 2, rw - 4, rh - 4, {
@@ -341,10 +364,13 @@ function renderGlass(data: TreemapData, title: string | undefined, d: DesignPres
       for (const line of fit.lines) {
         svg.text(rx + rw / 2, ty, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+          'data-field': `items[${i}].label`,
         });
         ty += Math.round(fit.fontSize * 1.4);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -369,12 +395,15 @@ function renderNeon(data: TreemapData, title: string | undefined, d: DesignPrese
   const rects = squarify(data.items, pad, pad + titleH, chartW, chartH, 0);
   const gap = 3;
 
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
     const color = itemColor(d, r.colorIdx);
     const rx = r.x + gap;
     const ry = r.y + gap;
     const rw = Math.max(r.w - gap * 2, 1);
     const rh = Math.max(r.h - gap * 2, 1);
+
+    svg.beginItem(`items[${i}]`);
 
     // Dark rect with neon border
     svg.rect(rx, ry, rw, rh, {
@@ -392,10 +421,13 @@ function renderNeon(data: TreemapData, title: string | undefined, d: DesignPrese
       for (const line of fit.lines) {
         svg.text(rx + rw / 2, ty, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+          'data-field': `items[${i}].label`,
         });
         ty += Math.round(fit.fontSize * 1.4);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -421,12 +453,15 @@ function renderWatercolor(data: TreemapData, title: string | undefined, d: Desig
   const rects = squarify(data.items, pad, pad + titleH, chartW, chartH, 0);
   const gap = 4;
 
-  for (const r of rects) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i]!;
     const color = itemColor(d, r.colorIdx);
     const rx = r.x + gap;
     const ry = r.y + gap;
     const rw = Math.max(r.w - gap * 2, 1);
     const rh = Math.max(r.h - gap * 2, 1);
+
+    svg.beginItem(`items[${i}]`);
 
     // Watercolor wash blob behind
     svg.ellipse(rx + rw / 2, ry + rh / 2, rw / 2 + 6, rh / 2 + 4, {
@@ -443,10 +478,13 @@ function renderWatercolor(data: TreemapData, title: string | undefined, d: Desig
       for (const line of fit.lines) {
         svg.text(rx + rw / 2, ty, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: d.text,
+          'data-field': `items[${i}].label`,
         });
         ty += Math.round(fit.fontSize * 1.4);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();

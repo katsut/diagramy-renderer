@@ -150,6 +150,8 @@ function renderBold(data: RankingData, title: string | undefined, d: DesignPrese
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.6;
     const barW = barMaxW * barRatio;
 
+    svg.beginItem(`items[${i}]`);
+
     // Rank badge with offset shadow
     svg.rect(pad, y + 4, rankW, rowH - 8, {
       fill: color, rx: d.borderRadius, filter: 'url(#bold-offset)',
@@ -163,6 +165,7 @@ function renderBold(data: RankingData, title: string | undefined, d: DesignPrese
     const fit = fitText(item.label, labelW, 1, d.labelSize + 2);
     svg.text(lx, y + rowH / 2 + 6, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': 900, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Bar with offset shadow
@@ -174,8 +177,11 @@ function renderBold(data: RankingData, title: string | undefined, d: DesignPrese
     if (item.value) {
       svg.text(bx + barW - 10, y + rowH / 2 + 5, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize + 1, 'font-weight': 800, fill: '#FFFFFF',
+        'data-field': `items[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -205,6 +211,8 @@ function renderFlat(data: RankingData, title: string | undefined, d: DesignPrese
     const y = pad + titleH + i * (rowH + rowGap);
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.6;
 
+    svg.beginItem(`items[${i}]`);
+
     // Flat row card
     svg.rect(pad, y, cardW, rowH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
@@ -218,6 +226,7 @@ function renderFlat(data: RankingData, title: string | undefined, d: DesignPrese
     const fit = fitText(item.label, 160, 1, d.labelSize);
     svg.text(pad + 52, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
     // Inline bar
     const barStart = pad + 220;
@@ -233,8 +242,11 @@ function renderFlat(data: RankingData, title: string | undefined, d: DesignPrese
     if (item.value) {
       svg.text(barStart + barW - 8, y + rowH / 2 + 4, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: '#FFFFFF',
+        'data-field': `items[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -269,6 +281,8 @@ function renderGlass(data: RankingData, title: string | undefined, d: DesignPres
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.6;
     const barW = barMaxW * barRatio;
 
+    svg.beginItem(`items[${i}]`);
+
     // Frosted glass row
     svg.rect(pad, y, pad * 2 + totalW - pad * 2, rowH, {
       fill: d.surface, stroke: d.border, 'stroke-width': 1, rx: d.borderRadius,
@@ -292,6 +306,7 @@ function renderGlass(data: RankingData, title: string | undefined, d: DesignPres
     svg.text(lx, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
       'letter-spacing': '0.3',
+      'data-field': `items[${i}].label`,
     });
 
     // Bar with glow
@@ -306,8 +321,11 @@ function renderGlass(data: RankingData, title: string | undefined, d: DesignPres
     if (item.value) {
       svg.text(bx + barW - 8, y + rowH / 2 + 4, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: '#FFFFFF',
+        'data-field': `items[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -341,6 +359,8 @@ function renderNeon(data: RankingData, title: string | undefined, d: DesignPrese
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.6;
     const barW = barMaxW * barRatio;
 
+    svg.beginItem(`items[${i}]`);
+
     // Neon rank number
     svg.text(pad + rankW / 2, y + rowH / 2 + 6, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 18, 'font-weight': 700, fill: color,
@@ -352,6 +372,7 @@ function renderNeon(data: RankingData, title: string | undefined, d: DesignPrese
     const fit = fitText(item.label, labelW, 1, d.labelSize);
     svg.text(lx, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Neon bar outline
@@ -367,8 +388,11 @@ function renderNeon(data: RankingData, title: string | undefined, d: DesignPrese
     if (item.value) {
       svg.text(bx + barW - 8, y + rowH / 2 + 4, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: color,
+        'data-field': `items[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -403,6 +427,8 @@ function renderWatercolor(data: RankingData, title: string | undefined, d: Desig
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.6;
     const barW = barMaxW * barRatio;
 
+    svg.beginItem(`items[${i}]`);
+
     // Watercolor rank circle
     svg.circle(pad + rankW / 2, y + rowH / 2, 18, { fill: color, opacity: 0.7, filter: 'url(#watercolor)' });
     svg.text(pad + rankW / 2, y + rowH / 2 + 5, `${i + 1}`, {
@@ -414,6 +440,7 @@ function renderWatercolor(data: RankingData, title: string | undefined, d: Desig
     const fit = fitText(item.label, labelW, 1, d.labelSize);
     svg.text(lx, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Watercolor bar
@@ -428,8 +455,11 @@ function renderWatercolor(data: RankingData, title: string | undefined, d: Desig
     if (item.value) {
       svg.text(bx + barW - 10, y + rowH / 2 + 4, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: d.text,
+        'data-field': `items[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -461,6 +491,8 @@ function renderSketch(data: RankingData, title: string | undefined, d: DesignPre
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.6;
     const barW = barMaxW * barRatio;
 
+    svg.beginItem(`items[${i}]`);
+
     // Rank number
     svg.text(pad + rankW / 2, y + rowH / 2 + 5, `${i + 1}.`, {
       'text-anchor': 'middle', 'font-size': 14, fill: d.text,
@@ -471,6 +503,7 @@ function renderSketch(data: RankingData, title: string | undefined, d: DesignPre
     const fit = fitText(item.label, labelW, 1, d.labelSize);
     svg.text(lx, y + rowH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Bar outline
@@ -478,6 +511,8 @@ function renderSketch(data: RankingData, title: string | undefined, d: DesignPre
     svg.path(jitterRect(bx, y + (rowH - 20) / 2, barW, 20, i * 23), {
       fill: 'none', stroke: d.border, 'stroke-width': 1.5,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -511,6 +546,8 @@ function renderPixel(data: RankingData, title: string | undefined, d: DesignPres
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.6;
     const barW = Math.round(barMaxW * barRatio);
 
+    svg.beginItem(`items[${i}]`);
+
     // Rank box
     svg.rect(pad, y, rankW, rowH, {
       fill: color, opacity: 0.8, 'shape-rendering': 'crispEdges',
@@ -524,6 +561,7 @@ function renderPixel(data: RankingData, title: string | undefined, d: DesignPres
     const fit = fitText(item.label, labelW, 1, d.labelSize);
     svg.text(lx, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Bar
@@ -535,8 +573,11 @@ function renderPixel(data: RankingData, title: string | undefined, d: DesignPres
     if (item.value) {
       svg.text(bx + barW - 6, y + rowH / 2 + 4, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 700, fill: d.bg,
+        'data-field': `items[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -578,6 +619,8 @@ function renderVerticalPodium(data: RankingData, title: string | undefined, d: D
     const x = pad + i * (barW + barGap);
     const y = baseY - barH;
 
+    svg.beginItem(`items[${i}]`);
+
     if (d.id === 'neon') {
       svg.rect(x, y, barW, barH, {
         fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
@@ -600,6 +643,7 @@ function renderVerticalPodium(data: RankingData, title: string | undefined, d: D
     if (item.value) {
       svg.text(x + barW / 2, y + 40, item.value, {
         'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': 600, fill: d.id === 'neon' ? color : 'white', opacity: 0.9,
+        'data-field': `items[${i}].value`,
       });
     }
 
@@ -608,9 +652,12 @@ function renderVerticalPodium(data: RankingData, title: string | undefined, d: D
     for (const line of fit.lines) {
       svg.text(x + barW / 2, ly, line, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `items[${i}].label`,
       });
       ly += Math.round(fit.fontSize * 1.3);
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -651,6 +698,8 @@ function renderHorizontalBars(data: RankingData, title: string | undefined, d: D
     const barRatio = 1 - (i / Math.max(count, 1)) * 0.65;
     const barW = barMaxW * barRatio;
 
+    svg.beginItem(`items[${i}]`);
+
     // Rank number
     svg.text(pad + rankW / 2, y + rowH / 2 + 5, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 14, 'font-weight': 800, fill: color,
@@ -661,6 +710,7 @@ function renderHorizontalBars(data: RankingData, title: string | undefined, d: D
     const fit = fitText(item.label, labelW, 1, d.labelSize);
     svg.text(lx, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Bar
@@ -687,8 +737,11 @@ function renderHorizontalBars(data: RankingData, title: string | undefined, d: D
     if (item.value) {
       svg.text(bx + barW - 6, y + rowH / 2 + 4, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize, 'font-weight': 600, fill: d.id === 'neon' ? color : 'white',
+        'data-field': `items[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -736,6 +789,8 @@ function renderRoiBar(data: RankingData, title: string | undefined, d: DesignPre
     const barRatio = numericValues[i]! / maxVal;
     const barW = Math.max(barMaxW * barRatio, 20);
 
+    svg.beginItem(`items[${i}]`);
+
     // Row background
     if (d.id !== 'sketch' && d.id !== 'pixel') {
       svg.rect(pad, y, totalW, rowH, {
@@ -758,6 +813,7 @@ function renderRoiBar(data: RankingData, title: string | undefined, d: DesignPre
     const fit = fitText(item.label, labelW - 20, 1, d.labelSize);
     svg.text(lx, y + 38, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Bar
@@ -782,6 +838,7 @@ function renderRoiBar(data: RankingData, title: string | undefined, d: DesignPre
       svg.text(bx + barW - 8, y + rowH / 2 + 5, item.value, {
         'text-anchor': 'end', 'font-size': d.captionSize + 1, 'font-weight': 700,
         fill: d.id === 'neon' ? color : 'white',
+        'data-field': `items[${i}].value`,
       });
     }
 
@@ -793,10 +850,13 @@ function renderRoiBar(data: RankingData, title: string | undefined, d: DesignPre
       for (const line of dfit.lines) {
         svg.text(dx, dy, line, {
           'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+          'data-field': `items[${i}].description`,
         });
         dy += Math.round(dfit.fontSize * 1.4);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();

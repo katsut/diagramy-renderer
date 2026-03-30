@@ -73,10 +73,12 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
         const color = itemColor(d, i);
         const x = pad + i * (cardW + gap);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.path(jitterRect(x, contentTop, cardW, cardH, i * 17), {
           fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
         });
         drawKpiContent(svg, d, card, cx, contentTop, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -89,11 +91,13 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
         const color = itemColor(d, i);
         const x = pad + i * (cardW + gap);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.raw(pixelBorder(x, contentTop, cardW, cardH, color, px));
         svg.rect(x + px, contentTop + px, cardW - px * 2, cardH - px * 2, {
           fill: d.surface, 'shape-rendering': 'crispEdges',
         });
         drawKpiContent(svg, d, card, cx, contentTop, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -105,12 +109,14 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
         const color = itemColor(d, i);
         const x = pad + i * (cardW + gap);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.rect(x, contentTop, cardW, cardH, {
           fill: d.surface, stroke: d.border, 'stroke-width': 3,
           rx: d.borderRadius, filter: 'url(#bold-offset)',
         });
         svg.rect(x + 1, contentTop + 1, cardW - 2, 5, { fill: color, rx: 2 });
         drawKpiContent(svg, d, card, cx, contentTop, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -122,6 +128,7 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
         const color = itemColor(d, i);
         const x = pad + i * (cardW + gap);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.rect(x, contentTop, cardW, cardH, {
           fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
         });
@@ -133,6 +140,7 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
           fill: color, opacity: 0.05, rx: d.borderRadius,
         });
         drawKpiContent(svg, d, card, cx, contentTop, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -144,12 +152,14 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
         const color = itemColor(d, i);
         const x = pad + i * (cardW + gap);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.rect(x, contentTop, cardW, cardH, {
           fill: d.surface, stroke: d.border, 'stroke-width': 1,
           rx: d.borderRadius, ...d.cardAttrs(),
         });
         svg.rect(x + 8, contentTop + 1, cardW - 16, 1, { fill: color, opacity: 0.3, rx: 0.5 });
         drawKpiContent(svg, d, card, cx, contentTop, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -161,6 +171,7 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
         const color = itemColor(d, i);
         const x = pad + i * (cardW + gap);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.ellipse(x + cardW / 2, contentTop + cardH / 2, cardW / 2 + 6, cardH / 2 + 4, {
           fill: color, opacity: 0.08, filter: 'url(#watercolor)',
         });
@@ -168,6 +179,7 @@ function renderHorizontal(data: KpiCardData, title: string | undefined, d: Desig
           fill: d.surface, opacity: 0.7, rx: d.borderRadius, filter: 'url(#watercolor)',
         });
         drawKpiContent(svg, d, card, cx, contentTop, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -225,10 +237,12 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
         const x = pad + col * (cardW + gapX);
         const y = contentTop + row * (cardH + gapY);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.path(jitterRect(x, y, cardW, cardH, i * 17), {
           fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
         });
         drawKpiContent(svg, d, card, cx, y, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -244,11 +258,13 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
         const x = pad + col * (cardW + gapX);
         const y = contentTop + row * (cardH + gapY);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.raw(pixelBorder(x, y, cardW, cardH, color, px));
         svg.rect(x + px, y + px, cardW - px * 2, cardH - px * 2, {
           fill: d.surface, 'shape-rendering': 'crispEdges',
         });
         drawKpiContent(svg, d, card, cx, y, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -263,12 +279,14 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
         const x = pad + col * (cardW + gapX);
         const y = contentTop + row * (cardH + gapY);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.rect(x, y, cardW, cardH, {
           fill: d.surface, stroke: d.border, 'stroke-width': 3,
           rx: d.borderRadius, filter: 'url(#bold-offset)',
         });
         svg.rect(x + 1, y + 1, cardW - 2, 5, { fill: color, rx: 2 });
         drawKpiContent(svg, d, card, cx, y, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -283,6 +301,7 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
         const x = pad + col * (cardW + gapX);
         const y = contentTop + row * (cardH + gapY);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.rect(x, y, cardW, cardH, {
           fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
         });
@@ -294,6 +313,7 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
           fill: color, opacity: 0.05, rx: d.borderRadius,
         });
         drawKpiContent(svg, d, card, cx, y, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -308,12 +328,14 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
         const x = pad + col * (cardW + gapX);
         const y = contentTop + row * (cardH + gapY);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.rect(x, y, cardW, cardH, {
           fill: d.surface, stroke: d.border, 'stroke-width': 1,
           rx: d.borderRadius, ...d.cardAttrs(),
         });
         svg.rect(x + 8, y + 1, cardW - 16, 1, { fill: color, opacity: 0.3, rx: 0.5 });
         drawKpiContent(svg, d, card, cx, y, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -328,6 +350,7 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
         const x = pad + col * (cardW + gapX);
         const y = contentTop + row * (cardH + gapY);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         svg.ellipse(x + cardW / 2, y + cardH / 2, cardW / 2 + 6, cardH / 2 + 4, {
           fill: color, opacity: 0.08, filter: 'url(#watercolor)',
         });
@@ -335,6 +358,7 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
           fill: d.surface, opacity: 0.7, rx: d.borderRadius, filter: 'url(#watercolor)',
         });
         drawKpiContent(svg, d, card, cx, y, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -349,8 +373,10 @@ function renderGrid(data: KpiCardData, title: string | undefined, d: DesignPrese
         const x = pad + col * (cardW + gapX);
         const y = contentTop + row * (cardH + gapY);
         const cx = x + cardW / 2;
+        svg.beginItem(`cards[${i}]`);
         drawPresetCard(svg, d, x, y, cardW, cardH, color);
         drawKpiContent(svg, d, card, cx, y, cardW, color, `cards[${i}]`);
+        svg.endItem();
       }
       break;
     }
@@ -428,10 +454,12 @@ function renderDashboard(data: KpiCardData, title: string | undefined, d: Design
     }
 
     // Hero content — larger
+    svg.beginItem('cards[0]');
     const hcx = hx + heroW / 2;
     const labelFit = fitText(card.label, heroW - 32, 1, d.captionSize + 1);
     svg.text(hcx, hy + 32, labelFit.lines[0] ?? card.label, {
       'text-anchor': 'middle', 'font-size': d.captionSize + 1, fill: d.textSecondary,
+      'data-field': 'cards[0].label',
     });
 
     const valueText = card.unit ? `${card.value}${card.unit}` : card.value;
@@ -441,6 +469,7 @@ function renderDashboard(data: KpiCardData, title: string | undefined, d: Design
     }
     svg.text(hcx, hy + 82, valueText, {
       'text-anchor': 'middle', 'font-size': valueFontSize, 'font-weight': 800, fill: d.text,
+      'data-field': 'cards[0].value',
     });
 
     if (card.trend) {
@@ -448,6 +477,7 @@ function renderDashboard(data: KpiCardData, title: string | undefined, d: Design
       const arrow = trendArrow(card.trend);
       svg.text(hcx, hy + 115, `${arrow}${card.trend}`, {
         'text-anchor': 'middle', 'font-size': d.labelSize + 2, 'font-weight': 600, fill: tc,
+        'data-field': 'cards[0].trend',
       });
     }
 
@@ -455,8 +485,10 @@ function renderDashboard(data: KpiCardData, title: string | undefined, d: Design
       const descFit = fitText(card.description, heroW - 32, 1, d.captionSize);
       svg.text(hcx, hy + 142, descFit.lines[0] ?? card.description, {
         'text-anchor': 'middle', 'font-size': descFit.fontSize, fill: d.textSecondary,
+        'data-field': 'cards[0].description',
       });
     }
+    svg.endItem();
   }
 
   // Smaller cards for remaining KPIs
@@ -469,6 +501,7 @@ function renderDashboard(data: KpiCardData, title: string | undefined, d: Design
     const sx = smallStartX + col * (smallCardW + gap);
     const sy = contentTop + row * (smallCardH + gap);
 
+    svg.beginItem(`cards[${i}]`);
     if (d.id === 'neon') {
       svg.rect(sx, sy, smallCardW, smallCardH, {
         fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
@@ -492,6 +525,7 @@ function renderDashboard(data: KpiCardData, title: string | undefined, d: Design
     }
 
     drawKpiContent(svg, d, card, sx + smallCardW / 2, sy, smallCardW, color, `cards[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();

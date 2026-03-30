@@ -135,10 +135,13 @@ function renderBold(data: BarChartData, title: string | undefined, d: DesignPres
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
     const barW = Math.max(8, (item.value / lay.maxVal) * lay.chartW);
 
+    svg.beginItem(`items[${i}]`);
+
     // Label (bold, large)
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 10, y + lay.barH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': 800, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Bar with offset shadow + thick border
@@ -152,12 +155,16 @@ function renderBold(data: BarChartData, title: string | undefined, d: DesignPres
     if (barW > 60) {
       svg.text(lay.chartX + barW - 10, y + lay.barH / 2 + 6, valText, {
         'text-anchor': 'end', 'font-size': d.labelSize, 'font-weight': 900, fill: '#FFFFFF',
+        'data-field': `items[${i}].value`,
       });
     } else {
       svg.text(lay.chartX + barW + 8, y + lay.barH / 2 + 6, valText, {
         'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': 900, fill: d.text,
+        'data-field': `items[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -180,11 +187,14 @@ function renderFlat(data: BarChartData, title: string | undefined, d: DesignPres
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
     const barW = Math.max(4, (item.value / lay.maxVal) * lay.chartW);
 
+    svg.beginItem(`items[${i}]`);
+
     // Color dot label
     svg.circle(lay.chartX - lay.labelW + 4, y + lay.barH / 2, 5, { fill: color });
     const fit = fitText(item.label, lay.labelW - 18, 1, d.labelSize);
     svg.text(lay.chartX - lay.labelW + 16, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Flat bar — no shadow, no border, no rounding
@@ -194,7 +204,10 @@ function renderFlat(data: BarChartData, title: string | undefined, d: DesignPres
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(lay.chartX + barW + 6, y + lay.barH / 2 + 4, valText, {
       'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
+      'data-field': `items[${i}].value`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -218,10 +231,13 @@ function renderGlass(data: BarChartData, title: string | undefined, d: DesignPre
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
     const barW = Math.max(4, (item.value / lay.maxVal) * lay.chartW);
 
+    svg.beginItem(`items[${i}]`);
+
     // Label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Background track (frosted glass)
@@ -242,7 +258,10 @@ function renderGlass(data: BarChartData, title: string | undefined, d: DesignPre
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(lay.chartX + barW + 8, y + lay.barH / 2 + 4, valText, {
       'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
+      'data-field': `items[${i}].value`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -273,10 +292,13 @@ function renderNeon(data: BarChartData, title: string | undefined, d: DesignPres
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
     const barW = Math.max(4, (item.value / lay.maxVal) * lay.chartW);
 
+    svg.beginItem(`items[${i}]`);
+
     // Label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Neon outline bar
@@ -297,7 +319,10 @@ function renderNeon(data: BarChartData, title: string | undefined, d: DesignPres
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(lay.chartX + barW + 8, y + lay.barH / 2 + 4, valText, {
       'text-anchor': 'start', 'font-size': d.captionSize, fill: color, opacity: 0.8,
+      'data-field': `items[${i}].value`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -326,10 +351,13 @@ function renderWatercolor(data: BarChartData, title: string | undefined, d: Desi
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
     const barW = Math.max(4, (item.value / lay.maxVal) * lay.chartW);
 
+    svg.beginItem(`items[${i}]`);
+
     // Label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Watercolor wash behind bar
@@ -347,7 +375,10 @@ function renderWatercolor(data: BarChartData, title: string | undefined, d: Desi
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(lay.chartX + barW + 8, y + lay.barH / 2 + 4, valText, {
       'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
+      'data-field': `items[${i}].value`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -373,10 +404,13 @@ function renderSketch(data: BarChartData, title: string | undefined, d: DesignPr
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
     const barW = Math.max(4, (item.value / lay.maxVal) * lay.chartW);
 
+    svg.beginItem(`items[${i}]`);
+
     // Label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Hand-drawn bar
@@ -394,7 +428,10 @@ function renderSketch(data: BarChartData, title: string | undefined, d: DesignPr
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(lay.chartX + barW + 6, y + lay.barH / 2 + 4, valText, {
       'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
+      'data-field': `items[${i}].value`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -424,10 +461,13 @@ function renderPixel(data: BarChartData, title: string | undefined, d: DesignPre
     const y = lay.contentTop + i * (lay.barH + lay.barGap);
     const barW = Math.max(px * 2, Math.floor((item.value / lay.maxVal) * lay.chartW / px) * px);
 
+    svg.beginItem(`items[${i}]`);
+
     // Label
     const fit = fitText(item.label, lay.labelW, 1, d.labelSize);
     svg.text(lay.chartX - 8, y + lay.barH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
 
     // Pixel bar
@@ -440,7 +480,10 @@ function renderPixel(data: BarChartData, title: string | undefined, d: DesignPre
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(lay.chartX + barW + 6, y + lay.barH / 2 + 4, valText, {
       'text-anchor': 'start', 'font-size': d.captionSize, fill: d.text,
+      'data-field': `items[${i}].value`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -489,6 +532,8 @@ function renderHorizontalStyle(data: BarChartData, title: string | undefined, d:
     const x = chartLeft + i * (barW + gap);
     const barH = Math.max(4, (item.value / maxVal) * chartH);
 
+    svg.beginItem(`items[${i}]`);
+
     // Bar growing upward
     if (d.id === 'neon') {
       svg.rect(x, baseY - barH, barW, barH, {
@@ -510,13 +555,17 @@ function renderHorizontalStyle(data: BarChartData, title: string | undefined, d:
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(x + barW / 2, baseY - barH - 6, valText, {
       'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
+      'data-field': `items[${i}].value`,
     });
 
     // Label below baseline
     const fit = fitText(item.label, barW + gap, 1, d.captionSize);
     svg.text(x + barW / 2, baseY + 18, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -565,6 +614,8 @@ function renderLollipop(data: BarChartData, title: string | undefined, d: Design
     const stemH = Math.max(4, (item.value / maxVal) * chartH);
     const tipY = baseY - stemH;
 
+    svg.beginItem(`items[${i}]`);
+
     // Thin stem
     if (d.id === 'neon') {
       svg.line(cx, baseY, cx, tipY, {
@@ -588,13 +639,17 @@ function renderLollipop(data: BarChartData, title: string | undefined, d: Design
     const valText = data.unit ? `${item.value} ${data.unit}` : `${item.value}`;
     svg.text(cx, tipY - dotR - 4, valText, {
       'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
+      'data-field': `items[${i}].value`,
     });
 
     // Label below baseline
     const fit = fitText(item.label, spacing - 6, 1, d.captionSize);
     svg.text(cx, baseY + 18, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `items[${i}].label`,
     });
+
+    svg.endItem();
   }
 
   return svg.build();

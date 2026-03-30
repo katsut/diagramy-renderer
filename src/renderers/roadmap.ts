@@ -144,6 +144,8 @@ function renderBold(data: RoadmapData, title: string | undefined, d: DesignPrese
     const x = lay.pad + i * (lay.phaseW + lay.phaseGap);
     const cx = x + lay.phaseW / 2;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Colored card with offset shadow
     svg.rect(x, lay.contentTop + 48, lay.phaseW, lay.laneH - 52, {
       fill: color, rx: d.borderRadius, filter: 'url(#bold-offset)',
@@ -163,6 +165,7 @@ function renderBold(data: RoadmapData, title: string | undefined, d: DesignPrese
     const fit = fitText(phase.label, lay.phaseW - 24, 1, d.labelSize + 2);
     svg.text(cx, lay.contentTop + 74, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
+      'data-field': `phases[${i}].label`,
     });
 
     // Items in white area
@@ -172,8 +175,11 @@ function renderBold(data: RoadmapData, title: string | undefined, d: DesignPrese
       const itemFit = fitText(phase.items[j]!, lay.phaseW - 44, 1, d.captionSize);
       svg.text(x + 26, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.text,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -205,6 +211,8 @@ function renderFlat(data: RoadmapData, title: string | undefined, d: DesignPrese
     const color = phaseColor(d, i);
     const y = contentTop + i * (cardH + gap);
 
+    svg.beginItem(`phases[${i}]`);
+
     // Flat card
     svg.rect(pad, y, cardW, cardH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
@@ -218,6 +226,7 @@ function renderFlat(data: RoadmapData, title: string | undefined, d: DesignPrese
     const fit = fitText(phase.label, 160, 1, d.labelSize);
     svg.text(pad + 48, y + 26, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `phases[${i}].label`,
     });
     // Items
     for (let j = 0; j < phase.items.length; j++) {
@@ -226,8 +235,11 @@ function renderFlat(data: RoadmapData, title: string | undefined, d: DesignPrese
       const itemFit = fitText(phase.items[j]!, cardW - 80, 1, d.captionSize);
       svg.text(pad + 60, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -260,6 +272,8 @@ function renderGlass(data: RoadmapData, title: string | undefined, d: DesignPres
     const x = lay.pad + i * (lay.phaseW + lay.phaseGap);
     const cx = x + lay.phaseW / 2;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Glow behind card
     svg.rect(x + 4, lay.contentTop + 44, lay.phaseW - 8, lay.laneH - 48, {
       fill: color, opacity: 0.06, rx: d.borderRadius, filter: 'url(#shadow)',
@@ -284,6 +298,7 @@ function renderGlass(data: RoadmapData, title: string | undefined, d: DesignPres
     svg.text(cx, lay.contentTop + 62, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
       'letter-spacing': '0.3',
+      'data-field': `phases[${i}].label`,
     });
 
     // Items
@@ -293,8 +308,11 @@ function renderGlass(data: RoadmapData, title: string | undefined, d: DesignPres
       const itemFit = fitText(phase.items[j]!, lay.phaseW - 40, 1, d.captionSize);
       svg.text(x + 28, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -326,6 +344,8 @@ function renderNeon(data: RoadmapData, title: string | undefined, d: DesignPrese
     const x = lay.pad + i * (lay.phaseW + lay.phaseGap);
     const cx = x + lay.phaseW / 2;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Dark card with neon border
     svg.rect(x, lay.contentTop + 40, lay.phaseW, lay.laneH - 44, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
@@ -351,6 +371,7 @@ function renderNeon(data: RoadmapData, title: string | undefined, d: DesignPrese
     const fit = fitText(phase.label, lay.phaseW - 24, 1, d.labelSize);
     svg.text(cx, lay.contentTop + 68, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `phases[${i}].label`,
     });
 
     // Items
@@ -360,8 +381,11 @@ function renderNeon(data: RoadmapData, title: string | undefined, d: DesignPrese
       const itemFit = fitText(phase.items[j]!, lay.phaseW - 40, 1, d.captionSize);
       svg.text(x + 24, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -391,6 +415,8 @@ function renderWatercolor(data: RoadmapData, title: string | undefined, d: Desig
     const x = lay.pad + i * (lay.phaseW + lay.phaseGap);
     const cx = x + lay.phaseW / 2;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Watercolor wash blob behind card
     svg.ellipse(cx, lay.contentTop + 40 + (lay.laneH - 44) / 2, lay.phaseW / 2 + 10, (lay.laneH - 44) / 2 + 8, {
       fill: color, opacity: 0.12, filter: 'url(#watercolor)',
@@ -410,6 +436,7 @@ function renderWatercolor(data: RoadmapData, title: string | undefined, d: Desig
     const fit = fitText(phase.label, lay.phaseW - 24, 1, d.labelSize);
     svg.text(cx, lay.contentTop + 62, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `phases[${i}].label`,
     });
 
     // Items
@@ -419,8 +446,11 @@ function renderWatercolor(data: RoadmapData, title: string | undefined, d: Desig
       const itemFit = fitText(phase.items[j]!, lay.phaseW - 40, 1, d.captionSize);
       svg.text(x + 28, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -447,6 +477,8 @@ function renderSketch(data: RoadmapData, title: string | undefined, d: DesignPre
     const x = lay.pad + i * (lay.phaseW + lay.phaseGap);
     const cx = x + lay.phaseW / 2;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Phase card (hand-drawn)
     svg.path(jitterRect(x, lay.contentTop + 40, lay.phaseW, lay.laneH - 44, i * 9), {
       fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
@@ -462,6 +494,7 @@ function renderSketch(data: RoadmapData, title: string | undefined, d: DesignPre
     const fit = fitText(phase.label, lay.phaseW - 24, 1, d.labelSize);
     svg.text(cx, lay.contentTop + 60, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `phases[${i}].label`,
     });
 
     // Items with dash markers
@@ -473,8 +506,11 @@ function renderSketch(data: RoadmapData, title: string | undefined, d: DesignPre
       const itemFit = fitText(phase.items[j]!, lay.phaseW - 36, 1, d.captionSize);
       svg.text(x + 24, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -503,6 +539,8 @@ function renderPixel(data: RoadmapData, title: string | undefined, d: DesignPres
     const x = lay.pad + i * (lay.phaseW + lay.phaseGap);
     const cx = x + lay.phaseW / 2;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Phase card (pixel border)
     const cardY = lay.contentTop + 38;
     const cardH = lay.laneH - 42;
@@ -525,6 +563,7 @@ function renderPixel(data: RoadmapData, title: string | undefined, d: DesignPres
     const fit = fitText(phase.label, lay.phaseW - 20, 1, d.labelSize);
     svg.text(cx, lay.contentTop + 60, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `phases[${i}].label`,
     });
 
     // Items
@@ -536,8 +575,11 @@ function renderPixel(data: RoadmapData, title: string | undefined, d: DesignPres
       const itemFit = fitText(phase.items[j]!, lay.phaseW - 32, 1, d.captionSize);
       svg.text(x + px * 4 + 10, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.text,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -582,6 +624,8 @@ function renderVerticalStyle(data: RoadmapData, title: string | undefined, d: De
     const color = phaseColor(d, i);
     const phaseH = phaseHeights[i]!;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Phase card
     drawPresetCard(svg, d, pad, curY, cardW, phaseH, color);
 
@@ -600,6 +644,7 @@ function renderVerticalStyle(data: RoadmapData, title: string | undefined, d: De
     const fit = fitText(phase.label, cardW - 80, 1, d.labelSize);
     svg.text(pad + 48, curY + headerH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': 700, fill: 'white',
+      'data-field': `phases[${i}].label`,
     });
 
     // Items
@@ -609,6 +654,7 @@ function renderVerticalStyle(data: RoadmapData, title: string | undefined, d: De
       const itemFit = fitText(phase.items[j]!, cardW - 56, 1, d.captionSize);
       svg.text(pad + 34, itemY + 8, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
 
@@ -623,6 +669,8 @@ function renderVerticalStyle(data: RoadmapData, title: string | undefined, d: De
         fill: 'none', stroke: d.border, 'stroke-width': 2, opacity: 0.4,
       });
     }
+
+    svg.endItem();
 
     curY += phaseH + phaseGap + arrowH;
   }
@@ -669,6 +717,8 @@ function renderTimelineCards(data: RoadmapData, title: string | undefined, d: De
     const cx = pad + i * (cardW + cardGap) + cardW / 2;
     const isAbove = i % 2 === 0;
 
+    svg.beginItem(`phases[${i}]`);
+
     // Dot on timeline
     svg.circle(cx, lineY, 7, { fill: `url(#rg${i})`, stroke: d.bg, 'stroke-width': 2 });
 
@@ -688,6 +738,7 @@ function renderTimelineCards(data: RoadmapData, title: string | undefined, d: De
     const fit = fitText(phase.label, cardW - 20, 1, d.labelSize);
     svg.text(cx, cardY + 22, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: color,
+      'data-field': `phases[${i}].label`,
     });
 
     // Items
@@ -697,8 +748,11 @@ function renderTimelineCards(data: RoadmapData, title: string | undefined, d: De
       const itemFit = fitText(phase.items[j]!, cardW - 36, 1, d.captionSize);
       svg.text(cx - cardW / 2 + 24, itemY + 4, itemFit.lines[0]!, {
         'text-anchor': 'start', 'font-size': itemFit.fontSize, fill: d.textSecondary,
+        'data-field': `phases[${i}].items[${j}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();

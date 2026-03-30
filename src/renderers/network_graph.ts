@@ -122,7 +122,8 @@ function renderClean(data: NetworkGraphData, title: string | undefined, d: Desig
   const positions = layoutNodes(data, cx, cy, ringR);
 
   // Edges
-  for (const edge of data.edges) {
+  for (let j = 0; j < data.edges.length; j++) {
+    const edge = data.edges[j]!;
     const from = findNode(positions, edge.from);
     const to = findNode(positions, edge.to);
     if (!from || !to) continue;
@@ -134,6 +135,7 @@ function renderClean(data: NetworkGraphData, title: string | undefined, d: Desig
     if (edge.label) {
       svg.text(mx, my - 4, edge.label, {
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
+        'data-field': `edges[${j}].label`,
       });
     }
   }
@@ -193,6 +195,7 @@ function renderBold(data: NetworkGraphData, title: string | undefined, d: Design
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
     const color = nodeColor(d, p.group);
+    svg.beginItem(`nodes[${i}]`);
     svg.circle(p.x, p.y, nodeR, {
       fill: color, stroke: '#111', 'stroke-width': 3, filter: 'url(#bold-offset)',
     });
@@ -202,7 +205,9 @@ function renderBold(data: NetworkGraphData, title: string | undefined, d: Design
     const fit = fitText(p.label, nodeR * 2 + 10, 1, 11);
     svg.text(p.x, p.y + 14, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: '#FFFFFF',
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -241,15 +246,18 @@ function renderFlat(data: NetworkGraphData, title: string | undefined, d: Design
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
     const color = nodeColor(d, p.group);
+    svg.beginItem(`nodes[${i}]`);
     svg.circle(p.x, p.y, nodeR, { fill: color });
     const fit = fitText(p.label, nodeR * 2 - 8, 1, 11);
     svg.text(p.x, p.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: '#FFFFFF',
+      'data-field': `nodes[${i}].label`,
     });
     // Label below
     svg.text(p.x, p.y + nodeR + 14, p.label, {
       'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -289,6 +297,7 @@ function renderGlass(data: NetworkGraphData, title: string | undefined, d: Desig
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
     const color = nodeColor(d, p.group);
+    svg.beginItem(`nodes[${i}]`);
     // Outer glow
     svg.circle(p.x, p.y, nodeR + 6, { fill: color, opacity: 0.08, filter: 'url(#shadow)' });
     // Frosted glass node
@@ -301,7 +310,9 @@ function renderGlass(data: NetworkGraphData, title: string | undefined, d: Desig
     svg.text(p.x, p.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600,
       fill: d.text, 'letter-spacing': '0.3',
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -330,7 +341,8 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
   const positions = layoutNodes(data, cx, cy, ringR);
 
   // Edges with labels (offset perpendicular to line)
-  for (const edge of data.edges) {
+  for (let j = 0; j < data.edges.length; j++) {
+    const edge = data.edges[j]!;
     const from = findNode(positions, edge.from);
     const to = findNode(positions, edge.to);
     if (!from || !to) continue;
@@ -349,6 +361,7 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
       const oy = (dx / len) * 12;
       svg.text(mx + ox, my + oy - 2, edge.label, {
         'text-anchor': 'middle', 'font-size': 9, fill: d.textSecondary, opacity: 0.7,
+        'data-field': `edges[${j}].label`,
       });
     }
   }
@@ -357,6 +370,7 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
     const color = nodeColor(d, i);
+    svg.beginItem(`nodes[${i}]`);
     svg.circle(p.x, p.y, nodeR, { fill: color, opacity: 0.08 });
     svg.circle(p.x, p.y, nodeR, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1.5,
@@ -370,8 +384,10 @@ function renderNeon(data: NetworkGraphData, title: string | undefined, d: Design
     for (let l = 0; l < fit.lines.length; l++) {
       svg.text(p.x, startY + l * lh, fit.lines[l]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: color,
+        'data-field': `nodes[${i}].label`,
       });
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -411,6 +427,7 @@ function renderWatercolor(data: NetworkGraphData, title: string | undefined, d: 
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
     const color = nodeColor(d, p.group);
+    svg.beginItem(`nodes[${i}]`);
     // Watercolor wash blob
     svg.circle(p.x, p.y, nodeR + 8, { fill: color, opacity: 0.12, filter: 'url(#watercolor)' });
     // Soft node
@@ -418,7 +435,9 @@ function renderWatercolor(data: NetworkGraphData, title: string | undefined, d: 
     const fit = fitText(p.label, nodeR * 2 - 8, 1, 11);
     svg.text(p.x, p.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -455,11 +474,14 @@ function renderSketch(data: NetworkGraphData, title: string | undefined, d: Desi
 
   for (let i = 0; i < positions.length; i++) {
     const p = positions[i]!;
+    svg.beginItem(`nodes[${i}]`);
     svg.circle(p.x, p.y, nodeR, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
     const fit = fitText(p.label, nodeR * 2 - 8, 1, 11);
     svg.text(p.x, p.y + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -501,6 +523,7 @@ function renderPixel(data: NetworkGraphData, title: string | undefined, d: Desig
     const bx = Math.round(p.x - nodeR);
     const by = Math.round(p.y - nodeR);
     const bw = nodeR * 2;
+    svg.beginItem(`nodes[${i}]`);
     svg.raw(pixelBorder(bx, by, bw, bw, color, px));
     svg.rect(bx + px, by + px, bw - px * 2, bw - px * 2, {
       fill: d.surface, 'shape-rendering': 'crispEdges',
@@ -508,7 +531,9 @@ function renderPixel(data: NetworkGraphData, title: string | undefined, d: Desig
     const fit = fitText(p.label, bw - 10, 1, 10);
     svg.text(Math.round(p.x), Math.round(p.y) + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();
@@ -543,7 +568,8 @@ function renderCardFlow(data: NetworkGraphData, title: string | undefined, d: De
   const positions = layoutNodes(data, cx, cy, ringR);
 
   // Edges as cubic bezier curves
-  for (const edge of data.edges) {
+  for (let j = 0; j < data.edges.length; j++) {
+    const edge = data.edges[j]!;
     const from = findNode(positions, edge.from);
     const to = findNode(positions, edge.to);
     if (!from || !to) continue;
@@ -559,6 +585,7 @@ function renderCardFlow(data: NetworkGraphData, title: string | undefined, d: De
     if (edge.label) {
       svg.text(mx + ox * 0.5, my + oy * 0.5 - 4, edge.label, {
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
+        'data-field': `edges[${j}].label`,
       });
     }
   }
@@ -569,6 +596,8 @@ function renderCardFlow(data: NetworkGraphData, title: string | undefined, d: De
     const color = nodeColor(d, p.group);
     const rx = p.x - cardW / 2;
     const ry = p.y - cardH / 2;
+
+    svg.beginItem(`nodes[${i}]`);
 
     if (d.id === 'neon') {
       svg.rect(rx, ry, cardW, cardH, {
@@ -591,8 +620,10 @@ function renderCardFlow(data: NetworkGraphData, title: string | undefined, d: De
     for (let li = 0; li < fit.lines.length; li++) {
       svg.text(p.x, startY + li * lh, fit.lines[li]!, {
         'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: d.text,
+        'data-field': `nodes[${i}].label`,
       });
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -633,7 +664,8 @@ function renderArc(data: NetworkGraphData, title: string | undefined, d: DesignP
   const findNodeX = (id: string) => nodePositions.find(p => p.id === id);
 
   // Arcs
-  for (const edge of data.edges) {
+  for (let j = 0; j < data.edges.length; j++) {
+    const edge = data.edges[j]!;
     const from = findNodeX(edge.from);
     const to = findNodeX(edge.to);
     if (!from || !to) continue;
@@ -649,6 +681,7 @@ function renderArc(data: NetworkGraphData, title: string | undefined, d: DesignP
     if (edge.label) {
       svg.text(mx, nodeY - arcR - 4, edge.label, {
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary,
+        'data-field': `edges[${j}].label`,
       });
     }
   }
@@ -659,12 +692,15 @@ function renderArc(data: NetworkGraphData, title: string | undefined, d: DesignP
     const pos = nodePositions[i]!;
     const color = nodeColor(d, pos.group);
 
+    svg.beginItem(`nodes[${i}]`);
     svg.circle(pos.x, nodeY, 8, { fill: color });
 
     const fit = fitText(nn.label, nodeSpacing - 10, 1, d.labelSize);
     svg.text(pos.x, nodeY + 24, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `nodes[${i}].label`,
     });
+    svg.endItem();
   }
 
   return svg.build();

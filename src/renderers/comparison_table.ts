@@ -470,10 +470,13 @@ function renderCards(data: ComparisonTableData, title?: string, design?: DesignP
       svg.rect(pad + 1, y + 1, cardW - 2, 4, { fill: color, rx: 2 });
     }
 
+    svg.beginItem(`rows[${i}]`);
+
     // Row label (card title)
     const fit = fitText(row.label, cardW - 32, 1, 16);
     svg.text(pad + 16, y + 32, fit.lines[0]!, {
       'font-size': fit.fontSize, 'font-weight': 700, fill: t.text,
+      'data-field': `rows[${i}].label`,
     });
 
     // Attributes
@@ -491,14 +494,18 @@ function renderCards(data: ComparisonTableData, title?: string, design?: DesignP
       const hfit = fitText(header, 120, 1, 11);
       svg.text(pad + 16, attrY + 12, hfit.lines[0]!, {
         'font-size': hfit.fontSize, 'font-weight': 500, fill: t.textSecondary,
+        'data-field': `headers[${h + 1}]`,
       });
 
       // Value
       const vfit = fitText(value, cardW - 160, 1, 13);
       svg.text(pad + cardW - 16, attrY + 12, vfit.lines[0]!, {
         'text-anchor': 'end', 'font-size': vfit.fontSize, 'font-weight': 500, fill: t.text,
+        'data-field': `rows[${i}].values[${h}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -536,6 +543,7 @@ function renderMinimal(data: ComparisonTableData, title?: string, design?: Desig
     const fit = fitText(headerText, w - 12, 1, 12);
     svg.text(hx + w / 2, tableTop + headerH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 600, fill: t.textSecondary,
+      'data-field': `headers[${c}]`,
     });
     hx += w;
   }
@@ -550,6 +558,8 @@ function renderMinimal(data: ComparisonTableData, title?: string, design?: Desig
     const row = data.rows[r]!;
     const y = tableTop + headerH + r * rowH;
 
+    svg.beginItem(`rows[${r}]`);
+
     // Row underline
     svg.line(tableLeft, y + rowH, tableLeft + totalW, y + rowH, {
       stroke: t.border, 'stroke-width': 0.5, opacity: 0.3,
@@ -557,17 +567,19 @@ function renderMinimal(data: ComparisonTableData, title?: string, design?: Desig
 
     let cx = tableLeft;
     // Label
-    renderCellText(svg, row.label, cx + layout.colWidths[0]! / 2, y + rowH / 2, layout.colWidths[0]!, 'middle', 13, 600, t.text);
+    renderCellText(svg, row.label, cx + layout.colWidths[0]! / 2, y + rowH / 2, layout.colWidths[0]!, 'middle', 13, 600, t.text, `rows[${r}].label`);
     cx += layout.colWidths[0]!;
 
     // Values
     for (let v = 0; v < row.values.length; v++) {
       if (v + 1 < layout.colCount) {
         const cw = layout.colWidths[v + 1]!;
-        renderCellText(svg, row.values[v]!, cx + cw / 2, y + rowH / 2, cw, 'middle', 13, 400, t.textSecondary);
+        renderCellText(svg, row.values[v]!, cx + cw / 2, y + rowH / 2, cw, 'middle', 13, 400, t.textSecondary, `rows[${r}].values[${v}]`);
         cx += cw;
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -606,9 +618,11 @@ function renderBeforeAfter(data: ComparisonTableData, title?: string, design?: D
   const rightCx = pad + cardW + arrowW + cardW / 2;
   svg.text(leftCx, contentTop + 16, beforeLabel, {
     'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: t.textSecondary,
+    'data-field': 'headers[1]',
   });
   svg.text(rightCx, contentTop + 16, afterLabel, {
     'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: t.textSecondary,
+    'data-field': 'headers[2]',
   });
 
   const rowStart = contentTop + 36;
@@ -620,9 +634,12 @@ function renderBeforeAfter(data: ComparisonTableData, title?: string, design?: D
     const beforeVal = row.values[0] ?? '';
     const afterVal = row.values[1] ?? '';
 
+    svg.beginItem(`rows[${i}]`);
+
     // Row label above
     svg.text(pad + cardW + arrowW / 2, y + 10, row.label, {
       'text-anchor': 'middle', 'font-size': 11, 'font-weight': 600, fill: color, 'letter-spacing': '0.5',
+      'data-field': `rows[${i}].label`,
     });
 
     // Before card (muted)
@@ -634,7 +651,7 @@ function renderBeforeAfter(data: ComparisonTableData, title?: string, design?: D
     });
     // Left accent strip
     svg.rect(pad, cardTop + 4, 4, cardInnerH - 8, { fill: t.textSecondary, rx: 2, opacity: 0.3 });
-    renderCellText(svg, beforeVal, pad + 20, cardTop + cardInnerH / 2, cardW - 32, 'start', 13, 400, t.textSecondary);
+    renderCellText(svg, beforeVal, pad + 20, cardTop + cardInnerH / 2, cardW - 32, 'start', 13, 400, t.textSecondary, `rows[${i}].values[0]`);
 
     // Arrow
     const arrowCx = pad + cardW + arrowW / 2;
@@ -654,7 +671,9 @@ function renderBeforeAfter(data: ComparisonTableData, title?: string, design?: D
     });
     // Left accent strip (colored)
     svg.rect(afterLeft, cardTop + 4, 4, cardInnerH - 8, { fill: color, rx: 2 });
-    renderCellText(svg, afterVal, afterLeft + 20, cardTop + cardInnerH / 2, cardW - 32, 'start', 13, 600, t.text);
+    renderCellText(svg, afterVal, afterLeft + 20, cardTop + cardInnerH / 2, cardW - 32, 'start', 13, 600, t.text, `rows[${i}].values[1]`);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -741,7 +760,7 @@ function renderHighlight(data: ComparisonTableData, title?: string, design?: Des
     const color = isHighlight ? highlightColor : (c === 0 ? t.text : t.textSecondary);
     svg.text(hx + w / 2, tableTop + headerH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': isHighlight ? 800 : 600,
-      fill: color,
+      fill: color, 'data-field': `headers[${c}]`,
     });
     hx += w;
   }
@@ -751,6 +770,8 @@ function renderHighlight(data: ComparisonTableData, title?: string, design?: Des
   for (let r = 0; r < data.rows.length; r++) {
     const row = data.rows[r]!;
     const rh = layout.rowHeights[r]!;
+
+    svg.beginItem(`rows[${r}]`);
 
     if (r % 2 === 1) {
       svg.rect(tableLeft, ry, totalW, rh, { fill: t.surface, opacity: 0.5 });
@@ -762,7 +783,7 @@ function renderHighlight(data: ComparisonTableData, title?: string, design?: Des
     }
 
     let cx = tableLeft;
-    renderCellText(svg, row.label, cx + 16, ry + rh / 2, paddedWidths[0]! - 20, 'start', 13, 600, t.text);
+    renderCellText(svg, row.label, cx + 16, ry + rh / 2, paddedWidths[0]! - 20, 'start', 13, 600, t.text, `rows[${r}].label`);
     cx += paddedWidths[0]!;
 
     for (let v = 0; v < row.values.length; v++) {
@@ -771,10 +792,12 @@ function renderHighlight(data: ComparisonTableData, title?: string, design?: Des
         const isHighlight = v + 1 === highlightCol;
         const weight = isHighlight ? 700 : 400;
         const fill = isHighlight ? highlightColor : t.textSecondary;
-        renderCellText(svg, row.values[v]!, cx + cw / 2, ry + rh / 2, cw - 8, 'middle', 13, weight, fill);
+        renderCellText(svg, row.values[v]!, cx + cw / 2, ry + rh / 2, cw - 8, 'middle', 13, weight, fill, `rows[${r}].values[${v}]`);
         cx += cw;
       }
     }
+
+    svg.endItem();
     ry += rh;
   }
 
@@ -840,7 +863,7 @@ function renderChecklist(data: ComparisonTableData, title?: string, design?: Des
     const fit = fitText(headerText, w - 20, 1, 12);
     svg.text(hx + w / 2, tableTop + headerH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700,
-      fill: c === 0 ? t.text : color,
+      fill: c === 0 ? t.text : color, 'data-field': `headers[${c}]`,
     });
     hx += w;
   }
@@ -849,6 +872,8 @@ function renderChecklist(data: ComparisonTableData, title?: string, design?: Des
   let ry = tableTop + headerH;
   for (let r = 0; r < data.rows.length; r++) {
     const row = data.rows[r]!;
+
+    svg.beginItem(`rows[${r}]`);
 
     if (r % 2 === 1) {
       svg.rect(tableLeft, ry, totalW, rowH, { fill: t.surface, opacity: 0.5 });
@@ -861,7 +886,7 @@ function renderChecklist(data: ComparisonTableData, title?: string, design?: Des
 
     // Label (first column)
     let cx = tableLeft;
-    renderCellText(svg, row.label, cx + 16, ry + rowH / 2, paddedWidths[0]! - 20, 'start', 13, 600, t.text);
+    renderCellText(svg, row.label, cx + 16, ry + rowH / 2, paddedWidths[0]! - 20, 'start', 13, 600, t.text, `rows[${r}].label`);
     cx += paddedWidths[0]!;
 
     // Value cells - render as check/cross or text
@@ -886,11 +911,13 @@ function renderChecklist(data: ComparisonTableData, title?: string, design?: Des
           });
         } else {
           // Plain text
-          renderCellText(svg, val, cellCx, cellCy, cw - 8, 'middle', 13, 400, t.textSecondary);
+          renderCellText(svg, val, cellCx, cellCy, cw - 8, 'middle', 13, 400, t.textSecondary, `rows[${r}].values[${v}]`);
         }
         cx += cw;
       }
     }
+
+    svg.endItem();
     ry += rowH;
   }
 
@@ -941,10 +968,13 @@ function renderSpecCard(data: ComparisonTableData, title?: string, design?: Desi
     // Top color accent bar
     svg.rect(cardX + 1, cardY + 1, cardW - 2, 5, { fill: color, rx: 2 });
 
+    svg.beginItem(`headers[${c + 1}]`);
+
     // Card title (header name)
     const hFit = fitText(cardHeaders[c]!, cardW - 32, 1, 16);
     svg.text(cardX + cardW / 2, cardY + 36, hFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': hFit.fontSize, 'font-weight': 700, fill: t.text,
+      'data-field': `headers[${c + 1}]`,
     });
 
     // Key-value pairs from rows
@@ -962,14 +992,18 @@ function renderSpecCard(data: ComparisonTableData, title?: string, design?: Desi
       const kFit = fitText(row.label, cardW / 2 - 20, 1, 11);
       svg.text(cardX + 16, kvY + 20, kFit.lines[0]!, {
         'font-size': kFit.fontSize, 'font-weight': 500, fill: t.textSecondary,
+        'data-field': `rows[${r}].label`,
       });
 
       // Value
       const vFit = fitText(val, cardW / 2 - 20, 1, 13);
       svg.text(cardX + cardW - 16, kvY + 20, vFit.lines[0]!, {
         'text-anchor': 'end', 'font-size': vFit.fontSize, 'font-weight': 600, fill: t.text,
+        'data-field': `rows[${r}].values[${c}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -1051,6 +1085,7 @@ function renderMatrix(data: ComparisonTableData, title?: string, design?: Design
     const fit = fitText(headerText, w - 20, 1, 12);
     svg.text(hx + w / 2, tableTop + headerH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: color,
+      'data-field': `headers[${c}]`,
     });
     hx += w;
   }
@@ -1074,6 +1109,8 @@ function renderMatrix(data: ComparisonTableData, title?: string, design?: Design
     const row = data.rows[r]!;
     const rh = layout.rowHeights[r]!;
 
+    svg.beginItem(`rows[${r}]`);
+
     if (r % 2 === 1) {
       svg.rect(tableLeft, ry, totalW, rh, { fill: t.surface, opacity: 0.5 });
     }
@@ -1086,7 +1123,7 @@ function renderMatrix(data: ComparisonTableData, title?: string, design?: Design
     // Row label
     let cx = tableLeft;
     svg.rect(cx, ry, paddedWidths[0]!, rh, { fill: t.bg, opacity: 0.5 });
-    renderCellText(svg, row.label, cx + 16, ry + rh / 2, paddedWidths[0]! - 20, 'start', 13, 600, t.text);
+    renderCellText(svg, row.label, cx + 16, ry + rh / 2, paddedWidths[0]! - 20, 'start', 13, 600, t.text, `rows[${r}].label`);
     cx += paddedWidths[0]!;
 
     // Value cells with subtle color tinting
@@ -1095,10 +1132,12 @@ function renderMatrix(data: ComparisonTableData, title?: string, design?: Design
         const cw = paddedWidths[v + 1]!;
         const color = t.colors[v % t.colors.length]!;
         svg.rect(cx, ry, cw, rh, { fill: color, opacity: 0.04 });
-        renderCellText(svg, row.values[v]!, cx + cw / 2, ry + rh / 2, cw - 12, 'middle', 13, 400, t.textSecondary);
+        renderCellText(svg, row.values[v]!, cx + cw / 2, ry + rh / 2, cw - 12, 'middle', 13, 400, t.textSecondary, `rows[${r}].values[${v}]`);
         cx += cw;
       }
     }
+
+    svg.endItem();
     ry += rh;
   }
 
@@ -1174,10 +1213,13 @@ function renderPricing(data: ComparisonTableData, title?: string, design?: Desig
       }
     }
 
+    svg.beginItem(`headers[${c + 1}]`);
+
     // Card header
     const hFit = fitText(cardHeaders[c]!, cardW - 32, 1, 18);
     svg.text(cardX + cardW / 2, cardY + (isHighlight ? 46 : 40), hFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': hFit.fontSize, 'font-weight': 800, fill: t.text,
+      'data-field': `headers[${c + 1}]`,
     });
 
     // Divider
@@ -1196,14 +1238,18 @@ function renderPricing(data: ComparisonTableData, title?: string, design?: Desig
       const kFit = fitText(row.label, cardW - 32, 1, 11);
       svg.text(cardX + cardW / 2, kvY + 14, kFit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': kFit.fontSize, 'font-weight': 500, fill: t.textSecondary,
+        'data-field': `rows[${r}].label`,
       });
 
       // Value
       const vFit = fitText(val, cardW - 32, 1, 14);
       svg.text(cardX + cardW / 2, kvY + 30, vFit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': vFit.fontSize, 'font-weight': 700, fill: t.text,
+        'data-field': `rows[${r}].values[${c}]`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -1291,10 +1337,13 @@ function renderScorecard(data: ComparisonTableData, title?: string, design?: Des
       svg.rect(cardX, cardY + 4, 5, cardH - 8, { fill: color, rx: 2 });
     }
 
+    svg.beginItem(`headers[${c + 1}]`);
+
     // Card header
     const hFit = fitText(cardHeaders[c]!, cardW - 48, 1, 16);
     svg.text(cardX + 24, cardY + 36, hFit.lines[0]!, {
       'font-size': hFit.fontSize, 'font-weight': 700, fill: t.text,
+      'data-field': `headers[${c + 1}]`,
     });
 
     // Attribute rows
@@ -1315,6 +1364,7 @@ function renderScorecard(data: ComparisonTableData, title?: string, design?: Des
       const kFit = fitText(row.label, cardW / 2 - 28, 1, 11);
       svg.text(cardX + 24, kvY + 18, kFit.lines[0]!, {
         'font-size': kFit.fontSize, 'font-weight': 500, fill: t.textSecondary,
+        'data-field': `rows[${r}].label`,
       });
 
       if (unlim || numVal !== null) {
@@ -1336,6 +1386,7 @@ function renderScorecard(data: ComparisonTableData, title?: string, design?: Des
         // Value label to the right
         svg.text(barX + barW + 8, barY + barH / 2 + 4, val, {
           'font-size': 10, 'font-weight': 600, fill: t.text,
+          'data-field': `rows[${r}].values[${c}]`,
         });
       } else {
         // Text badge (non-numeric values)
@@ -1348,9 +1399,12 @@ function renderScorecard(data: ComparisonTableData, title?: string, design?: Des
         });
         svg.text(badgeX + badgeW / 2, badgeY + 15, vFit.lines[0]!, {
           'text-anchor': 'middle', 'font-size': vFit.fontSize, 'font-weight': 600, fill: color,
+          'data-field': `rows[${r}].values[${c}]`,
         });
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -1411,6 +1465,7 @@ function renderVersus(data: ComparisonTableData, title?: string, design?: Design
   const lhFit = fitText(leftLabel, colW - 32, 1, 18);
   svg.text(leftCx, contentTop + headerH / 2 - 2, lhFit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': lhFit.fontSize, 'font-weight': 800, fill: leftColor,
+    'data-field': 'headers[1]',
   });
 
   // Right header card
@@ -1428,6 +1483,7 @@ function renderVersus(data: ComparisonTableData, title?: string, design?: Design
   const rhFit = fitText(rightLabel, colW - 32, 1, 18);
   svg.text(rightCx, contentTop + headerH / 2 - 2, rhFit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': rhFit.fontSize, 'font-weight': 800, fill: rightColor,
+    'data-field': 'headers[2]',
   });
 
   // VS badge
@@ -1462,11 +1518,14 @@ function renderVersus(data: ComparisonTableData, title?: string, design?: Design
     const leftVal = row.values[0] ?? '';
     const rightVal = row.values[1] ?? '';
 
+    svg.beginItem(`rows[${r}]`);
+
     // Row label centered
     const labelMaxW = Math.max(150, estimateWidth(row.label, 10) + 16);
     const lFit = fitText(row.label, labelMaxW, 1, 10);
     svg.text(vsCx, ry + 10, lFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': lFit.fontSize, 'font-weight': 600, fill: t.textSecondary,
+      'data-field': `rows[${r}].label`,
     });
 
     // Left card
@@ -1488,7 +1547,7 @@ function renderVersus(data: ComparisonTableData, title?: string, design?: Design
       });
       svg.rect(pad, ry + 18, 4, rowH - 26, { fill: leftColor, rx: 2 });
     }
-    renderCellText(svg, leftVal, pad + 20, ry + 14 + (rowH - 18) / 2, colW - 32, 'start', 13, 500, t.text);
+    renderCellText(svg, leftVal, pad + 20, ry + 14 + (rowH - 18) / 2, colW - 32, 'start', 13, 500, t.text, `rows[${r}].values[0]`);
 
     // Right card
     if (isSketch) {
@@ -1509,7 +1568,9 @@ function renderVersus(data: ComparisonTableData, title?: string, design?: Design
       });
       svg.rect(pad + colW + vsW + colW - 4, ry + 18, 4, rowH - 26, { fill: rightColor, rx: 2 });
     }
-    renderCellText(svg, rightVal, pad + colW + vsW + 16, ry + 14 + (rowH - 18) / 2, colW - 32, 'start', 13, 500, t.text);
+    renderCellText(svg, rightVal, pad + colW + vsW + 16, ry + 14 + (rowH - 18) / 2, colW - 32, 'start', 13, 500, t.text, `rows[${r}].values[1]`);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -1582,6 +1643,7 @@ function renderFeatureMatrix(data: ComparisonTableData, title?: string, design?:
     const fit = fitText(headerText, w - 20, 1, 13);
     svg.text(hx + w / 2, tableTop + headerH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: color,
+      'data-field': `headers[${c}]`,
     });
     hx += w;
   }
@@ -1605,6 +1667,8 @@ function renderFeatureMatrix(data: ComparisonTableData, title?: string, design?:
   for (let r = 0; r < data.rows.length; r++) {
     const row = data.rows[r]!;
 
+    svg.beginItem(`rows[${r}]`);
+
     // Alternating row bg
     if (r % 2 === 0) {
       svg.rect(tableLeft, ry, totalW, rowH, { fill: t.bg, opacity: 0.4 });
@@ -1618,7 +1682,7 @@ function renderFeatureMatrix(data: ComparisonTableData, title?: string, design?:
 
     // Label column
     let cx = tableLeft;
-    renderCellText(svg, row.label, cx + 16, ry + rowH / 2, paddedWidths[0]! - 20, 'start', 13, 600, t.text);
+    renderCellText(svg, row.label, cx + 16, ry + rowH / 2, paddedWidths[0]! - 20, 'start', 13, 600, t.text, `rows[${r}].label`);
     cx += paddedWidths[0]!;
 
     // Value cells
@@ -1640,11 +1704,13 @@ function renderFeatureMatrix(data: ComparisonTableData, title?: string, design?:
             fill: 'none', stroke: '#EF4444', 'stroke-width': 2.5, 'stroke-linecap': 'round',
           });
         } else {
-          renderCellText(svg, val, cellCx, cellCy, cw - 12, 'middle', 12, 500, t.textSecondary);
+          renderCellText(svg, val, cellCx, cellCy, cw - 12, 'middle', 12, 500, t.textSecondary, `rows[${r}].values[${v}]`);
         }
         cx += cw;
       }
     }
+
+    svg.endItem();
     ry += rowH;
   }
 
@@ -1689,6 +1755,8 @@ function renderTimelineCompare(data: ComparisonTableData, title?: string, design
   for (let p = 0; p < pointCount; p++) {
     const px = tlLeft + p * pointGap + pointGap / 2;
 
+    svg.beginItem(`rows[${p}]`);
+
     // Time point marker
     svg.circle(px, contentTop + timelineTop - 20, 5, { fill: isSketch ? t.border : t.primary });
 
@@ -1701,7 +1769,10 @@ function renderTimelineCompare(data: ComparisonTableData, title?: string, design
     const lFit = fitText(timePoints[p]!.label, pointGap - 20, 1, 12);
     svg.text(px, contentTop + timelineTop - 28, lFit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': lFit.fontSize, 'font-weight': 600, fill: t.text,
+      'data-field': `rows[${p}].label`,
     });
+
+    svg.endItem();
   }
 
   // Horizontal timeline axis
@@ -1721,6 +1792,7 @@ function renderTimelineCompare(data: ComparisonTableData, title?: string, design
     const tFit = fitText(tracks[tr]!, labelColW - 16, 1, 12);
     svg.text(pad + 8, trackY + trackH / 2 + 4, tFit.lines[0]!, {
       'font-size': tFit.fontSize, 'font-weight': 600, fill: color,
+      'data-field': `headers[${tr + 1}]`,
     });
 
     // Track lane background
@@ -1768,6 +1840,7 @@ function renderTimelineCompare(data: ComparisonTableData, title?: string, design
       const vFit = fitText(val, cardW - 12, 1, 11);
       svg.text(px, trackY + trackH / 2 + 4, vFit.lines[0]!, {
         'text-anchor': 'middle', 'font-size': vFit.fontSize, 'font-weight': 500, fill: t.text,
+        'data-field': `rows[${p}].values[${tr}]`,
       });
     }
   }

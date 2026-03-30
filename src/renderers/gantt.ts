@@ -162,9 +162,12 @@ function renderSketch(data: GanttData, title: string | undefined, d: DesignPrese
     const task = data.tasks[i]!;
     const y = topY + axisH + i * (rowH + rowGap);
 
+    svg.beginItem(`tasks[${i}]`);
+
     const fit = fitText(task.label, labelW - 16, 1, d.labelSize);
     svg.text(pad + labelW - 8, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `tasks[${i}].label`,
     });
 
     const x1 = barX + ((task.start - min) / range) * barAreaW;
@@ -173,6 +176,8 @@ function renderSketch(data: GanttData, title: string | undefined, d: DesignPrese
     svg.path(jitterRect(x1, y + 4, bw, rowH - 8, i * 19), {
       fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -200,9 +205,12 @@ function renderPixel(data: GanttData, title: string | undefined, d: DesignPreset
     const color = taskColor(d, i);
     const y = topY + axisH + i * (rowH + rowGap);
 
+    svg.beginItem(`tasks[${i}]`);
+
     const fit = fitText(task.label, labelW - 12, 1, d.labelSize);
     svg.text(pad + labelW - 6, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'end', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+      'data-field': `tasks[${i}].label`,
     });
 
     const x1 = Math.round(barX + ((task.start - min) / range) * barAreaW);
@@ -211,6 +219,8 @@ function renderPixel(data: GanttData, title: string | undefined, d: DesignPreset
     svg.rect(x1, y + 2, bw, rowH - 4, {
       fill: color, opacity: 0.85, 'shape-rendering': 'crispEdges',
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -252,6 +262,8 @@ function renderBold(data: GanttData, title: string | undefined, d: DesignPreset)
     const color = taskColor(d, i);
     const y = topY + axisH + i * (rowH + rowGap);
 
+    svg.beginItem(`tasks[${i}]`);
+
     // Bold number badge
     svg.circle(pad + 16, y + rowH / 2, 14, { fill: color });
     svg.text(pad + 16, y + rowH / 2 + 5, `${i + 1}`, {
@@ -262,6 +274,7 @@ function renderBold(data: GanttData, title: string | undefined, d: DesignPreset)
     const fit = fitText(task.label, labelW - 44, 1, d.labelSize + 1);
     svg.text(pad + 36, y + rowH / 2 + 5, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': 800, fill: d.text,
+      'data-field': `tasks[${i}].label`,
     });
 
     // Bar with offset shadow
@@ -278,6 +291,8 @@ function renderBold(data: GanttData, title: string | undefined, d: DesignPreset)
         'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: '#FFFFFF',
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -315,6 +330,8 @@ function renderFlat(data: GanttData, title: string | undefined, d: DesignPreset)
     const color = taskColor(d, i);
     const y = topY + axisH + i * (rowH + rowGap);
 
+    svg.beginItem(`tasks[${i}]`);
+
     // Row background
     svg.rect(pad, y, labelW + barAreaW, rowH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
@@ -324,6 +341,7 @@ function renderFlat(data: GanttData, title: string | undefined, d: DesignPreset)
     const fit = fitText(task.label, labelW - 20, 1, d.labelSize);
     svg.text(pad + 14, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `tasks[${i}].label`,
     });
 
     // Flat bar (no shadow, no border)
@@ -333,6 +351,8 @@ function renderFlat(data: GanttData, title: string | undefined, d: DesignPreset)
     svg.rect(x1, y + 8, bw, rowH - 16, {
       fill: color, rx: 3,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -374,11 +394,14 @@ function renderGlass(data: GanttData, title: string | undefined, d: DesignPreset
     const color = taskColor(d, i);
     const y = topY + axisH + i * (rowH + rowGap);
 
+    svg.beginItem(`tasks[${i}]`);
+
     // Label with glow dot
     svg.circle(pad + 8, y + rowH / 2, 4, { fill: color, opacity: 0.6 });
     const fit = fitText(task.label, labelW - 24, 1, d.labelSize);
     svg.text(pad + 18, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `tasks[${i}].label`,
     });
 
     // Frosted glass bar
@@ -395,6 +418,8 @@ function renderGlass(data: GanttData, title: string | undefined, d: DesignPreset
     svg.rect(x1 + 2, y + 6, bw - 4, rowH - 12, {
       fill: color, opacity: 0.15, rx: 5,
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -435,6 +460,8 @@ function renderNeon(data: GanttData, title: string | undefined, d: DesignPreset)
     const color = taskColor(d, i);
     const y = topY + axisH + i * (rowH + rowGap);
 
+    svg.beginItem(`tasks[${i}]`);
+
     // Number tag
     svg.text(pad + 4, y + rowH / 2 + 4, `0${i + 1}`, {
       'text-anchor': 'start', 'font-size': 10, fill: color, opacity: 0.5, 'letter-spacing': '1',
@@ -444,6 +471,7 @@ function renderNeon(data: GanttData, title: string | undefined, d: DesignPreset)
     const fit = fitText(task.label, labelW - 32, 1, d.labelSize);
     svg.text(pad + 28, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `tasks[${i}].label`,
     });
 
     // Neon outlined bar
@@ -458,6 +486,8 @@ function renderNeon(data: GanttData, title: string | undefined, d: DesignPreset)
       fill: 'none', stroke: color, 'stroke-width': 1.5, rx: 4,
       opacity: 0.3, filter: 'url(#neon-glow)',
     });
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -496,6 +526,8 @@ function renderWatercolor(data: GanttData, title: string | undefined, d: DesignP
     const color = taskColor(d, i);
     const y = topY + axisH + i * (rowH + rowGap);
 
+    svg.beginItem(`tasks[${i}]`);
+
     // Watercolor number circle
     svg.circle(pad + 12, y + rowH / 2, 10, { fill: color, opacity: 0.7, filter: 'url(#watercolor)' });
     svg.text(pad + 12, y + rowH / 2 + 4, `${i + 1}`, {
@@ -506,6 +538,7 @@ function renderWatercolor(data: GanttData, title: string | undefined, d: DesignP
     const fit = fitText(task.label, labelW - 32, 1, d.labelSize);
     svg.text(pad + 28, y + rowH / 2 + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `tasks[${i}].label`,
     });
 
     // Watercolor wash bar
@@ -520,6 +553,8 @@ function renderWatercolor(data: GanttData, title: string | undefined, d: DesignP
     svg.rect(x1, y + 6, bw, rowH - 12, {
       fill: color, opacity: 0.7, rx: 6, filter: 'url(#watercolor)',
     });
+
+    svg.endItem();
   }
 
   return svg.build();

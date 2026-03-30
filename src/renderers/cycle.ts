@@ -177,13 +177,15 @@ function renderBold(data: CycleData, title: string | undefined, d: DesignPreset)
     const { x, y } = positions[i]!;
     const color = stepColor(d, i);
 
+    svg.beginItem(`steps[${i}]`);
     // Offset shadow
     svg.circle(x + 3, y + 3, nodeR, { fill: '#333333', opacity: 0.25 });
     // Colored fill node
     svg.circle(x, y, nodeR, { fill: color, stroke: d.border, 'stroke-width': 3 });
     svg.text(x, y + 7, `${i + 1}`, { 'text-anchor': 'middle', 'font-size': 22, 'font-weight': 900, fill: '#FFFFFF' });
 
-    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 18, 130);
+    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 18, 130, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -228,10 +230,12 @@ function renderFlat(data: CycleData, title: string | undefined, d: DesignPreset)
     const { x, y } = positions[i]!;
     const color = stepColor(d, i);
 
+    svg.beginItem(`steps[${i}]`);
     svg.circle(x, y, nodeR, { fill: color });
     svg.text(x, y + 5, `${i + 1}`, { 'text-anchor': 'middle', 'font-size': 15, 'font-weight': 700, fill: '#FFFFFF' });
 
-    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 14, 110);
+    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 14, 110, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -293,6 +297,7 @@ function renderGlass(data: CycleData, title: string | undefined, d: DesignPreset
     const { x, y } = positions[i]!;
     const color = stepColor(d, i);
 
+    svg.beginItem(`steps[${i}]`);
     // Outer glow
     svg.circle(x, y, nodeR + 4, { fill: color, opacity: 0.08, filter: 'url(#shadow)' });
     // Frosted node
@@ -303,7 +308,8 @@ function renderGlass(data: CycleData, title: string | undefined, d: DesignPreset
     svg.circle(x, y, nodeR, { fill: 'none', stroke: color, 'stroke-width': 1.5, opacity: 0.4 });
     svg.text(x, y + 6, `${i + 1}`, { 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 700, fill: d.text });
 
-    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 16, 120);
+    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 16, 120, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -372,6 +378,7 @@ function renderNeon(data: CycleData, title: string | undefined, d: DesignPreset)
     const { x, y } = positions[i]!;
     const color = stepColor(d, i);
 
+    svg.beginItem(`steps[${i}]`);
     // Dark fill circle
     svg.circle(x, y, nodeR, { fill: 'rgba(0,0,0,0.5)' });
     // Neon outline with glow
@@ -382,7 +389,8 @@ function renderNeon(data: CycleData, title: string | undefined, d: DesignPreset)
     });
     svg.text(x, y + 6, `${i + 1}`, { 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 400, fill: color, filter: 'url(#neon-glow)' });
 
-    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 16, 115);
+    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 16, 115, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -442,13 +450,15 @@ function renderWatercolor(data: CycleData, title: string | undefined, d: DesignP
     const { x, y } = positions[i]!;
     const color = stepColor(d, i);
 
+    svg.beginItem(`steps[${i}]`);
     // Wash blob behind node
     svg.circle(x, y, nodeR + 8, { fill: color, opacity: 0.12, filter: 'url(#watercolor)' });
     // Watercolor circle
     svg.circle(x, y, nodeR, { fill: color, opacity: 0.7, filter: 'url(#watercolor)' });
     svg.text(x, y + 6, `${i + 1}`, { 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 600, fill: d.text });
 
-    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 16, 120);
+    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 16, 120, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -485,9 +495,11 @@ function renderSketch(data: CycleData, title: string | undefined, d: DesignPrese
   for (let i = 0; i < count; i++) {
     const step = data.steps[i]!;
     const { x, y } = positions[i]!;
+    svg.beginItem(`steps[${i}]`);
     svg.circle(x, y, nodeR, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
     svg.text(x, y + 5, `${i + 1}`, { 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 400, fill: d.text });
-    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 14, 100);
+    drawLabelBlock(svg, d, step.label, step.description, x, y + nodeR + 14, 100, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -523,11 +535,13 @@ function renderPixel(data: CycleData, title: string | undefined, d: DesignPreset
     const by = Math.round(y - nodeR);
     const bw = nodeR * 2;
 
+    svg.beginItem(`steps[${i}]`);
     svg.rect(bx, by, bw, bw, { fill: color, opacity: 0.85, 'shape-rendering': 'crispEdges' });
     svg.text(Math.round(x), Math.round(y) + 5, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: d.bg,
     });
-    drawLabelBlock(svg, d, step.label, undefined, Math.round(x), Math.round(y) + nodeR + 16, 90);
+    drawLabelBlock(svg, d, step.label, undefined, Math.round(x), Math.round(y) + nodeR + 16, 90, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -580,6 +594,7 @@ function renderGear(data: CycleData, title: string | undefined, d: DesignPreset)
     const { x, y } = positions[i]!;
     const color = stepColor(d, i);
 
+    svg.beginItem(`steps[${i}]`);
     // Gear teeth path
     let gearPath = '';
     for (let t = 0; t < toothCount; t++) {
@@ -617,7 +632,8 @@ function renderGear(data: CycleData, title: string | undefined, d: DesignPreset)
     });
 
     // Label below
-    drawLabelBlock(svg, d, step.label, step.description, x, y + gearR + toothDepth + 12, 110);
+    drawLabelBlock(svg, d, step.label, step.description, x, y + gearR + toothDepth + 12, 110, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -665,6 +681,7 @@ function renderFlywheel(data: CycleData, title: string | undefined, d: DesignPre
     const color = stepColor(d, i);
     const startAngle = -Math.PI / 2 + i * angleStep + gapAngle;
     const endAngle = -Math.PI / 2 + (i + 1) * angleStep - gapAngle;
+    svg.beginItem(`steps[${i}]`);
 
     // Arc segment
     const x1i = cx + innerR * Math.cos(startAngle);
@@ -701,7 +718,7 @@ function renderFlywheel(data: CycleData, title: string | undefined, d: DesignPre
     const labelR = outerR + 36;
     const labelX = cx + labelR * Math.cos(midAngle);
     const labelY = cy + labelR * Math.sin(midAngle);
-    drawLabelBlock(svg, d, step.label, step.description, labelX, labelY - 4, 110);
+    drawLabelBlock(svg, d, step.label, step.description, labelX, labelY - 4, 110, 'middle', `steps[${i}]`);
 
     // Step number inside segment
     const numR = (innerR + outerR) / 2;
@@ -710,6 +727,7 @@ function renderFlywheel(data: CycleData, title: string | undefined, d: DesignPre
     svg.text(numX, numY + 5, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: '#FFFFFF',
     });
+    svg.endItem();
   }
 
   // Central hub
@@ -801,6 +819,7 @@ function renderFeedbackLoop(data: CycleData, title: string | undefined, d: Desig
     const color = stepColor(d, i);
     const x = pad + i * (nodeW + gapX);
 
+    svg.beginItem(`steps[${i}]`);
     if (d.id === 'neon') {
       svg.rect(x, nodeY, nodeW, nodeH, {
         fill: 'rgba(0,0,0,0.3)', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
@@ -827,7 +846,8 @@ function renderFeedbackLoop(data: CycleData, title: string | undefined, d: Desig
     });
 
     // Label & description
-    drawLabelBlock(svg, d, step.label, step.description, x + nodeW / 2, nodeY + 26, nodeW - 16);
+    drawLabelBlock(svg, d, step.label, step.description, x + nodeW / 2, nodeY + 26, nodeW - 16, 'middle', `steps[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();

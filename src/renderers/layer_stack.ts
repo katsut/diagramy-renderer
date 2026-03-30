@@ -73,7 +73,7 @@ function renderClean(data: LayerStackData, title: string | undefined, d: DesignP
 
     svg.rect(pad, y + 4, 6, layerH - 8, { fill: color, rx: 3 });
 
-    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH);
+    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH, `layers[${i}]`);
 
     svg.endItem();
   }
@@ -106,6 +106,8 @@ function renderSketch(data: LayerStackData, title: string | undefined, d: Design
     const color = layerColor(d, i);
     const y = contentTop + i * (layerH + gap);
 
+    svg.beginItem(`layers[${i}]`);
+
     // Jitter outline for hand-drawn feel
     svg.path(jitterRect(pad, y, layerW, layerH, i * 17), {
       fill: d.surface, stroke: d.border, 'stroke-width': 1.5,
@@ -124,7 +126,8 @@ function renderSketch(data: LayerStackData, title: string | undefined, d: Design
       });
     }
 
-    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH);
+    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH, `layers[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -155,6 +158,8 @@ function renderPixel(data: LayerStackData, title: string | undefined, d: DesignP
     const color = layerColor(d, i);
     const y = contentTop + i * (layerH + gap);
 
+    svg.beginItem(`layers[${i}]`);
+
     // Pixel-style layer band
     svg.rect(pad, y, layerW, layerH, {
       fill: d.surface, 'shape-rendering': 'crispEdges',
@@ -166,7 +171,8 @@ function renderPixel(data: LayerStackData, title: string | undefined, d: DesignP
       fill: color, opacity: 0.8, 'shape-rendering': 'crispEdges',
     });
 
-    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH);
+    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH, `layers[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -199,6 +205,8 @@ function renderBold(data: LayerStackData, title: string | undefined, d: DesignPr
     const color = layerColor(d, i);
     const y = contentTop + i * (layerH + gap);
 
+    svg.beginItem(`layers[${i}]`);
+
     // Bold layer with offset shadow and thick border
     svg.rect(pad, y, layerW, layerH, {
       fill: d.surface,
@@ -211,7 +219,8 @@ function renderBold(data: LayerStackData, title: string | undefined, d: DesignPr
     // Wide left color accent
     svg.rect(pad, y + 4, 10, layerH - 8, { fill: color, rx: 4 });
 
-    drawLayerContent(svg, d, layer, color, pad + 4, y, layerW - 4, layerH);
+    drawLayerContent(svg, d, layer, color, pad + 4, y, layerW - 4, layerH, `layers[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -249,6 +258,8 @@ function renderNeon(data: LayerStackData, title: string | undefined, d: DesignPr
     const color = layerColor(d, i);
     const y = contentTop + i * (layerH + gap);
 
+    svg.beginItem(`layers[${i}]`);
+
     // Neon-glow bordered layer
     svg.rect(pad, y, layerW, layerH, {
       fill: 'rgba(0,0,0,0.3)',
@@ -270,7 +281,8 @@ function renderNeon(data: LayerStackData, title: string | undefined, d: DesignPr
       fill: color, filter: 'url(#neon-glow)',
     });
 
-    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH);
+    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH, `layers[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -302,6 +314,8 @@ function renderGlass(data: LayerStackData, title: string | undefined, d: DesignP
     const color = layerColor(d, i);
     const y = contentTop + i * (layerH + gap);
 
+    svg.beginItem(`layers[${i}]`);
+
     // Frosted glass layer
     svg.rect(pad, y, layerW, layerH, {
       fill: d.surface,
@@ -321,7 +335,8 @@ function renderGlass(data: LayerStackData, title: string | undefined, d: DesignP
       fill: color, rx: 2, opacity: 0.2, filter: 'url(#shadow)',
     });
 
-    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH);
+    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH, `layers[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -354,6 +369,8 @@ function renderWatercolor(data: LayerStackData, title: string | undefined, d: De
     const color = layerColor(d, i);
     const y = contentTop + i * (layerH + gap);
 
+    svg.beginItem(`layers[${i}]`);
+
     // Watercolor layer band
     svg.rect(pad, y, layerW, layerH, {
       fill: color, opacity: 0.12, rx: d.borderRadius, filter: 'url(#watercolor)',
@@ -367,7 +384,8 @@ function renderWatercolor(data: LayerStackData, title: string | undefined, d: De
       fill: color, opacity: 0.7, rx: 4, filter: 'url(#watercolor)',
     });
 
-    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH);
+    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH, `layers[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -398,6 +416,8 @@ function renderMinimal(data: LayerStackData, title: string | undefined, d: Desig
     const color = layerColor(d, i);
     const y = contentTop + i * (layerH + gap);
 
+    svg.beginItem(`layers[${i}]`);
+
     // Flat layer, no shadow
     svg.rect(pad, y, layerW, layerH, {
       fill: d.surface, rx: d.borderRadius,
@@ -413,7 +433,8 @@ function renderMinimal(data: LayerStackData, title: string | undefined, d: Desig
       });
     }
 
-    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH);
+    drawLayerContent(svg, d, layer, color, pad, y, layerW, layerH, `layers[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -456,6 +477,8 @@ function renderHorizontal(data: LayerStackData, title: string | undefined, d: De
     // Top color accent
     svg.rect(x + 4, contentTop, layerW - 8, 6, { fill: color, rx: 3 });
 
+    svg.beginItem(`layers[${i}]`);
+
     // Label
     const cx = x + layerW / 2;
     const labelFit = fitText(layer.label, layerW - 20, 2, d.labelSize);
@@ -463,6 +486,7 @@ function renderHorizontal(data: LayerStackData, title: string | undefined, d: De
     for (const line of labelFit.lines) {
       svg.text(cx, ly, line, {
         'text-anchor': 'middle', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+        'data-field': `layers[${i}].label`,
       });
       ly += Math.round(labelFit.fontSize * 1.4);
     }
@@ -482,6 +506,7 @@ function renderHorizontal(data: LayerStackData, title: string | undefined, d: De
         });
         svg.text(cx, ty + 4, comp, {
           'text-anchor': 'middle', 'font-size': d.captionSize - 1, fill: d.text,
+          'data-field': `layers[${i}].components[${j}]`,
         });
         ty += 30;
       }
@@ -494,10 +519,13 @@ function renderHorizontal(data: LayerStackData, title: string | undefined, d: De
       for (let k = descFit.lines.length - 1; k >= 0; k--) {
         svg.text(cx, dy, descFit.lines[k]!, {
           'text-anchor': 'middle', 'font-size': descFit.fontSize, fill: d.textSecondary,
+          'data-field': `layers[${i}].description`,
         });
         dy -= Math.round(descFit.fontSize * 1.3);
       }
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -514,11 +542,13 @@ function drawLayerContent(
   y: number,
   layerW: number,
   layerH: number,
+  dataPath?: string,
 ): void {
   // Label
   const labelFit = fitText(layer.label, 160, 1, d.labelSize);
   svg.text(pad + 24, y + layerH / 2 + 5, labelFit.lines[0] ?? layer.label, {
     'text-anchor': 'start', 'font-size': labelFit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+    ...(dataPath ? { 'data-field': `${dataPath}.label` } : {}),
   });
 
   // Components as tags
@@ -538,6 +568,7 @@ function drawLayerContent(
       });
       svg.text(tx + compW / 2, y + layerH / 2 + 4, comp, {
         'text-anchor': 'middle', 'font-size': d.captionSize - 1, fill: d.text,
+        ...(dataPath ? { 'data-field': `${dataPath}.components[${j}]` } : {}),
       });
       tx += compW + 8;
     }
@@ -548,6 +579,7 @@ function drawLayerContent(
     const descFit = fitText(layer.description, 120, 1, d.captionSize - 1);
     svg.text(pad + layerW - 12, y + layerH / 2 + 4, descFit.lines[0] ?? layer.description, {
       'text-anchor': 'end', 'font-size': descFit.fontSize, fill: d.textSecondary,
+      ...(dataPath ? { 'data-field': `${dataPath}.description` } : {}),
     });
   }
 }

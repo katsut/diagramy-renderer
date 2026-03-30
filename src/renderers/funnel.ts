@@ -182,6 +182,8 @@ function renderBold(data: FunnelData, title: string | undefined, d: DesignPreset
     const y = contentTop + i * stageH;
     const { topHalf } = funnelRatios(i, count);
 
+    svg.beginItem(`stages[${i}]`);
+
     // Offset shadow trapezoid
     drawTrapezoid(svg, funnelCx + 4, y + 4, stageH, funnelW, i, count, {
       fill: '#000000', opacity: 0.15,
@@ -196,13 +198,17 @@ function renderBold(data: FunnelData, title: string | undefined, d: DesignPreset
     });
     svg.text(funnelCx, y + stageH / 2 + 16, stage.label, {
       'text-anchor': 'middle', 'font-size': d.labelSize + 2, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+      'data-field': `stages[${i}].label`,
     });
     if (stage.value) {
       svg.text(funnelCx, y + stageH / 2 + 32, stage.value, {
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: '#FFFFFF', opacity: 0.9,
+        'data-field': `stages[${i}].value`,
       });
     }
     drawAnnotation(svg, d, pad + funnelW + gap, y, stageH, annotW, funnelCx + funnelW * topHalf - 10, color, i, stage);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -235,18 +241,24 @@ function renderFlat(data: FunnelData, title: string | undefined, d: DesignPreset
     const ratio = 1 - (i / count) * 0.7;
     const barW = Math.floor(maxBarW * ratio);
 
+    svg.beginItem(`stages[${i}]`);
+
     // Flat bar — no shadow, left-aligned
     svg.rect(pad, y, barW, barH, { fill: color, rx: d.borderRadius, opacity: 0.9 });
     // Label inside bar
     svg.text(pad + 16, y + barH / 2 + 5, stage.label, {
       'text-anchor': 'start', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: '#FFFFFF',
+      'data-field': `stages[${i}].label`,
     });
     // Value right of bar
     if (stage.value) {
       svg.text(pad + barW + 12, y + barH / 2 + 5, stage.value, {
         'text-anchor': 'start', 'font-size': d.captionSize, fill: d.textSecondary,
+        'data-field': `stages[${i}].value`,
       });
     }
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -282,6 +294,8 @@ function renderGlass(data: FunnelData, title: string | undefined, d: DesignPrese
     const y = contentTop + i * stageH;
     const { topHalf } = funnelRatios(i, count);
 
+    svg.beginItem(`stages[${i}]`);
+
     // Glow behind trapezoid
     drawTrapezoid(svg, funnelCx, y, stageH, funnelW, i, count, {
       fill: color, opacity: 0.08, filter: 'url(#shadow)',
@@ -302,8 +316,11 @@ function renderGlass(data: FunnelData, title: string | undefined, d: DesignPrese
     // Label below icon
     svg.text(funnelCx, y + stageH / 2 + 28, stage.label, {
       'text-anchor': 'middle', 'font-size': d.captionSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `stages[${i}].label`,
     });
     drawAnnotation(svg, d, pad + funnelW + gap, y, stageH, annotW, funnelCx + funnelW * topHalf - 10, color, i, stage);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -338,6 +355,8 @@ function renderNeon(data: FunnelData, title: string | undefined, d: DesignPreset
     const y = contentTop + i * stageH;
     const { topHalf } = funnelRatios(i, count);
 
+    svg.beginItem(`stages[${i}]`);
+
     // Dark fill trapezoid
     drawTrapezoid(svg, funnelCx, y, stageH, funnelW, i, count, {
       fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1,
@@ -358,8 +377,11 @@ function renderNeon(data: FunnelData, title: string | undefined, d: DesignPreset
     // Label
     svg.text(funnelCx - 30, y + stageH / 2 + 5, stage.label, {
       'text-anchor': 'end', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `stages[${i}].label`,
     });
     drawAnnotation(svg, d, pad + funnelW + gap, y, stageH, annotW, funnelCx + funnelW * topHalf - 10, color, i, stage);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -395,6 +417,8 @@ function renderWatercolor(data: FunnelData, title: string | undefined, d: Design
     const y = contentTop + i * stageH;
     const { topHalf, botHalf } = funnelRatios(i, count);
 
+    svg.beginItem(`stages[${i}]`);
+
     // Watercolor bleed behind trapezoid
     const avgHalf = (funnelW * topHalf + funnelW * botHalf) / 2;
     svg.ellipse(funnelCx, y + stageH / 2, avgHalf + 12, stageH / 2 + 6, {
@@ -407,13 +431,17 @@ function renderWatercolor(data: FunnelData, title: string | undefined, d: Design
     // Label
     svg.text(funnelCx, y + stageH / 2 + 5, stage.label, {
       'text-anchor': 'middle', 'font-size': d.labelSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `stages[${i}].label`,
     });
     if (stage.value) {
       svg.text(funnelCx, y + stageH / 2 + 20, stage.value, {
         'text-anchor': 'middle', 'font-size': d.captionSize, fill: d.textSecondary, opacity: 0.8,
+        'data-field': `stages[${i}].value`,
       });
     }
     drawAnnotation(svg, d, pad + funnelW + gap, y, stageH, annotW, funnelCx + funnelW * topHalf - 10, color, i, stage);
+
+    svg.endItem();
   }
 
   return svg.build();
@@ -441,8 +469,10 @@ function renderSketch(data: FunnelData, title: string | undefined, d: DesignPres
   for (let i = 0; i < count; i++) {
     const stage = data.stages[i]!;
     const y = contentTop + i * stageH;
+    svg.beginItem(`stages[${i}]`);
     drawTrapezoid(svg, cx, y, stageH, funnelW, i, count, { fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth });
-    drawStageLabel(svg, d, cx, y, stageH, stage, d.text);
+    drawStageLabel(svg, d, cx, y, stageH, stage, d.text, undefined, `stages[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -474,10 +504,12 @@ function renderPixel(data: FunnelData, title: string | undefined, d: DesignPrese
     const ratio = 1 - (i / count) * 0.7;
     const w = Math.floor(funnelW * ratio);
 
+    svg.beginItem(`stages[${i}]`);
     svg.rect(cx - w / 2, y + 2, w, stageH - 4, {
       fill: color, opacity: 0.85, 'shape-rendering': 'crispEdges',
     });
-    drawStageLabel(svg, d, cx, y, stageH, stage, d.text, color);
+    drawStageLabel(svg, d, cx, y, stageH, stage, d.text, color, `stages[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -526,6 +558,7 @@ function renderHorizontal(data: FunnelData, title: string | undefined, d: Design
     const rh = funnelH * rightHalf;
     const gap = 2;
 
+    svg.beginItem(`stages[${i}]`);
     // Trapezoid (horizontal: tall left, short right)
     if (d.id === 'neon') {
       svg.polygon(
@@ -550,7 +583,8 @@ function renderHorizontal(data: FunnelData, title: string | undefined, d: Design
 
     // Label below
     const labelY = contentTop + funnelH + 16;
-    drawLabelBlock(svg, d, stage.label, stage.value, x + stageW / 2, labelY, stageW - 12);
+    drawLabelBlock(svg, d, stage.label, stage.value, x + stageW / 2, labelY, stageW - 12, 'middle', `stages[${i}]`);
+    svg.endItem();
   }
 
   // Arrow indicator at the end
@@ -595,6 +629,8 @@ function renderPipeline(data: FunnelData, title: string | undefined, d: DesignPr
     const stage = data.stages[i]!;
     const color = stageColor(d, i);
 
+    svg.beginItem(`stages[${i}]`);
+
     if (d.id === 'neon') {
       svg.rect(pad, curY, boxW, boxH, {
         fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: d.borderRadius,
@@ -627,14 +663,18 @@ function renderPipeline(data: FunnelData, title: string | undefined, d: DesignPr
     const fit = fitText(stage.label, boxW - 80, 1, d.labelSize);
     svg.text(pad + 48, curY + boxH / 2 - (stage.description ? 4 : 0) + 4, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill: d.text,
+      'data-field': `stages[${i}].label`,
     });
     // Description
     if (stage.description) {
       const dfit = fitText(stage.description, boxW - 80, 1, d.captionSize);
       svg.text(pad + 48, curY + boxH / 2 + 16, dfit.lines[0]!, {
         'text-anchor': 'start', 'font-size': dfit.fontSize, fill: d.textSecondary,
+        'data-field': `stages[${i}].description`,
       });
     }
+
+    svg.endItem();
 
     // Arrow between stages
     if (i < count - 1) {

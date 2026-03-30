@@ -39,12 +39,14 @@ function drawRingLabels(
     const color = ringColor(d, i);
     const fill = opts?.fillOverride?.(i) ?? d.text;
 
+    svg.beginItem(`rings[${i}]`);
     if (i === 0) {
       const fit = fitText(ring.label, baseR * 1.6, 2, d.labelSize);
       let ty = cy - ((fit.lines.length - 1) * fit.fontSize * 0.7);
       for (const line of fit.lines) {
         svg.text(cx, ty, line, {
           'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill,
+          'data-field': `rings[${i}].label`,
         });
         ty += Math.round(fit.fontSize * 1.4);
       }
@@ -63,8 +65,10 @@ function drawRingLabels(
       );
       svg.text(lx, ly + 4, fit.lines[0]!, {
         'text-anchor': anchor, 'font-size': fit.fontSize, 'font-weight': d.fontWeight, fill,
+        'data-field': `rings[${i}].label`,
       });
     }
+    svg.endItem();
   }
 }
 

@@ -144,9 +144,11 @@ function renderSketch(data: TimelineData, title: string | undefined, d: DesignPr
     const ev = data.events[i]!;
     const cx = lay.cx(i);
 
+    svg.beginItem(`events[${i}]`);
     drawSketchMarker(svg, d, cx, lay.axisY, i);
     drawSketchTime(svg, d, cx, lay.axisY - 20, ev.time);
     drawSketchEvent(svg, d, cx, lay.axisY + 24, lay.stepW - 40, lay.cardH, ev, i);
+    svg.endItem();
   }
 
   return svg.build();
@@ -171,7 +173,7 @@ function drawSketchEvent(svg: SvgBuilder, d: DesignPreset, cx: number, top: numb
   svg.path(jitterRect(x, top, w, h, i * 11), {
     fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
   });
-  drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 20, w - 20);
+  drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 20, w - 20, 'middle', `events[${i}]`);
 }
 
 // ========== PIXEL ==========
@@ -200,9 +202,11 @@ function renderPixel(data: TimelineData, title: string | undefined, d: DesignPre
     const cx = lay.cx(i);
     const color = eventColor(d, i);
 
+    svg.beginItem(`events[${i}]`);
     drawPixelMarker(svg, cx, lay.axisY, color, px);
     drawPixelTime(svg, d, cx, lay.axisY - 18, ev.time);
     drawPixelCard(svg, d, cx, lay.axisY + 16, lay.stepW - 28, lay.cardH, color, ev, px, i);
+    svg.endItem();
   }
 
   return svg.build();
@@ -239,7 +243,7 @@ function drawPixelCard(svg: SvgBuilder, d: DesignPreset, cx: number, top: number
   svg.text(x + px * 3 + 1, top + px * 4, `${i + 1}`, {
     'text-anchor': 'middle', 'font-size': 10, 'font-weight': 700, fill: d.bg,
   });
-  drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 24);
+  drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 24, 'middle', `events[${i}]`);
 }
 
 // ========== BOLD ==========
@@ -267,6 +271,7 @@ function renderBold(data: TimelineData, title: string | undefined, d: DesignPres
     const cx = lay.cx(i);
     const color = eventColor(d, i);
 
+    svg.beginItem(`events[${i}]`);
     // Bold dot with thick border
     svg.circle(cx, lay.axisY, 10, { fill: color, stroke: '#111', 'stroke-width': 3 });
     // Vertical connector
@@ -288,7 +293,8 @@ function renderBold(data: TimelineData, title: string | undefined, d: DesignPres
     svg.rect(x + 4, top + 6, w - 8, lay.cardH - 12, {
       fill: '#FFFFFF', rx: d.borderRadius - 2,
     });
-    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 28, w - 28);
+    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 28, w - 28, 'middle', `events[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -318,6 +324,7 @@ function renderFlat(data: TimelineData, title: string | undefined, d: DesignPres
     const cx = lay.cx(i);
     const color = eventColor(d, i);
 
+    svg.beginItem(`events[${i}]`);
     // Flat dot
     svg.circle(cx, lay.axisY, 6, { fill: color });
     // Vertical connector
@@ -335,7 +342,8 @@ function renderFlat(data: TimelineData, title: string | undefined, d: DesignPres
     svg.rect(x, top, w, lay.cardH, { fill: d.surface, rx: d.borderRadius });
     // Left color strip
     svg.rect(x, top + 4, 4, lay.cardH - 8, { fill: color, rx: 2 });
-    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 24);
+    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 24, 'middle', `events[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -369,6 +377,7 @@ function renderGlass(data: TimelineData, title: string | undefined, d: DesignPre
     const cx = lay.cx(i);
     const color = eventColor(d, i);
 
+    svg.beginItem(`events[${i}]`);
     // Glow dot
     svg.circle(cx, lay.axisY, 12, { fill: color, opacity: 0.1 });
     svg.circle(cx, lay.axisY, 7, { fill: color, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': 1 });
@@ -396,7 +405,8 @@ function renderGlass(data: TimelineData, title: string | undefined, d: DesignPre
     });
     // Top glow line
     svg.rect(x + 16, top + 1, w - 32, 1, { fill: color, opacity: 0.4, rx: 0.5 });
-    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 28);
+    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 28, 'middle', `events[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -426,6 +436,7 @@ function renderNeon(data: TimelineData, title: string | undefined, d: DesignPres
     const cx = lay.cx(i);
     const color = eventColor(d, i);
 
+    svg.beginItem(`events[${i}]`);
     // Neon dot with glow
     svg.circle(cx, lay.axisY, 8, { fill: 'none', stroke: color, 'stroke-width': 2, filter: 'url(#neon-glow)' });
     svg.circle(cx, lay.axisY, 3, { fill: color });
@@ -453,7 +464,8 @@ function renderNeon(data: TimelineData, title: string | undefined, d: DesignPres
     svg.text(x + w - 14, top + 14, `0${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 10, fill: color, opacity: 0.5, 'letter-spacing': '1',
     });
-    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 28, w - 24);
+    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 28, w - 24, 'middle', `events[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -484,6 +496,7 @@ function renderWatercolor(data: TimelineData, title: string | undefined, d: Desi
     const cx = lay.cx(i);
     const color = eventColor(d, i);
 
+    svg.beginItem(`events[${i}]`);
     // Watercolor bleed dot
     svg.circle(cx, lay.axisY, 14, { fill: color, opacity: 0.15, filter: 'url(#watercolor)' });
     svg.circle(cx, lay.axisY, 7, { fill: color, opacity: 0.7, filter: 'url(#watercolor)' });
@@ -506,7 +519,8 @@ function renderWatercolor(data: TimelineData, title: string | undefined, d: Desi
     svg.rect(x, top, w, lay.cardH, {
       fill: d.surface, rx: d.borderRadius, opacity: 0.85, filter: 'url(#watercolor)',
     });
-    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 24);
+    drawLabelBlock(svg, d, ev.event, ev.details, cx, top + 24, w - 24, 'middle', `events[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -567,6 +581,7 @@ function renderVertical(data: TimelineData, title: string | undefined, d: Design
     const color = eventColor(d, i);
     const cy = contentTop + i * stepH + stepH / 2;
 
+    svg.beginItem(`events[${i}]`);
     // Dot marker on the line
     if (d.lineJitter) {
       svg.circle(lineX, cy, 6, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
@@ -605,7 +620,7 @@ function renderVertical(data: TimelineData, title: string | undefined, d: Design
       svg.path(jitterRect(x, cy - cardH / 2, cardW, cardH, i * 11), {
         fill: 'none', stroke: d.border, 'stroke-width': d.borderWidth,
       });
-      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28);
+      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28, 'middle', `events[${i}]`);
     } else if (d.id === 'neon') {
       const x = cardLeft;
       const top = cy - cardH / 2;
@@ -616,11 +631,12 @@ function renderVertical(data: TimelineData, title: string | undefined, d: Design
         fill: 'none', stroke: color, 'stroke-width': 1.5, rx: d.borderRadius,
         opacity: 0.3, filter: 'url(#neon-glow)',
       });
-      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28);
+      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28, 'middle', `events[${i}]`);
     } else {
       drawPresetCard(svg, d, cardLeft, cy - cardH / 2, cardW, cardH, color);
-      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28);
+      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cy - 10, cardW - 28, 'middle', `events[${i}]`);
     }
+    svg.endItem();
   }
 
   return svg.build();
@@ -668,6 +684,7 @@ function renderSerpentine(data: TimelineData, title: string | undefined, d: Desi
     const cx = pad + col * stepW + stepW / 2;
     const cy = contentTop + row * rowH + 30;
 
+    svg.beginItem(`events[${i}]`);
     // Dot on connector path
     if (d.lineJitter) {
       svg.circle(cx, cy, 6, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
@@ -701,7 +718,8 @@ function renderSerpentine(data: TimelineData, title: string | undefined, d: Desi
     } else {
       drawPresetCard(svg, d, cx - cardW / 2, cardTop, cardW, cardH, color);
     }
-    drawLabelBlock(svg, d, ev.event, ev.details, cx, cardTop + 20, cardW - 24);
+    drawLabelBlock(svg, d, ev.event, ev.details, cx, cardTop + 20, cardW - 24, 'middle', `events[${i}]`);
+    svg.endItem();
 
     // Connector to next event
     if (i < n - 1) {
@@ -804,6 +822,7 @@ function renderAlternating(data: TimelineData, title: string | undefined, d: Des
     const cy = contentTop + i * stepH + stepH / 2;
     const isLeft = i % 2 === 0;
 
+    svg.beginItem(`events[${i}]`);
     // Dot marker on line
     if (d.lineJitter) {
       svg.circle(lineX, cy, 6, { fill: 'none', stroke: d.border, 'stroke-width': 1.5 });
@@ -857,7 +876,8 @@ function renderAlternating(data: TimelineData, title: string | undefined, d: Des
     } else {
       drawPresetCard(svg, d, cardLeftX, cy - cardH / 2, cardW, cardH, color);
     }
-    drawLabelBlock(svg, d, ev.event, ev.details, cardLeftX + cardW / 2, cy - 10, cardW - 28);
+    drawLabelBlock(svg, d, ev.event, ev.details, cardLeftX + cardW / 2, cy - 10, cardW - 28, 'middle', `events[${i}]`);
+    svg.endItem();
   }
 
   return svg.build();
@@ -985,6 +1005,7 @@ function renderGrouped(data: TimelineData, title: string | undefined, d: DesignP
       const cardTop = y + 4;
       const dotY = cardTop + cardH / 2;
 
+      svg.beginItem(`events[${globalIdx}]`);
       if (d.lineJitter) {
         svg.circle(lineX, dotY, 4, { fill: d.border });
       } else if (d.id === 'neon') {
@@ -1028,7 +1049,8 @@ function renderGrouped(data: TimelineData, title: string | undefined, d: DesignP
         'text-anchor': 'end', 'font-size': timeFit.fontSize, fill: d.textSecondary,
       });
 
-      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cardTop + 24, cardW - 32);
+      drawLabelBlock(svg, d, ev.event, ev.details, cardLeft + cardW / 2, cardTop + 24, cardW - 32, 'middle', `events[${globalIdx}]`);
+      svg.endItem();
 
       y += cardH + cardGap;
       globalIdx++;
