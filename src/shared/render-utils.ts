@@ -285,7 +285,7 @@ export function buildColorGradients(d: DesignPreset, count: number, prefix = 'cg
 
 export function arrowMarkerDef(d: DesignPreset, id = 'arr'): string {
   return `<marker id="${id}" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">` +
-    `<path d="M 0 0 L 10 4 L 0 8 Z" fill="${d.border}" opacity="0.35"/></marker>`;
+    `<path d="M 0 0 L 10 4 L 0 8 Z" fill="${d.border}"/></marker>`;
 }
 
 // --- Color-blind friendly patterns ---

@@ -833,10 +833,10 @@ function renderStaircase(data: ProcessData, title: string | undefined, d: Design
   const count = data.nodes.length;
   const pad = 36;
   const titleH = title ? 44 : 0;
-  const stepW = 160;
-  const stepH = 56;
-  const offsetX = 48; // horizontal offset per stair
-  const offsetY = 48; // vertical offset per stair (going up)
+  const stepW = 200;
+  const stepH = 68;
+  const offsetX = 52; // horizontal offset per stair
+  const offsetY = 52; // vertical offset per stair (going up)
   const totalW = stepW + (count - 1) * offsetX;
   const totalH = stepH + (count - 1) * offsetY;
   const width = pad * 2 + totalW;
@@ -905,7 +905,7 @@ function renderStaircase(data: ProcessData, title: string | undefined, d: Design
     });
 
     // Label
-    drawLabelBlock(svg, d, node.label, node.description, x + stepW / 2 + 8, y + (node.description ? stepH / 2 - 2 : stepH / 2 + 5), stepW - 48, 'middle', `nodes[${i}]`);
+    drawLabelBlock(svg, d, node.label, node.description, x + stepW / 2 + 8, y + (node.description ? stepH / 2 - 6 : stepH / 2 + 4), stepW - 40, 'middle', `nodes[${i}]`);
     svg.endItem();
 
     // Connector arrow from this step to next (diagonal upward-right)
