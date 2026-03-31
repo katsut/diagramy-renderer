@@ -1022,14 +1022,15 @@ function renderNumbered(data: ProcessData, title: string | undefined, d: DesignP
 
 function renderPipeline(data: ProcessData, title: string | undefined, d: DesignPreset): string {
   const count = data.nodes.length;
-  const pad = 40;
-  const titleH = title ? 48 : 0;
-  const barW = 160;
-  const barH = 64;
-  const gateW = 16; // triangle separator width
-  const totalW = count * barW + (count - 1) * gateW;
+  const pad = 28;
+  const titleH = title ? 40 : 0;
+  const pipeW = 180;
+  const pipeH = 72;
+  const gap = 24;
+  const ellipseRx = 14; // ellipse radius for cylinder caps
+  const totalW = count * pipeW + (count - 1) * gap;
   const width = pad * 2 + totalW;
-  const height = pad * 2 + titleH + barH;
+  const height = pad * 2 + titleH + pipeH;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Process diagram (pipeline)');
   svg.defs(defs);
@@ -1048,84 +1049,50 @@ function renderPipeline(data: ProcessData, title: string | undefined, d: DesignP
   for (let i = 0; i < count; i++) {
     const node = data.nodes[i]!;
     const color = stepColor(d, i);
-    const x = pad + i * (barW + gateW);
+    const x = pad + i * (pipeW + gap);
     const y = contentTop;
+    const cy = y + pipeH / 2;
 
     svg.beginItem(`nodes[${i}]`);
 
-    // Bar rectangle — preset-aware
-    if (d.lineJitter) {
-      svg.path(jitterRect(x, y, barW, barH, i * 7), {
-        fill: d.surface, stroke: d.border, 'stroke-width': d.borderWidth,
-      });
-      // Color accent at top
-      svg.path(jitterLine(x + 4, y + 3, x + barW - 4, y + 3, i * 7 + 100), {
-        stroke: color, 'stroke-width': 2, opacity: 0.6,
-      });
-    } else if (d.shapeRendering === 'crispEdges') {
-      svg.raw(pixelBorder(x, y, barW, barH, color, 3));
-      svg.rect(x + 3, y + 3, barW - 6, barH - 6, {
-        fill: d.surface, opacity: 0.9, 'shape-rendering': 'crispEdges',
-      });
-    } else if (d.id === 'neon') {
-      svg.rect(x, y, barW, barH, {
-        fill: 'rgba(0,0,0,0.4)', stroke: color, 'stroke-width': 1, rx: i === 0 ? d.borderRadius : 0,
-      });
-      svg.rect(x, y, barW, barH, {
-        fill: 'none', stroke: color, 'stroke-width': 1.5, rx: i === 0 ? d.borderRadius : 0,
-        opacity: 0.3, filter: 'url(#neon-glow)',
-      });
-    } else {
-      svg.rect(x, y, barW, barH, {
-        fill: color, opacity: 0.85, rx: i === 0 ? d.borderRadius : 0,
-      });
-      svg.rect(x + 2, y + 2, barW - 4, barH - 4, {
-        fill: d.surface, opacity: 0.6, rx: i === 0 ? Math.max(0, d.borderRadius - 2) : 0,
-      });
-    }
+    // 3D cylinder pipe shape
+    // Body rectangle
+    svg.rect(x + ellipseRx, y, pipeW - ellipseRx * 2, pipeH, {
+      fill: color, opacity: 0.15,
+    });
+    // Top line
+    svg.line(x + ellipseRx, y, x + pipeW - ellipseRx, y, {
+      stroke: d.border, 'stroke-width': 1, opacity: 0.4,
+    });
+    // Bottom line
+    svg.line(x + ellipseRx, y + pipeH, x + pipeW - ellipseRx, y + pipeH, {
+      stroke: d.border, 'stroke-width': 1, opacity: 0.4,
+    });
+    // Left ellipse (back face)
+    svg.raw(`<ellipse cx="${x + ellipseRx}" cy="${cy}" rx="${ellipseRx}" ry="${pipeH / 2}" fill="${color}" opacity="0.08" stroke="${d.border}" stroke-width="1" stroke-opacity="0.4"/>`);
+    // Right ellipse (front face, visible cap)
+    svg.raw(`<ellipse cx="${x + pipeW - ellipseRx}" cy="${cy}" rx="${ellipseRx}" ry="${pipeH / 2}" fill="${color}" opacity="0.12" stroke="${d.border}" stroke-width="1" stroke-opacity="0.5"/>`);
 
-    // Step number (top-left badge)
-    svg.text(x + 14, y + 18, `${i + 1}`, {
+    // Step number
+    svg.text(x + ellipseRx + 12, y + 18, `${i + 1}`, {
       'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700,
-      fill: d.id === 'neon' ? color : (d.lineJitter ? d.text : color),
-      opacity: 0.7,
-      ...(d.id === 'neon' ? { filter: 'url(#neon-glow)' } : {}),
+      fill: color, opacity: 0.7,
     });
 
     // Label + description
-    drawLabelBlock(svg, d, node.label, node.description, x + barW / 2, y + (node.description ? barH / 2 + 2 : barH / 2 + 6), barW - 28, 'middle', `nodes[${i}]`);
+    drawLabelBlock(svg, d, node.label, node.description, x + pipeW / 2, y + (node.description ? pipeH / 2 - 2 : pipeH / 2 + 5), pipeW - ellipseRx * 2 - 20, 'middle', `nodes[${i}]`);
     svg.endItem();
 
-    // Triangle gate separator between stages
+    // Arrow between pipes
     if (i < count - 1) {
-      const gx = x + barW;
-      const nextColor = stepColor(d, i + 1);
-      if (d.lineJitter) {
-        // Sketch: hand-drawn triangle
-        svg.path(jitterLine(gx, y, gx + gateW, y + barH / 2, i * 7 + 200), {
-          stroke: d.border, 'stroke-width': d.borderWidth, fill: 'none',
-        });
-        svg.path(jitterLine(gx + gateW, y + barH / 2, gx, y + barH, i * 7 + 210), {
-          stroke: d.border, 'stroke-width': d.borderWidth, fill: 'none',
-        });
-      } else if (d.shapeRendering === 'crispEdges') {
-        svg.polygon(`${gx},${y} ${gx + gateW},${y + barH / 2} ${gx},${y + barH}`, {
-          fill: color, opacity: 0.6, 'shape-rendering': 'crispEdges',
-        });
-      } else if (d.id === 'neon') {
-        svg.polygon(`${gx},${y} ${gx + gateW},${y + barH / 2} ${gx},${y + barH}`, {
-          fill: 'none', stroke: color, 'stroke-width': 1, filter: 'url(#neon-glow)',
-        });
-      } else {
-        // Triangle pointing right
-        svg.polygon(`${gx},${y} ${gx + gateW},${y + barH / 2} ${gx},${y + barH}`, {
-          fill: color, opacity: 0.6,
-        });
-        // Small background fill for next bar connection
-        svg.rect(gx, y, gateW, barH, {
-          fill: nextColor, opacity: 0.15,
-        });
-      }
+      const ax1 = x + pipeW + 2;
+      const ax2 = ax1 + gap - 4;
+      svg.line(ax1, cy, ax2, cy, {
+        stroke: d.border, 'stroke-width': 1.5, opacity: 0.4,
+      });
+      svg.path(`M ${ax2 - 6} ${cy - 4} L ${ax2} ${cy} L ${ax2 - 6} ${cy + 4} Z`, {
+        fill: d.border, opacity: 0.5,
+      });
     }
   }
 
