@@ -602,11 +602,11 @@ function renderChevron(data: ProcessData, title: string | undefined, d: DesignPr
 
 function renderVertical(data: ProcessData, title: string | undefined, d: DesignPreset): string {
   const count = data.nodes.length;
-  const pad = 36;
-  const titleH = title ? 44 : 0;
+  const pad = 24;
+  const titleH = title ? 40 : 0;
   const cardW = 400;
   const cardH = 64;
-  const arrowH = 28;
+  const arrowH = 24;
   const width = pad * 2 + cardW;
   const height = pad * 2 + titleH + count * cardH + (count - 1) * arrowH;
 
@@ -718,12 +718,12 @@ function renderSerpentine(data: ProcessData, title: string | undefined, d: Desig
   const count = data.nodes.length;
   const perRow = Math.min(4, Math.max(3, Math.ceil(Math.sqrt(count + 1))));
   const rows = Math.ceil(count / perRow);
-  const pad = 36;
-  const titleH = title ? 44 : 0;
+  const pad = 24;
+  const titleH = title ? 40 : 0;
   const stepW = 160;
   const stepH = 80;
   const gapX = 40;
-  const gapY = 48;
+  const gapY = 40;
   const width = pad * 2 + perRow * stepW + (perRow - 1) * gapX;
   const height = pad * 2 + titleH + rows * stepH + (rows - 1) * gapY;
 
@@ -831,8 +831,8 @@ function renderSerpentine(data: ProcessData, title: string | undefined, d: Desig
 
 function renderStaircase(data: ProcessData, title: string | undefined, d: DesignPreset): string {
   const count = data.nodes.length;
-  const pad = 36;
-  const titleH = title ? 44 : 0;
+  const pad = 24;
+  const titleH = title ? 40 : 0;
   const stepW = 200;
   const stepH = 68;
   const offsetX = 52; // horizontal offset per stair
