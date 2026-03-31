@@ -27,10 +27,9 @@ export class SvgBuilder {
   ) {
     const font = fontFamily || "'Noto Sans JP', system-ui, sans-serif";
     const bg = bgColor || '#FFFFFF';
-    const displayScale = 2; // 2x Retina, matches PNG scale
     this.parts.push(
       `<svg xmlns="http://www.w3.org/2000/svg" xml:lang="ja" viewBox="0 0 ${width} ${height}" ` +
-      `width="${width * displayScale}" height="${height * displayScale}" role="img" aria-label="${escapeXml(ariaLabel)}" ` +
+      `width="${width}" height="${height}" role="img" aria-label="${escapeXml(ariaLabel)}" ` +
       `font-family="${font}" style="background:${bg}">`,
     );
     if (fontImport) {
