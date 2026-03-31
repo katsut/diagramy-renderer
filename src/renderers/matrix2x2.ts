@@ -132,6 +132,7 @@ function drawAxisLabels(
   const xFit = fitText(axes.x, plotW - 20, 1, 13);
   svg.text(plotLeft + plotW / 2, plotTop + plotH + space - 4, xFit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': xFit.fontSize, 'font-weight': 600, fill: d.textSecondary,
+    'data-field': 'axes.x',
   });
 
   // Y axis label (left, rotated)
@@ -139,6 +140,7 @@ function drawAxisLabels(
   svg.raw(
     `<text x="${plotLeft - space + 6}" y="${plotTop + plotH / 2}" ` +
     `text-anchor="middle" font-size="${yFit.fontSize}" font-weight="600" fill="${d.textSecondary}" ` +
+    `data-field="axes.y" ` +
     `transform="rotate(-90 ${plotLeft - space + 6} ${plotTop + plotH / 2})">${yFit.lines[0]!}</text>`,
   );
 }

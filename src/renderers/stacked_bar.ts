@@ -471,6 +471,7 @@ function drawLegend(svg: SvgBuilder, d: DesignPreset, categories: string[], star
     const fit = fitText(categories[i]!, 80, 1, d.captionSize);
     svg.text(x + 16, y + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.textSecondary,
+      'data-field': `categories[${i}]`,
     });
     x += 16 + 60 + 12;
     if (x > startX + maxW - 40) { x = startX; y += 18; }
@@ -485,6 +486,7 @@ function drawSketchLegend(svg: SvgBuilder, d: DesignPreset, categories: string[]
     const fit = fitText(categories[i]!, 80, 1, d.captionSize);
     svg.text(x + 14, y + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.textSecondary,
+      'data-field': `categories[${i}]`,
     });
     x += 14 + 60 + 12;
     if (x > startX + maxW - 40) { x = startX; y += 18; }
@@ -499,6 +501,7 @@ function drawNeonLegend(svg: SvgBuilder, d: DesignPreset, categories: string[], 
     const fit = fitText(categories[i]!, 80, 1, d.captionSize);
     svg.text(x + 16, y + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: color,
+      'data-field': `categories[${i}]`,
     });
     x += 16 + 60 + 12;
     if (x > startX + maxW - 40) { x = startX; y += 18; }
@@ -512,6 +515,7 @@ function drawPixelLegend(svg: SvgBuilder, d: DesignPreset, categories: string[],
     const fit = fitText(categories[i]!, 80, 1, d.captionSize);
     svg.text(x + px * 5 + 2, y + 10, fit.lines[0]!, {
       'text-anchor': 'start', 'font-size': fit.fontSize, fill: d.text,
+      'data-field': `categories[${i}]`,
     });
     x += px * 5 + 60 + 12;
     if (x > startX + maxW - 40) { x = startX; y += 18; }

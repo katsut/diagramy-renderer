@@ -41,7 +41,7 @@ export function renderDecisionTree(data: DecisionTreeData, title?: string, desig
 
 // --- Layout ---
 
-interface LayoutNode { label: string; x: number; y: number; w: number; isLeaf: boolean; yes?: LayoutNode; no?: LayoutNode; }
+interface LayoutNode { label: string; x: number; y: number; w: number; isLeaf: boolean; yes?: LayoutNode; no?: LayoutNode; dataPath: string; }
 
 const NODE_W = 130;
 const NODE_H = 40;
@@ -58,25 +58,25 @@ function leafCount(node: DecisionNode): number {
   return (node.yes ? leafCount(node.yes) : 0) + (node.no ? leafCount(node.no) : 0);
 }
 
-function layoutNode(node: DecisionNode, depth: number, xOff: { v: number }): LayoutNode {
+function layoutNode(node: DecisionNode, depth: number, xOff: { v: number }, dataPath = 'root'): LayoutNode {
   const isLeaf = !node.yes && !node.no;
   const w = NODE_W;
 
   if (isLeaf) {
     const x = xOff.v;
     xOff.v += w + H_GAP;
-    return { label: node.label, x, y: depth * (NODE_H + V_GAP), w, isLeaf: true };
+    return { label: node.label, x, y: depth * (NODE_H + V_GAP), w, isLeaf: true, dataPath };
   }
 
-  const yesLayout = node.yes ? layoutNode(node.yes, depth + 1, xOff) : undefined;
-  const noLayout = node.no ? layoutNode(node.no, depth + 1, xOff) : undefined;
+  const yesLayout = node.yes ? layoutNode(node.yes, depth + 1, xOff, `${dataPath}.yes`) : undefined;
+  const noLayout = node.no ? layoutNode(node.no, depth + 1, xOff, `${dataPath}.no`) : undefined;
 
   const children = [yesLayout, noLayout].filter(Boolean) as LayoutNode[];
   const minX = Math.min(...children.map(c => c.x));
   const maxX = Math.max(...children.map(c => c.x + c.w));
   const x = (minX + maxX) / 2 - w / 2;
 
-  return { label: node.label, x, y: depth * (NODE_H + V_GAP), w, isLeaf: false, yes: yesLayout, no: noLayout };
+  return { label: node.label, x, y: depth * (NODE_H + V_GAP), w, isLeaf: false, yes: yesLayout, no: noLayout, dataPath };
 }
 
 function offsetLayout(node: LayoutNode, dx: number, dy: number): LayoutNode {
@@ -152,6 +152,7 @@ function drawCleanNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth
     'text-anchor': 'middle', 'font-size': fit.fontSize,
     'font-weight': node.isLeaf ? d.fontWeight : 700,
     fill: node.isLeaf ? d.text : 'white',
+    'data-field': `${node.dataPath}.label`,
   });
 
   const bottom = node.y + NODE_H;
@@ -207,6 +208,7 @@ function drawSketchNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, dept
   const fit = fitText(node.label, node.w - 24, 1, 12);
   svg.text(cx, cy + 4, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, fill: d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const bottom = node.y + NODE_H;
@@ -257,6 +259,7 @@ function drawPixelNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth
   const fit = fitText(node.label, node.w - 16, 1, 12);
   svg.text(Math.round(cx), Math.round(cy) + 4, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const bottom = node.y + NODE_H;
@@ -319,6 +322,7 @@ function drawBoldNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth:
     'text-anchor': 'middle', 'font-size': fit.fontSize,
     'font-weight': 800,
     fill: node.isLeaf ? d.text : '#FFFFFF',
+    'data-field': `${node.dataPath}.label`,
   });
 
   const bottom = node.y + NODE_H;
@@ -379,6 +383,7 @@ function drawFlatNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth:
     'text-anchor': node.isLeaf ? 'start' : 'middle', 'font-size': fit.fontSize,
     'font-weight': d.fontWeight,
     fill: node.isLeaf ? d.text : '#FFFFFF',
+    'data-field': `${node.dataPath}.label`,
   });
 
   const bottom = node.y + NODE_H;
@@ -446,6 +451,7 @@ function drawGlassNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth
   svg.text(cx, cy + 4, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize,
     'font-weight': d.fontWeight, fill: d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const bottom = node.y + NODE_H;
@@ -513,6 +519,7 @@ function drawNeonNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, depth:
   svg.text(cx, cy + 4, fit.lines[0]!, {
     'text-anchor': 'middle', 'font-size': fit.fontSize,
     'font-weight': d.fontWeight, fill: d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const bottom = node.y + NODE_H;
@@ -578,6 +585,7 @@ function drawWatercolorNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, 
     'text-anchor': 'middle', 'font-size': fit.fontSize,
     'font-weight': 600,
     fill: node.isLeaf ? d.text : d.text,
+    'data-field': `${node.dataPath}.label`,
   });
 
   const bottom = node.y + NODE_H;
@@ -824,6 +832,7 @@ function drawFlowchartNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, d
     svg.text(cx, cy + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': d.fontWeight,
       fill: d.id === 'neon' ? color : d.text,
+      'data-field': `${node.dataPath}.label`,
     });
   } else {
     // Diamond decision node
@@ -853,6 +862,7 @@ function drawFlowchartNode(svg: SvgBuilder, d: DesignPreset, node: LayoutNode, d
     const fit = fitText(node.label, node.w - 16, 1, 12);
     svg.text(cx, cy + 4, fit.lines[0]!, {
       'text-anchor': 'middle', 'font-size': fit.fontSize, 'font-weight': 700, fill: color,
+      'data-field': `${node.dataPath}.label`,
     });
   }
 
