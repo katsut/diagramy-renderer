@@ -137,8 +137,8 @@ function renderSketch(data: ProcessData, title: string | undefined, d: DesignPre
 
     svg.beginItem(`nodes[${i}]`);
     drawSketchBox(svg, d, cx, lay.contentTop, lay.stepW, lay.stepH, i);
-    drawSketchNumber(svg, d, cx, lay.contentTop + 36, i);
-    drawNodeText(svg, d, node, cx, lay.contentTop + 66, lay.stepW - 36, i);
+    drawSketchNumber(svg, d, cx, lay.contentTop + 28, i);
+    drawNodeText(svg, d, node, cx, lay.contentTop + 48, lay.stepW - 28, i);
     svg.endItem();
     drawSketchArrow(svg, d, cx, lay, i);
   }
@@ -169,8 +169,8 @@ function drawSketchArrow(svg: SvgBuilder, d: DesignPreset, cx: number, lay: Step
   svg.path(jitterLine(ax1, ay, ax2, ay, i * 13), {
     fill: 'none', stroke: d.border, 'stroke-width': 1.5,
   });
-  svg.path(`M ${ax2 - 8} ${ay - 5} L ${ax2} ${ay} L ${ax2 - 8} ${ay + 5}`, {
-    fill: 'none', stroke: d.border, 'stroke-width': 1.5,
+  svg.path(`M ${ax2 - 8} ${ay - 5} L ${ax2} ${ay} L ${ax2 - 8} ${ay + 5} Z`, {
+    fill: d.border, stroke: d.border, 'stroke-width': 1,
   });
 }
 
