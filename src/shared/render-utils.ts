@@ -271,9 +271,12 @@ export function computeHorizontalStepLayout(
 // --- Color gradients for N items ---
 
 export function buildColorGradients(d: DesignPreset, count: number, prefix = 'cg'): string {
+  // Dark presets: use surface color for highlight instead of white
+  const isDark = d.id === 'neon' || d.id === 'glass' || d.id === 'pixel';
+  const highlight = isDark ? d.surface : 'white';
   let defs = '';
   for (let i = 0; i < count; i++) {
-    defs += radialGradient(`${prefix}${i}`, d.colors[i % d.colors.length]!);
+    defs += radialGradient(`${prefix}${i}`, d.colors[i % d.colors.length]!, highlight);
   }
   return defs;
 }
@@ -381,6 +384,9 @@ export function drawIconNode(
     svg.circle(cx, cy, r + 4, { fill: color, opacity: 0.15, filter: 'url(#watercolor)' });
     svg.circle(cx, cy, r, { fill: color, opacity: 0.6, filter: 'url(#watercolor)' });
     svg.raw(iconSvg(iconName, cx, cy, iconSize, d.text));
+  } else if (d.id === 'pixel') {
+    svg.circle(cx, cy, r, { fill: color, 'shape-rendering': 'crispEdges' });
+    svg.raw(iconSvg(iconName, cx, cy, iconSize, d.bg));
   } else {
     // clean default
     svg.circle(cx, cy, r + 6, { fill: color, opacity: 0.08 });

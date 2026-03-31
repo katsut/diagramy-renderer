@@ -171,9 +171,9 @@ export const FILTER_GLOW =
   `<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>` +
   `</filter>`;
 
-export function radialGradient(id: string, color: string): string {
+export function radialGradient(id: string, color: string, highlight = 'white'): string {
   return `<radialGradient id="${id}" cx="35%" cy="30%" r="65%">` +
-    `<stop offset="0%" stop-color="white" stop-opacity="0.35"/>` +
+    `<stop offset="0%" stop-color="${highlight}" stop-opacity="0.35"/>` +
     `<stop offset="100%" stop-color="${color}" stop-opacity="1"/>` +
     `</radialGradient>`;
 }
