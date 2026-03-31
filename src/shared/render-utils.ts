@@ -38,7 +38,7 @@ export function createDiagramSvg(
   desc: string,
   extraDefs = '',
 ): { svg: SvgBuilder; defs: string } {
-  const svg = new SvgBuilder(width, height + FOOTER_MARGIN, title ?? desc, d.fontFamily, d.fontImport);
+  const svg = new SvgBuilder(width, height + FOOTER_MARGIN, title ?? desc, d.fontFamily, d.fontImport, d.bg);
   if (title) svg.title(title);
   svg.desc(desc);
 

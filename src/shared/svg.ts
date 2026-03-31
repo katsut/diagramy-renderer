@@ -23,12 +23,14 @@ export class SvgBuilder {
     private ariaLabel: string = 'Diagram',
     fontFamily?: string,
     fontImport?: string,
+    bgColor?: string,
   ) {
     const font = fontFamily || "'Noto Sans JP', system-ui, sans-serif";
+    const bg = bgColor || '#FFFFFF';
     this.parts.push(
       `<svg xmlns="http://www.w3.org/2000/svg" xml:lang="ja" viewBox="0 0 ${width} ${height}" ` +
       `width="${width}" height="${height}" role="img" aria-label="${escapeXml(ariaLabel)}" ` +
-      `font-family="${font}" style="background:#FFFFFF">`,
+      `font-family="${font}" style="background:${bg}">`,
     );
     if (fontImport) {
       const escaped = fontImport.replace(/&/g, '&amp;');
