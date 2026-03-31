@@ -8,7 +8,9 @@
     "dev": "nodemon --watch src --ext ts --exec 'tsx src/server.ts'",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "tsx src/test.ts"
+    "test": "tsx src/test.ts",
+    "catalog": "tsx scripts/catalog.ts",
+    "storybook": "tsx scripts/storybook.ts"
   },
   "keywords": [],
   "author": "",
