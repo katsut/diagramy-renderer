@@ -468,13 +468,13 @@ function renderWatercolor(data: CycleData, title: string | undefined, d: DesignP
 
 function renderSketch(data: CycleData, title: string | undefined, d: DesignPreset): string {
   const pad = 48;
-  const titleH = title ? 48 : 0;
+  const titleH = title ? 36 : 0;
   const count = data.steps.length;
   const ringR = 110;
   const nodeR = 30;
   const size = (ringR + nodeR + 60) * 2;
   const width = pad * 2 + size;
-  const height = pad * 2 + titleH + size;
+  const height = pad + 24 + titleH + size;
   const cx = width / 2;
   const cy = pad + titleH + size / 2;
 

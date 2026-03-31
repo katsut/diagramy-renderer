@@ -115,11 +115,11 @@ function renderClean(data: FunnelData, title: string | undefined, d: DesignPrese
   const pad = 48;
   const titleH = title ? 44 : 0;
   const count = data.stages.length;
-  const funnelW = 320;
+  const funnelW = 400;
   const annotW = 300;
   const gap = 40;
   const hasDesc = data.stages.some(s => s.description);
-  const stageH = hasDesc ? 96 : 80;
+  const stageH = hasDesc ? 110 : 90;
   const width = pad * 2 + funnelW + gap + annotW;
   const height = pad * 2 + titleH + count * stageH + 40;
 

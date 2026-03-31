@@ -83,7 +83,7 @@ function renderClean(data: SwimlaneData, title: string | undefined, d: DesignPre
     });
     const aFit = fitText(lane.actor, actorW - 16, 2, d.labelSize);
     svg.text(pad + actorW / 2, y + laneH / 2 + 4, aFit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: 'white',
+      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: d.text,
       'data-field': `lanes[${li}].label`,
     });
 
@@ -276,7 +276,7 @@ function renderBold(data: SwimlaneData, title: string | undefined, d: DesignPres
     });
     const aFit = fitText(lane.actor, actorW - 20, 2, d.labelSize + 1);
     svg.text(pad + actorW / 2, y + laneH / 2 + 5, aFit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 900, fill: '#FFFFFF',
+      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 900, fill: d.text,
       'data-field': `lanes[${li}].label`,
     });
 
@@ -429,7 +429,7 @@ function renderGlass(data: SwimlaneData, title: string | undefined, d: DesignPre
     });
     const aFit = fitText(lane.actor, actorW - 20, 1, d.labelSize);
     svg.text(pad + actorW / 2, y + laneH / 2 + 5, aFit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: '#FFFFFF',
+      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: d.text,
       'data-field': `lanes[${li}].label`,
     });
 
@@ -669,7 +669,7 @@ function renderVerticalStyle(data: SwimlaneData, title: string | undefined, d: D
     });
     const aFit = fitText(lane.actor, colW - 16, 1, d.labelSize);
     svg.text(cx, contentTop + headerH / 2 + 5, aFit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: 'white',
+      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: d.text,
       'data-field': `lanes[${li}].label`,
     });
 
@@ -761,7 +761,7 @@ function renderKanban(data: SwimlaneData, title: string | undefined, d: DesignPr
     });
     const aFit = fitText(lane.actor, colW - 40, 1, d.labelSize);
     svg.text(cx, contentTop + headerH / 2 + 5, aFit.lines[0]!, {
-      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: 'white',
+      'text-anchor': 'middle', 'font-size': aFit.fontSize, 'font-weight': 700, fill: d.text,
       'data-field': `lanes[${li}].label`,
     });
     // Count badge

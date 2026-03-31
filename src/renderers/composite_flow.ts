@@ -642,11 +642,12 @@ function renderSketch(data: CompositeFlowData, title: string | undefined, d: Des
   const vGap = 40;
   const edges = effectiveEdges(data);
   const hasFeedback = edges.some(e => e.edge_type === 'feedback');
+  const feedbackMargin = hasFeedback ? 70 : 0;
   const totalH = count * nodeH + (count - 1) * vGap;
-  const contentW = pad * 2 + nodeW + (hasFeedback ? 60 : 0);
+  const contentW = pad * 2 + nodeW + feedbackMargin;
   const width = ensureTitleFits(contentW, title, d, pad);
   const height = pad * 2 + titleH + totalH;
-  const nodeLeft = (width - nodeW) / 2;
+  const nodeLeft = (width - nodeW - feedbackMargin) / 2;
   const cx = nodeLeft + nodeW / 2;
 
   const { svg, defs } = createDiagramSvg(d, width, height, title, 'Composite flow (sketch)');
@@ -655,7 +656,51 @@ function renderSketch(data: CompositeFlowData, title: string | undefined, d: Des
   if (title) drawTitle(svg, d, title, width, pad);
 
   const contentTop = pad + titleH;
+  const positions = data.nodes.map((_, i) => contentTop + i * (nodeH + vGap) + nodeH / 2);
 
+  // Forward edges
+  for (const edge of edges) {
+    if (edge.edge_type === 'feedback') continue;
+    const fi = nodeIndex(data.nodes, edge.from);
+    const ti = nodeIndex(data.nodes, edge.to);
+    if (fi >= 0 && ti >= 0) {
+      const ay1 = positions[fi]! + nodeH / 2 + 4;
+      const ay2 = positions[ti]! - nodeH / 2 - 4;
+      svg.path(jitterLine(cx, ay1, cx, ay2, fi * 11), {
+        fill: 'none', stroke: d.border, 'stroke-width': 1.5,
+      });
+      svg.path(`M ${cx - 5} ${ay2 - 6} L ${cx} ${ay2} L ${cx + 5} ${ay2 - 6}`, {
+        fill: 'none', stroke: d.border, 'stroke-width': 1.5,
+      });
+    }
+  }
+
+  // Feedback edges — dashed curved arrows going backward
+  for (const edge of edges) {
+    if (edge.edge_type !== 'feedback') continue;
+    const fi = nodeIndex(data.nodes, edge.from);
+    const ti = nodeIndex(data.nodes, edge.to);
+    if (fi >= 0 && ti >= 0) {
+      const fy = positions[fi]!;
+      const ty = positions[ti]!;
+      const arcX = nodeLeft + nodeW + 16;
+      svg.path(`M ${nodeLeft + nodeW} ${fy} C ${arcX + 30} ${fy}, ${arcX + 30} ${ty}, ${nodeLeft + nodeW} ${ty}`, {
+        fill: 'none', stroke: d.border, 'stroke-width': 1.5, 'stroke-dasharray': '6,4',
+        opacity: 0.5,
+      });
+      // Arrowhead at destination
+      svg.path(`M ${nodeLeft + nodeW + 6} ${ty - 5} L ${nodeLeft + nodeW} ${ty} L ${nodeLeft + nodeW + 6} ${ty + 5}`, {
+        fill: 'none', stroke: d.border, 'stroke-width': 1.5, opacity: 0.5,
+      });
+      if (edge.label) {
+        svg.text(arcX + 36, (fy + ty) / 2 + 4, edge.label, {
+          'font-size': d.captionSize, fill: d.text, opacity: 0.5,
+        });
+      }
+    }
+  }
+
+  // Nodes
   for (let i = 0; i < count; i++) {
     const node = data.nodes[i]!;
     const ny = contentTop + i * (nodeH + vGap);
@@ -670,17 +715,6 @@ function renderSketch(data: CompositeFlowData, title: string | undefined, d: Des
       'data-field': `nodes[${i}].label`,
     });
     svg.endItem();
-
-    if (i < count - 1) {
-      const ay1 = ny + nodeH + 4;
-      const ay2 = ny + nodeH + vGap - 4;
-      svg.path(jitterLine(cx, ay1, cx, ay2, i * 11), {
-        fill: 'none', stroke: d.border, 'stroke-width': 1.5,
-      });
-      svg.path(`M ${cx - 5} ${ay2 - 6} L ${cx} ${ay2} L ${cx + 5} ${ay2 - 6}`, {
-        fill: 'none', stroke: d.border, 'stroke-width': 1.5,
-      });
-    }
   }
 
   return svg.build();
