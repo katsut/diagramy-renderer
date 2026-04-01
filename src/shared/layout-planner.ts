@@ -89,10 +89,10 @@ export function adaptiveRadialRadius(branchCount: number, childCount: number): {
   // Minimum arc distance between branches — wider for more children
   const minArcDist = childCount >= 4 ? 170 : childCount >= 3 ? 150 : childCount >= 2 ? 120 : 90;
   const circumference = branchCount * minArcDist;
-  const branchR = Math.max(170, Math.round(circumference / (2 * Math.PI)));
+  const branchR = Math.max(130, Math.round(circumference / (2 * Math.PI)));
 
   // Child radius: more space when branches are dense so labels don't overlap
-  const childR = branchCount <= 3 ? 90 : branchCount <= 5 ? 80 : branchCount <= 7 ? 65 : 55;
+  const childR = branchCount <= 3 ? 75 : branchCount <= 5 ? 65 : branchCount <= 7 ? 55 : 45;
 
   return { branchR, childR };
 }

@@ -49,8 +49,8 @@ function branchIcon(i: number): string {
 }
 
 function computeLayout(branchCount: number, hasTitle: boolean, maxChildren: number) {
-  const pad = 48;
-  const titleH = hasTitle ? 44 : 0;
+  const pad = 32;
+  const titleH = hasTitle ? 40 : 0;
   const centerR = 50;
   const { branchR, childR } = adaptiveRadialRadius(branchCount, maxChildren);
   const maxChildCount = branchCount <= 3 ? 6 : branchCount <= 5 ? 5 : branchCount <= 7 ? 4 : 3;
@@ -61,8 +61,8 @@ function computeLayout(branchCount: number, hasTitle: boolean, maxChildren: numb
   const childSpread = Math.min(Math.PI * 0.6, angularGap * 0.7);
 
   // Extra label padding for dense maps
-  const labelPad = branchCount >= 6 ? 40 : 20;
-  const totalR = branchR + childR + 80 + labelPad;
+  const labelPad = branchCount >= 6 ? 30 : 10;
+  const totalR = branchR + childR + 50 + labelPad;
   const width = Math.max(pad * 2 + totalR * 2, 700);
   const height = pad * 2 + titleH + totalR * 2;
   const cx = width / 2;
