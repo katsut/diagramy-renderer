@@ -18,7 +18,7 @@
   "packageManager": "pnpm@10.30.2",
   "dependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.9.0",
     "express": "^5.2.1",
     "lucide-static": "^0.577.0",
     "typescript": "^5.9.3"
